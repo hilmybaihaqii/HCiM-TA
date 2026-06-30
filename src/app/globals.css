@@ -1,26 +1,73 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* === Crimson Pearl Color Palette === */
+  --background: #FCFAFA;      /* Putih mutiara hangat untuk canvas utama */
+  --surface-white: #ffffff;   /* Putih absolut untuk base kaca/pantulan */
+  --foreground: #2B2223;      /* Pengganti hitam (Deep Oxblood/Charcoal) */
+  --text-muted: #786B6C;      /* Pengganti abu-abu (Warm Ash) untuk paragraf */
+  --accent-red: #BA3B46;      /* Merah medis elegan (Refined Crimson) */
+  --accent-red-dark: #8F2D36; /* Merah gelap untuk efek hover pada tombol */
 }
 
 @theme inline {
+  /* Memetakan variabel ke utility class Tailwind */
   --color-background: var(--background);
+  --color-surface-white: var(--surface-white);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-muted: var(--text-muted);
+  --color-accent: var(--accent-red);
+  --color-accent-dark: var(--accent-red-dark);
+  
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Kustomisasi Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px; 
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent; 
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #d1d5db;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Menggunakan warna accent untuk hover scrollbar */
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent-red);
+}
+
+@media (prefers-color-scheme: dark) {
+  /* Bisa diisi nanti jika ingin menambahkan Dark Mode */
+}
+
+/* Kustomisasi kursor kustom (jika menggunakan custom cursor) */
+@media (pointer: fine) {
+  body,
+  a,
+  button,
+  .cursor-pointer {
+    cursor: none !important;
+  }
 }
