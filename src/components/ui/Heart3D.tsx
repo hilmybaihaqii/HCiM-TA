@@ -11,7 +11,7 @@ function Model({ isMobile }: { isMobile: boolean }) {
   // Jika di HP, skalanya mengecil (1.1) dan posisinya disesuaikan (-0.8)
   // Jika di Desktop, kembali ke ukuran besar (1.5) dan posisi (-1.2)
   const scale = isMobile ? 1.5 : 1.7;
-  const posY = isMobile ? -0.7 : -0.8;
+  const posY = isMobile ? -0.9 : -0.8;
 
   return <primitive object={scene} scale={scale} position={[0, posY, 0]} />;
 }
