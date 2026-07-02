@@ -142,7 +142,7 @@ export default function AboutSection() {
               into toxicity predictions<span className="text-accent">.</span>
             </h2>
             <p className="mt-6 max-w-xl text-sm md:text-base text-muted leading-relaxed">
-              Instead of relying on costly in-vivo animal testing, we trained a <strong className="text-foreground font-medium">Stacking Ensemble Machine Learning</strong> model using datasets generated purely from the <strong className="text-foreground font-medium">O&apos;Hara-Rudy in-silico model</strong>. By evaluating 11 critical cellular biomarkers, the system precisely classifies the risk of Torsade de Pointes (TdP) for any given compound.
+              Instead of relying on costly in-vivo animal testing, we trained a <strong className="text-foreground font-medium">Ensemble Machine Learning</strong> model using datasets generated purely from the <strong className="text-foreground font-medium">O&apos;Hara-Rudy in-silico model</strong>. By evaluating 11 critical cellular biomarkers, the system precisely classifies the risk of Torsade de Pointes (TdP) for any given compound.
             </p>
           </div>
 
