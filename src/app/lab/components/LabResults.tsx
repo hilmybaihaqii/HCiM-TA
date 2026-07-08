@@ -59,7 +59,7 @@ export default function LabResults({ tier, shap, onReset }: { tier: string; shap
           </div>
         </div>
 
-        <button onClick={onReset} className="group relative z-10 w-full md:w-auto px-6 py-3 bg-foreground/2 border border-foreground/5 text-foreground text-xs font-semibold uppercase tracking-widest rounded-full hover:bg-foreground hover:text-surface-white transition-all duration-300 flex items-center justify-center gap-3 overflow-hidden">
+        <button onClick={onReset} className="group relative z-10 w-full md:w-auto px-6 py-3 bg-foreground/2 border border-foreground/5 text-foreground text-xs font-semibold uppercase tracking-widest rounded-full hover:bg-accent hover:border-accent hover:text-surface-white transition-all duration-300 flex items-center justify-center gap-3 overflow-hidden">
           <span>Recalibrate</span>
           <RefreshCcw className="w-3.5 h-3.5 transition-transform duration-500 group-hover:rotate-180" />
         </button>

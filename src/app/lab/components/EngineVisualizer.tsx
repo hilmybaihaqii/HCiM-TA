@@ -131,8 +131,8 @@ export default function EngineVisualizer({ activeStage }: { activeStage: Stage }
                       {/* Core Node Bubble */}
                       <motion.div
                         animate={{
-                          backgroundColor: isCompleted ? 'var(--foreground)' : isActive ? 'var(--surface-white)' : 'var(--surface-white)',
-                          borderColor: isCompleted ? 'transparent' : isActive ? 'var(--accent)' : 'rgba(0,0,0,0.06)',
+                          backgroundColor: isCompleted ? 'var(--accent)' : isActive ? 'var(--surface-white)' : 'var(--surface-white)',
+                          borderColor: isCompleted ? 'transparent' : isActive ? 'var(--accent)' : 'var(--border-color)',
                           color: isCompleted ? 'var(--surface-white)' : isActive ? 'var(--accent)' : 'var(--text-muted)',
                         }}
                         className="w-full h-full rounded-full border flex items-center justify-center shadow-sm relative z-10 transition-all duration-300"

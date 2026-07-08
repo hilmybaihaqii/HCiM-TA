@@ -1,13 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  /* === Crimson Pearl Color Palette === */
-  --background: #FCFAFA;      /* Putih mutiara hangat untuk canvas utama */
+  /* === Cardiotox Color Palette (from Figma) === */
+  --background: #F6F4F3;      /* Warm Ivory - canvas utama */
   --surface-white: #ffffff;   /* Putih absolut untuk base kaca/pantulan */
-  --foreground: #2B2223;      /* Pengganti hitam (Deep Oxblood/Charcoal) */
-  --text-muted: #786B6C;      /* Pengganti abu-abu (Warm Ash) untuk paragraf */
-  --accent-red: #BA3B46;      /* Merah medis elegan (Refined Crimson) */
-  --accent-red-dark: #8F2D36; /* Merah gelap untuk efek hover pada tombol */
+  --foreground: #2A2A2A;      /* Charcoal (Text) */
+  --text-muted: color-mix(in srgb, var(--foreground) 60%, var(--background)); /* Diturunkan dari Text + Background */
+  --accent-red: #B8545C;      /* Soft Crimson (Accent) */
+  --accent-red-dark: #7F4046; /* Wine Red (Hover) */
+  --primary: #2B1F1D;         /* Deep Cardiac Brown (Primary) */
+  --secondary: #C98B8B;       /* Dusty Rose (Secondary) */
+  --border-color: #E6E0DD;    /* Light Gray (Border) */
 }
 
 @theme inline {
@@ -18,7 +21,10 @@
   --color-muted: var(--text-muted);
   --color-accent: var(--accent-red);
   --color-accent-dark: var(--accent-red-dark);
-  
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-border: var(--border-color);
+
   --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
 }
 

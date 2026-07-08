@@ -36,7 +36,7 @@ const RevealText = ({ children }: { children: string }) => {
    REUSABLE COMPONENT: BIOMARKER CARD
    ========================================================= */
 const BioCard = ({ name }: { name: string }) => (
-  <div className="flex items-center justify-center py-2.5 md:py-3.5 px-2 bg-foreground/[0.03] border border-foreground/10 rounded-lg text-[10px] md:text-xs font-mono text-muted hover:bg-foreground hover:text-background hover:border-foreground transition-colors duration-300 cursor-crosshair">
+  <div className="flex items-center justify-center py-2.5 md:py-3.5 px-2 bg-foreground/[0.03] border border-foreground/10 rounded-lg text-[10px] md:text-xs font-mono text-muted hover:bg-accent hover:text-surface-white hover:border-accent transition-colors duration-300 cursor-crosshair">
     {name}
   </div>
 );
@@ -212,7 +212,7 @@ export default function SolutionSection() {
                   A Hard Voting mechanism aggregates the predictions from all three models to determine the final risk category (Low, Intermediate, or High). Each result is supported by SHAP values to maintain full clinical transparency.
                 </p>
                 
-                <div className="w-full p-6 md:p-8 rounded-2xl border border-foreground/10 bg-surface-white relative overflow-hidden group hover:border-foreground/30 hover:shadow-lg transition-all duration-500">
+                <div className="w-full p-6 md:p-8 rounded-2xl border border-foreground/10 bg-surface-white relative overflow-hidden group hover:border-accent/40 hover:shadow-lg transition-all duration-500">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full blur-3xl group-hover:bg-accent/15 transition-colors duration-700" />
                   
                   <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">

@@ -14,7 +14,7 @@ const AnimatedLink = ({ title, href }: { title: string; href: string }) => {
     <li>
       <Link 
         href={href} 
-        className="group relative flex items-center w-max overflow-hidden text-sm font-medium text-muted transition-colors duration-300 hover:text-foreground"
+        className="group relative flex items-center w-max overflow-hidden text-sm font-medium text-muted transition-colors duration-300 hover:text-accent"
       >
         <span className="relative flex flex-col h-[1.2em] overflow-hidden">
           {/* Teks utama (naik ke atas dan menghilang) */}
@@ -154,10 +154,10 @@ export default function Footer() {
             ))}
           </div>
           
-          <Link href="#" className="text-[11px] font-mono uppercase tracking-widest text-muted hover:text-foreground transition-colors duration-300">
+          <Link href="#" className="text-[11px] font-mono uppercase tracking-widest text-muted hover:text-accent transition-colors duration-300">
             Privacy
           </Link>
-          <Link href="#" className="text-[11px] font-mono uppercase tracking-widest text-muted hover:text-foreground transition-colors duration-300">
+          <Link href="#" className="text-[11px] font-mono uppercase tracking-widest text-muted hover:text-accent transition-colors duration-300">
             Cookies
           </Link>
         </div>

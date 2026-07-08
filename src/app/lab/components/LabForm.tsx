@@ -241,7 +241,7 @@ export default function LabForm({ onSubmit }: { onSubmit: (data: number[]) => vo
                   className={`w-8 h-8 rounded-full flex items-center justify-center transition-all border outline-none
                     ${page === 0 
                       ? 'border-foreground/5 text-muted/20 cursor-not-allowed' 
-                      : 'border-foreground/10 text-muted hover:text-foreground hover:bg-foreground/5 active:scale-90'
+                      : 'border-foreground/10 text-muted hover:text-accent hover:bg-accent/10 active:scale-90'
                     }`}
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -255,9 +255,9 @@ export default function LabForm({ onSubmit }: { onSubmit: (data: number[]) => vo
                       type="button"
                       onClick={() => setPage(idx)}
                       className={`w-7 h-7 rounded-full text-[11px] font-mono font-medium transition-all duration-300 flex items-center justify-center outline-none
-                        ${page === idx 
-                          ? 'bg-foreground text-surface-white shadow-sm scale-105' 
-                          : 'bg-foreground/5 text-muted hover:bg-foreground/10 hover:text-foreground'
+                        ${page === idx
+                          ? 'bg-accent text-surface-white shadow-sm scale-105'
+                          : 'bg-foreground/5 text-muted hover:bg-accent/10 hover:text-accent'
                         }
                       `}
                     >
@@ -274,7 +274,7 @@ export default function LabForm({ onSubmit }: { onSubmit: (data: number[]) => vo
                   className={`w-8 h-8 rounded-full flex items-center justify-center transition-all border outline-none
                     ${page === totalPages - 1 
                       ? 'border-foreground/5 text-muted/20 cursor-not-allowed' 
-                      : 'border-foreground/10 text-muted hover:text-foreground hover:bg-foreground/5 active:scale-90'
+                      : 'border-foreground/10 text-muted hover:text-accent hover:bg-accent/10 active:scale-90'
                     }`}
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -303,8 +303,8 @@ export default function LabForm({ onSubmit }: { onSubmit: (data: number[]) => vo
               type="submit"
               disabled={!isReady}
               className={`group flex items-center justify-center gap-3 w-full sm:w-auto px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.15em] transition-all duration-300 rounded-full shadow-lg 
-                ${isReady 
-                  ? 'bg-foreground text-surface-white hover:shadow-foreground/15 hover:scale-[1.02] active:scale-95 cursor-pointer' 
+                ${isReady
+                  ? 'bg-accent text-surface-white hover:bg-accent-dark hover:shadow-accent/25 hover:scale-[1.02] active:scale-95 cursor-pointer'
                   : 'bg-foreground/10 text-muted/50 shadow-none cursor-not-allowed'
                 }
               `}

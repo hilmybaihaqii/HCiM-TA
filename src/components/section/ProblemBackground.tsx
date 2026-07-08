@@ -66,7 +66,7 @@ const MediaReveal = ({ caption, fallbackText }: { caption: string, fallbackText:
       <div className="w-full aspect-video md:aspect-21/9 rounded-2xl md:rounded-4xl overflow-hidden bg-foreground/5 border border-foreground/10 relative flex items-center justify-center group">
         
         <div className="absolute inset-0 bg-linear-to-br from-foreground/5 to-transparent opacity-50" />
-        <span className="text-[10px] md:text-xs font-mono uppercase tracking-[0.2em] text-muted group-hover:text-foreground transition-colors duration-500">
+        <span className="text-[10px] md:text-xs font-mono uppercase tracking-[0.2em] text-muted group-hover:text-accent transition-colors duration-500">
           [ {fallbackText} ]
         </span>
         

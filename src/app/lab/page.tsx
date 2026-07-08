@@ -67,7 +67,7 @@ export default function DigitalLabPage() {
       {/* Pembungkus Konten Utama: Terkunci Konsisten dengan Pola Landing Page */}
       <div className="w-full max-w-7xl mx-auto px-6 md:px-12 relative min-h-100 mt-6">
         {error && (
-          <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-500 text-xs font-mono text-center tracking-wide">
+          <div className="mb-6 p-4 bg-accent/10 border border-accent/25 rounded-2xl text-accent text-xs font-mono text-center tracking-wide">
             [SYSTEM_CORE_ERROR] // {error}
           </div>
         )}

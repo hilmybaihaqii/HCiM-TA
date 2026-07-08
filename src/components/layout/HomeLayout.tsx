@@ -8,7 +8,7 @@ export default function HomeLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative min-h-screen bg-white">
+    <div className="relative min-h-screen bg-background">
       <Navbar />
       <main className="relative flex flex-col w-full">{children}</main>
       <Footer />

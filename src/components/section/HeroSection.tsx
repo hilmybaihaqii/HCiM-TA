@@ -22,7 +22,7 @@ export default function HeroSection() {
         >
           <span 
             className="block text-transparent" 
-            style={{ WebkitTextStroke: '2px rgba(43, 34, 35, 0.06)' }}
+            style={{ WebkitTextStroke: '2px rgba(42, 42, 42, 0.06)' }}
           >
             IN-SILICO
           </span>
@@ -50,7 +50,7 @@ export default function HeroSection() {
             transition={{ duration: 1, delay: 0.5 }} 
             className="flex flex-col gap-1.5 md:gap-2"
           >
-            <div className="flex items-center gap-2 md:gap-3">
+            <div className="flex items-center gap-2 md:gap-3 bg-secondary/15 border border-secondary/30 px-3 py-1.5 rounded-full">
               <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-accent animate-pulse" />
               <div className="text-[9px] md:text-xs font-mono uppercase tracking-[0.2em] text-foreground font-medium">
                 O&apos;Hara-Rudy Cell Data
@@ -98,7 +98,7 @@ export default function HeroSection() {
             className="absolute bottom-0 left-1/2 transform -translate-x-1/2 pointer-events-auto flex-col items-center gap-3 hidden xl:flex"
           >
             <span className="text-[9px] font-mono text-muted uppercase tracking-widest rotate-90 opacity-0">.</span>
-            <a href="#about" className="w-12 h-12 flex items-center justify-center rounded-full border border-foreground/20 text-muted hover:border-foreground hover:text-foreground transition-all duration-300">
+            <a href="#about" className="w-12 h-12 flex items-center justify-center rounded-full border border-foreground/20 text-muted hover:border-accent hover:text-accent transition-all duration-300">
               <svg className="w-5 h-5 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M19 13l-7 7-7-7m14-8l-7 7-7-7" />
               </svg>
@@ -111,10 +111,10 @@ export default function HeroSection() {
             transition={{ duration: 1, delay: 0.9 }} 
             className="flex flex-col sm:flex-row w-full lg:w-auto gap-2 md:gap-3 pointer-events-auto shrink-0"
           >
-            <button className="w-full sm:w-auto px-6 py-3.5 md:px-8 md:py-4 text-[10px] md:text-xs font-normal uppercase tracking-widest bg-surface-white/60 backdrop-blur-md border border-foreground/10 text-foreground hover:bg-foreground hover:text-surface-white transition-all duration-300 rounded-full">
+            <button className="w-full sm:w-auto px-6 py-3.5 md:px-8 md:py-4 text-[10px] md:text-xs font-normal uppercase tracking-widest bg-surface-white/60 backdrop-blur-md border border-foreground/10 text-foreground hover:bg-accent hover:border-accent hover:text-surface-white transition-all duration-300 rounded-full">
               Architecture
             </button>
-            <button className="group flex items-center justify-center gap-3 w-full sm:w-auto px-6 py-3.5 md:px-8 md:py-4 bg-foreground text-surface-white text-[10px] md:text-xs font-normal uppercase tracking-widest transition-all duration-300 rounded-full shadow-lg hover:shadow-foreground/20 hover:scale-[1.02]">
+            <button className="group flex items-center justify-center gap-3 w-full sm:w-auto px-6 py-3.5 md:px-8 md:py-4 bg-accent text-surface-white text-[10px] md:text-xs font-normal uppercase tracking-widest transition-all duration-300 rounded-full shadow-lg hover:bg-accent-dark hover:shadow-accent/30 hover:scale-[1.02]">
               Run Prediction
               <svg className="w-3.5 h-3.5 md:w-4 md:h-4 transform transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />

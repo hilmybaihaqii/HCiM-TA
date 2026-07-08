@@ -65,7 +65,7 @@ export default function ForgotPasswordPage() {
       {[1, 2, 3].map((s) => (
         <div 
           key={s} 
-          className={`h-1 rounded-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${s === currentStep ? 'w-8 bg-white' : s < currentStep ? 'w-4 bg-white/50' : 'w-4 bg-white/10'}`}
+          className={`h-1 rounded-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${s === currentStep ? 'w-8 bg-accent' : s < currentStep ? 'w-4 bg-accent/50' : 'w-4 bg-white/10'}`}
         />
       ))}
     </motion.div>
@@ -77,14 +77,14 @@ export default function ForgotPasswordPage() {
       {/* =========================================================
           PANEL KIRI (Branding & Ambient Animation)
           ========================================================= */}
-      <div className="hidden lg:flex flex-col justify-between w-1/2 h-full bg-[#E8E6E1] p-12 relative overflow-hidden">
-        <motion.div 
+      <div className="hidden lg:flex flex-col justify-between w-1/2 h-full bg-border p-12 relative overflow-hidden">
+        <motion.div
           animate={blobAnimation} transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-40 -left-40 w-96 h-96 bg-foreground/5 rounded-full blur-3xl" 
+          className="absolute -top-40 -left-40 w-96 h-96 bg-accent/20 rounded-full blur-3xl"
         />
-        <motion.div 
+        <motion.div
           animate={{ ...blobAnimation, x: [0, -30, 0], y: [0, 40, 0] }} transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="absolute bottom-20 -right-20 w-80 h-80 bg-foreground/5 rounded-full blur-3xl" 
+          className="absolute bottom-20 -right-20 w-80 h-80 bg-secondary/25 rounded-full blur-3xl"
         />
         
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1, ease: luxEase }}>
@@ -111,7 +111,7 @@ export default function ForgotPasswordPage() {
       {/* =========================================================
           PANEL KANAN (Form Forgot Password Wizard)
           ========================================================= */}
-      <div className="w-full lg:w-1/2 h-full bg-[#0A0A0A] relative flex flex-col items-center justify-center p-6 md:p-12">
+      <div className="w-full lg:w-1/2 h-full bg-primary relative flex flex-col items-center justify-center p-6 md:p-12">
         
         {/* Tombol Tutup hanya muncul jika belum success */}
         <AnimatePresence>
@@ -141,7 +141,7 @@ export default function ForgotPasswordPage() {
 
                 <div className="flex flex-col gap-6 w-full">
                   <motion.div variants={itemVariants} className="relative group">
-                    <input type="email" placeholder="Email Address" disabled={isLoading} className="w-full bg-transparent border-b border-white/20 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white transition-colors disabled:opacity-50" />
+                    <input type="email" placeholder="Email Address" disabled={isLoading} className="w-full bg-transparent border-b border-white/20 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-accent transition-colors disabled:opacity-50" />
                   </motion.div>
                   
                   <motion.div variants={itemVariants}>
@@ -149,11 +149,11 @@ export default function ForgotPasswordPage() {
                       type="button" 
                       onClick={() => handleNextStep('otp')} 
                       disabled={isLoading}
-                      className="w-full mt-4 py-4 bg-white text-black text-xs font-medium uppercase tracking-widest hover:bg-white/90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 rounded-sm disabled:opacity-70 disabled:hover:scale-100 flex justify-center items-center gap-3"
+                      className="w-full mt-4 py-4 bg-accent text-white text-xs font-medium uppercase tracking-widest hover:bg-accent-dark hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 rounded-sm disabled:opacity-70 disabled:hover:scale-100 flex justify-center items-center gap-3"
                     >
                       {isLoading ? (
                         <>
-                          <div className="w-3 h-3 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                          <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                           Sending Code...
                         </>
                       ) : (
@@ -163,7 +163,7 @@ export default function ForgotPasswordPage() {
                   </motion.div>
 
                   <motion.div variants={itemVariants} className="text-center mt-4">
-                    <Link href="/login" className="text-[10px] text-white/40 hover:text-white transition-colors">
+                    <Link href="/login" className="text-[10px] text-white/40 hover:text-accent transition-colors">
                       ← Return to Login
                     </Link>
                   </motion.div>
@@ -188,7 +188,7 @@ export default function ForgotPasswordPage() {
                       placeholder="• • • • • •" 
                       maxLength={6} 
                       disabled={isLoading}
-                      className="w-full bg-transparent border-b border-white/20 py-3 text-2xl tracking-[0.5em] text-center text-white placeholder-white/20 focus:outline-none focus:border-white transition-colors disabled:opacity-50" 
+                      className="w-full bg-transparent border-b border-white/20 py-3 text-2xl tracking-[0.5em] text-center text-white placeholder-white/20 focus:outline-none focus:border-accent transition-colors disabled:opacity-50"
                     />
                   </motion.div>
                   
@@ -197,11 +197,11 @@ export default function ForgotPasswordPage() {
                       type="button" 
                       onClick={() => handleNextStep('reset')} 
                       disabled={isLoading}
-                      className="w-full mt-4 py-4 bg-white text-black text-xs font-medium uppercase tracking-widest hover:bg-white/90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 rounded-sm disabled:opacity-70 disabled:hover:scale-100 flex justify-center items-center gap-3"
+                      className="w-full mt-4 py-4 bg-accent text-white text-xs font-medium uppercase tracking-widest hover:bg-accent-dark hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 rounded-sm disabled:opacity-70 disabled:hover:scale-100 flex justify-center items-center gap-3"
                     >
                       {isLoading ? (
                         <>
-                          <div className="w-3 h-3 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                          <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                           Verifying...
                         </>
                       ) : (
@@ -211,7 +211,7 @@ export default function ForgotPasswordPage() {
                   </motion.div>
 
                   <motion.div variants={itemVariants} className="text-center mt-4 flex flex-col gap-4">
-                    <button type="button" className="text-[10px] text-white/40 hover:text-white transition-colors">
+                    <button type="button" className="text-[10px] text-white/40 hover:text-accent transition-colors">
                       Didn&apos;t receive the code? Resend
                     </button>
                   </motion.div>
@@ -231,10 +231,10 @@ export default function ForgotPasswordPage() {
 
                 <div className="flex flex-col gap-6 w-full">
                   <motion.div variants={itemVariants} className="relative group">
-                    <input type="password" placeholder="New Password" disabled={isLoading} className="w-full bg-transparent border-b border-white/20 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white transition-colors disabled:opacity-50" />
+                    <input type="password" placeholder="New Password" disabled={isLoading} className="w-full bg-transparent border-b border-white/20 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-accent transition-colors disabled:opacity-50" />
                   </motion.div>
                   <motion.div variants={itemVariants} className="relative group">
-                    <input type="password" placeholder="Confirm New Password" disabled={isLoading} className="w-full bg-transparent border-b border-white/20 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white transition-colors disabled:opacity-50" />
+                    <input type="password" placeholder="Confirm New Password" disabled={isLoading} className="w-full bg-transparent border-b border-white/20 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-accent transition-colors disabled:opacity-50" />
                   </motion.div>
                   
                   <motion.div variants={itemVariants}>
@@ -242,11 +242,11 @@ export default function ForgotPasswordPage() {
                       type="button" 
                       onClick={() => handleNextStep('success')} 
                       disabled={isLoading}
-                      className="w-full mt-4 py-4 bg-white text-black text-xs font-medium uppercase tracking-widest hover:bg-white/90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 rounded-sm disabled:opacity-70 disabled:hover:scale-100 flex justify-center items-center gap-3"
+                      className="w-full mt-4 py-4 bg-accent text-white text-xs font-medium uppercase tracking-widest hover:bg-accent-dark hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 rounded-sm disabled:opacity-70 disabled:hover:scale-100 flex justify-center items-center gap-3"
                     >
                       {isLoading ? (
                         <>
-                          <div className="w-3 h-3 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                          <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                           Updating...
                         </>
                       ) : (
@@ -263,9 +263,9 @@ export default function ForgotPasswordPage() {
               <motion.div key="success" variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="flex flex-col items-center justify-center w-full py-10">
                 <motion.div 
                   initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.2 }}
-                  className="w-20 h-20 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mb-8"
+                  className="w-20 h-20 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mb-8"
                 >
-                  <motion.svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <motion.svg className="w-8 h-8 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <motion.path 
                       strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"
                       initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}

@@ -71,7 +71,7 @@ export default function Navbar() {
           <div className="flex items-center gap-5 md:gap-8">
             <Link
               href="/login"
-              className="relative z-50 px-5 py-2 text-xs font-medium tracking-[0.15em] border border-foreground text-foreground hover:bg-foreground hover:text-surface-white transition-all duration-300 rounded-full hidden sm:block"
+              className="relative z-50 px-5 py-2 text-xs font-medium tracking-[0.15em] border border-accent bg-accent text-surface-white hover:bg-accent-dark hover:border-accent-dark transition-all duration-300 rounded-full hidden sm:block"
             >
               Get Started
             </Link>
@@ -134,10 +134,10 @@ export default function Navbar() {
                       <Link
                         href={link.href}
                         onClick={() => setIsMenuOpen(false)}
-                        className="group flex items-center justify-between w-full py-4 border-b border-foreground/10 hover:border-foreground/30 transition-colors duration-300"
+                        className="group flex items-center justify-between w-full py-4 border-b border-foreground/10 hover:border-accent/40 transition-colors duration-300"
                       >
                         <div className="flex items-center gap-4 md:gap-10">
-                          <span className="text-[10px] md:text-xs font-mono text-muted group-hover:text-foreground transition-colors duration-300">
+                          <span className="text-[10px] md:text-xs font-mono text-muted group-hover:text-accent transition-colors duration-300">
                             {link.id}
                           </span>
                           <span className="text-2xl sm:text-4xl md:text-5xl font-medium tracking-tight text-foreground group-hover:text-accent transition-colors duration-300">
@@ -170,7 +170,7 @@ export default function Navbar() {
                 <Link
                   href="/login"
                   onClick={() => setIsMenuOpen(false)}
-                  className="flex sm:hidden items-center justify-center w-full py-3.5 text-[10px] font-medium uppercase tracking-widest text-surface-white bg-foreground rounded-full"
+                  className="flex sm:hidden items-center justify-center w-full py-3.5 text-[10px] font-medium uppercase tracking-widest text-surface-white bg-accent rounded-full"
                 >
                   Get Started
                 </Link>

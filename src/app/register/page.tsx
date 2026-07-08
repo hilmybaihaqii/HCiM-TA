@@ -37,18 +37,18 @@ export default function RegisterPage() {
       {/* =========================================================
           PANEL KIRI (Branding & Ambient Animation)
           ========================================================= */}
-      <div className="hidden lg:flex flex-col justify-between w-1/2 h-full bg-[#E8E6E1] p-12 relative overflow-hidden">
-        
+      <div className="hidden lg:flex flex-col justify-between w-1/2 h-full bg-border p-12 relative overflow-hidden">
+
         {/* Ambient Background Blobs */}
-        <motion.div 
+        <motion.div
           animate={blobAnimation}
           transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-40 -left-40 w-96 h-96 bg-foreground/5 rounded-full blur-3xl" 
+          className="absolute -top-40 -left-40 w-96 h-96 bg-accent/20 rounded-full blur-3xl"
         />
-        <motion.div 
+        <motion.div
           animate={{ ...blobAnimation, x: [0, -30, 0], y: [0, 40, 0] }}
           transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="absolute bottom-20 -right-20 w-80 h-80 bg-foreground/5 rounded-full blur-3xl" 
+          className="absolute bottom-20 -right-20 w-80 h-80 bg-secondary/25 rounded-full blur-3xl"
         />
         
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1, ease: luxEase }}>
@@ -75,7 +75,7 @@ export default function RegisterPage() {
       {/* =========================================================
           PANEL KANAN (Form Register)
           ========================================================= */}
-      <div className="w-full lg:w-1/2 h-full bg-[#0A0A0A] relative flex flex-col items-center justify-center p-6 md:p-12">
+      <div className="w-full lg:w-1/2 h-full bg-primary relative flex flex-col items-center justify-center p-6 md:p-12">
         
         {/* Tombol Tutup (X) */}
         <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8, delay: 0.5, ease: luxEase }}>
@@ -102,14 +102,14 @@ export default function RegisterPage() {
                 <input 
                   type="text" 
                   placeholder="First Name" 
-                  className="w-full bg-transparent border-b border-white/20 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white transition-colors hover:border-white/50" 
+                  className="w-full bg-transparent border-b border-white/20 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-accent transition-colors hover:border-white/50"
                 />
               </div>
               <div className="relative group w-1/2">
                 <input 
                   type="text" 
                   placeholder="Last Name" 
-                  className="w-full bg-transparent border-b border-white/20 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white transition-colors hover:border-white/50" 
+                  className="w-full bg-transparent border-b border-white/20 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-accent transition-colors hover:border-white/50"
                 />
               </div>
             </motion.div>
@@ -137,7 +137,7 @@ export default function RegisterPage() {
               <input 
                 type={showPassword ? 'text' : 'password'} 
                 placeholder="Create Password" 
-                className="w-full bg-transparent border-b border-white/20 py-3 pr-10 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white transition-colors hover:border-white/50" 
+                className="w-full bg-transparent border-b border-white/20 py-3 pr-10 text-sm text-white placeholder-white/30 focus:outline-none focus:border-accent transition-colors hover:border-white/50"
               />
               <button
                 type="button"
@@ -172,7 +172,7 @@ export default function RegisterPage() {
             <motion.div variants={itemVariants}>
               <button 
                 type="button" 
-                className="w-full mt-6 py-4 bg-white text-black text-xs font-medium uppercase tracking-widest hover:bg-white/90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 rounded-sm"
+                className="w-full mt-6 py-4 bg-accent text-white text-xs font-medium uppercase tracking-widest hover:bg-accent-dark hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 rounded-sm"
               >
                 Create Account
               </button>

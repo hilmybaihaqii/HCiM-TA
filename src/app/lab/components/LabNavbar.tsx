@@ -59,7 +59,7 @@ export default function LabNavbar() {
                       transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     />
                   )}
-                  <span className={`relative flex items-center gap-2 z-10 transition-colors duration-300 ${isActive ? 'text-foreground font-semibold' : 'text-muted hover:text-foreground'}`}>
+                  <span className={`relative flex items-center gap-2 z-10 transition-colors duration-300 ${isActive ? 'text-accent font-semibold' : 'text-muted hover:text-accent'}`}>
                     <Icon className="w-4 h-4 md:w-3.5 md:h-3.5" />
                     {/* Teks dihilangkan pada mobile, muncul di desktop */}
                     <span className="hidden md:block">{item.name}</span>

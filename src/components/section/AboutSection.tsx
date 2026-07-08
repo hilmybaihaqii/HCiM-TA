@@ -164,7 +164,7 @@ export default function AboutSection() {
         <div
           ref={simRef}
           className={`relative w-full rounded-3xl md:rounded-4xl border overflow-hidden flex flex-col lg:flex-row transition-all duration-700 bg-surface-white ${
-            isHigh ? 'border-accent/30 shadow-[0_10px_50px_rgba(186,59,70,0.06)]' : 'border-foreground/10 shadow-[0_10px_40px_rgba(0,0,0,0.03)]'
+            isHigh ? 'border-accent/30 shadow-[0_10px_50px_rgba(184,84,92,0.08)]' : 'border-foreground/10 shadow-[0_10px_40px_rgba(0,0,0,0.03)]'
           }`}
         >
           
@@ -177,7 +177,7 @@ export default function AboutSection() {
                 <span className="text-[9px] md:text-[10px] font-mono uppercase tracking-[0.2em] text-foreground font-bold">TdP Electrophysicology Trace</span>
               </div>
               
-              <div className={`flex items-center gap-2 rounded-full border px-3 py-1.5 transition-colors duration-500 ${isHigh ? 'bg-accent/10 border-accent/25' : 'bg-surface-white border-foreground/10'}`}>
+              <div className={`flex items-center gap-2 rounded-full border px-3 py-1.5 transition-colors duration-500 ${isHigh ? 'bg-accent/10 border-accent/25' : 'bg-secondary/10 border-secondary/25'}`}>
                 <span className={`w-1.5 h-1.5 rounded-full transition-colors duration-500 ${tier === 2 ? 'bg-accent' : tier === 1 ? 'bg-foreground' : 'bg-foreground/40'}`} />
                 <span className={`text-[9px] font-mono uppercase tracking-[0.15em] transition-colors duration-500 ${isHigh ? 'text-accent font-bold' : 'text-foreground'}`}>{TIER_NAME[tier]}</span>
               </div>
@@ -265,7 +265,7 @@ export default function AboutSection() {
                         className={`snap-start shrink-0 relative rounded-full px-3 py-1.5 md:px-4 md:py-2 text-[10px] md:text-[11px] font-medium tracking-tight transition-colors duration-300 border ${
                           on 
                             ? 'bg-foreground border-foreground text-surface-white' 
-                            : 'bg-surface-white border-foreground/15 text-foreground hover:border-foreground/40'
+                            : 'bg-surface-white border-foreground/15 text-foreground hover:border-accent/50'
                         }`}
                       >
                         {d.name}
@@ -318,7 +318,7 @@ export default function AboutSection() {
             Every breakthrough begins with a flaw in the system it replaces.{' '}
             <span className="text-foreground font-medium">Why did we build this?</span>
           </p>
-          <a href="#problem" className="group relative overflow-hidden inline-flex items-center gap-3 rounded-full border border-foreground/20 px-6 py-3 shrink-0 hover:border-foreground transition-colors duration-300">
+          <a href="#problem" className="group relative overflow-hidden inline-flex items-center gap-3 rounded-full border border-foreground/20 px-6 py-3 shrink-0 hover:border-accent transition-colors duration-300">
             <span className="absolute inset-0 bg-foreground translate-y-[101%] group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]" />
             <span className="relative z-10 text-[10px] font-mono uppercase tracking-[0.15em] text-foreground group-hover:text-surface-white transition-colors duration-500 whitespace-nowrap">Explore the Paradox</span>
             <svg className="relative z-10 w-3 h-3 text-foreground group-hover:text-surface-white transition-all duration-500 group-hover:translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
