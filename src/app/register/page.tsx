@@ -2,193 +2,229 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence, Variants } from 'framer-motion';
-
-const luxEase = [0.16, 1, 0.3, 1] as const;
+import { motion, AnimatePresence } from 'framer-motion';
+import { api } from '@/lib/api';
 
 export default function RegisterPage() {
+  // State Form (Sesuai kebutuhan payload backend)[cite: 1, 2]
+  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  
+  // State UI & Feedback
+  const [isLoading, setIsLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  /* =========================================================
-     ANIMATION VARIANTS
-     ========================================================= */
-  const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1, 
-      transition: { staggerChildren: 0.1, delayChildren: 0.1, duration: 0.8, ease: luxEase } 
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    try {
+      // Mengirimkan data registrasi ke backend[cite: 1, 2]
+      await api("/auth/register", {
+        method: "POST",
+        body: { 
+          email, 
+          password, 
+          display_name: displayName // Pastikan penulisan key ini persis seperti kontrak backend[cite: 1, 2]
+        }
+      });
+      
+      // Jika sukses (201), tampilkan instruksi verifikasi[cite: 1, 2]
+      setSuccessMsg("Account created successfully! Please check your email to verify your account before logging in.");
+      setIsLoading(false);
+      
+      // Kosongkan form setelah berhasil
+      setDisplayName('');
+      setEmail('');
+      setPassword('');
+      
+    } catch (error) {
+      setIsLoading(false);
+      
+      const e = error as { status?: number };
+      
+      // Menangani error spesifik (409) jika email sudah terpakai[cite: 1, 2]
+      if (e.status === 409) {
+        setErrorMsg("That email is already in use. Please sign in instead.");
+      } else {
+        setErrorMsg("Registration failed. Please check your inputs and try again.");
+      }
     }
-  };
-
-  const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: luxEase } }
-  };
-
-  const blobAnimation = {
-    scale: [1, 1.1, 1],
-    x: [0, 20, 0],
-    y: [0, -30, 0],
   };
 
   return (
     <main className="fixed inset-0 z-50 w-full h-screen flex bg-background font-sans overflow-hidden">
       
-      {/* =========================================================
-          PANEL KIRI (Branding & Ambient Animation)
-          ========================================================= */}
+      {/* PANEL KIRI (Branding & Ambient Animation) */}
       <div className="hidden lg:flex flex-col justify-between w-1/2 h-full bg-[#E8E6E1] p-12 relative overflow-hidden">
         
-        {/* Ambient Background Blobs */}
         <motion.div 
-          animate={blobAnimation}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-40 -left-40 w-96 h-96 bg-foreground/5 rounded-full blur-3xl" 
+          animate={{ scale: [1, 1.1, 1], x: [0, 20, 0], y: [0, -30, 0] }} transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -top-40 -left-40 w-96 h-96 bg-foreground/5 rounded-full blur-3xl pointer-events-none" 
         />
         <motion.div 
-          animate={{ ...blobAnimation, x: [0, -30, 0], y: [0, 40, 0] }}
-          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="absolute bottom-20 -right-20 w-80 h-80 bg-foreground/5 rounded-full blur-3xl" 
+          animate={{ scale: [1, 1.1, 1], x: [0, -30, 0], y: [0, 40, 0] }} transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          className="absolute bottom-20 -right-20 w-80 h-80 bg-foreground/5 rounded-full blur-3xl pointer-events-none" 
         />
         
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1, ease: luxEase }}>
-          <Link href="/" className="relative z-10 text-2xl font-medium tracking-tight text-foreground hover:opacity-70 transition-opacity">
-            cardiotox<span className="text-accent">.</span>
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1 }}>
+          <Link href="/" className="relative z-10 text-2xl font-bold tracking-tight text-foreground hover:opacity-70 transition-opacity">
+            cardiotox<span className="text-[#E63946]">.</span>
           </Link>
         </motion.div>
 
-        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="relative z-10 flex flex-col gap-6">
-          <motion.h2 variants={itemVariants} className="text-4xl xl:text-5xl font-medium tracking-tight text-foreground leading-[1.1]">
-            Join the research <br /> network.
-          </motion.h2>
-          <motion.p variants={itemVariants} className="text-foreground/70 max-w-sm leading-relaxed text-sm">
-            Create an account to evaluate our in silico models, participate in the private beta, and access advanced electrophysiological analytics.
-          </motion.p>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 0.2 }} className="relative z-10 flex flex-col gap-6">
+          <h2 className="text-4xl xl:text-5xl font-medium tracking-tight text-foreground leading-[1.1]">
+            Join the <br /> Research Node.
+          </h2>
+          <p className="text-foreground/70 max-w-sm leading-relaxed text-sm">
+            Create an account to run Torsade de Pointes (TdP) predictions and access the advanced SHAP explainability matrix.
+          </p>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 0.6, ease: luxEase }} className="relative z-10 flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-foreground/50">
-          <span>Research Platform</span>
-          <span>Telkom University</span>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 0.6 }} className="relative z-10 flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-foreground/50">
+          <span>Registration</span>
+          <span>Verified Access</span>
         </motion.div>
       </div>
 
-      {/* =========================================================
-          PANEL KANAN (Form Register)
-          ========================================================= */}
-      <div className="w-full lg:w-1/2 h-full bg-[#0A0A0A] relative flex flex-col items-center justify-center p-6 md:p-12">
+      {/* PANEL KANAN (Form Register) */}
+      <div className="w-full lg:w-1/2 h-full bg-[#0A0A0A] relative flex flex-col items-center justify-center p-6 md:p-12 overflow-y-auto">
         
-        {/* Tombol Tutup (X) */}
-        <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8, delay: 0.5, ease: luxEase }}>
-          <Link href="/" className="absolute top-8 right-8 text-white/50 hover:text-white transition-colors duration-300 p-2">
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </Link>
-        </motion.div>
-
-        {/* Kontainer Form */}
-        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="w-full max-w-sm flex flex-col">
-          
-          <motion.div variants={itemVariants} className="mb-10 text-center">
-            <h1 className="text-2xl md:text-3xl font-medium tracking-tight text-white mb-3">Request Access</h1>
-            <p className="text-xs text-white/50">Register to join the private evaluation program.</p>
+        <AnimatePresence>
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            transition={{ duration: 0.5 }}
+            className="absolute top-8 right-8 z-50"
+          >
+            <Link href="/" className="text-white/50 hover:text-white transition-colors duration-300 p-2 block">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </Link>
           </motion.div>
-          
-          <div className="flex flex-col gap-6 w-full">
-            
-            {/* Input First & Last Name */}
-            <motion.div variants={itemVariants} className="flex gap-4">
-              <div className="relative group w-1/2">
-                <input 
-                  type="text" 
-                  placeholder="First Name" 
-                  className="w-full bg-transparent border-b border-white/20 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white transition-colors hover:border-white/50" 
-                />
-              </div>
-              <div className="relative group w-1/2">
-                <input 
-                  type="text" 
-                  placeholder="Last Name" 
-                  className="w-full bg-transparent border-b border-white/20 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white transition-colors hover:border-white/50" 
-                />
-              </div>
-            </motion.div>
+        </AnimatePresence>
 
-            {/* Input Email */}
-            <motion.div variants={itemVariants} className="relative group">
-              <input 
-                type="email" 
-                placeholder="Email Address" 
-                className="w-full bg-transparent border-b border-white/20 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white transition-colors hover:border-white/50" 
-              />
-            </motion.div>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full max-w-sm flex flex-col py-10"
+        >
+          <div className="mb-10 text-center">
+            <h1 className="text-3xl font-medium tracking-tight text-white mb-3">Create Account</h1>
+            <p className="text-xs text-white/50 leading-relaxed">Fill in your details to initialize your credentials.</p>
+          </div>
+          
+          {/* Banner Notifikasi (Sukses / Error) */}
+          <AnimatePresence mode="wait">
+            {successMsg && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mb-6 overflow-hidden">
+                <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-sm text-emerald-500 text-xs text-center font-medium shadow-sm leading-relaxed">
+                  {successMsg}
+                </div>
+              </motion.div>
+            )}
+            {errorMsg && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mb-6 overflow-hidden">
+                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-sm text-red-500 text-xs text-center font-medium shadow-sm">
+                  {errorMsg}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+          <form onSubmit={handleRegister} className="flex flex-col gap-6 w-full">
             
-            {/* Input Institution */}
-            <motion.div variants={itemVariants} className="relative group">
+            <div className="relative group">
+              <label className="text-[10px] font-mono uppercase tracking-widest text-white/40 mb-1 block group-focus-within:text-white transition-colors">
+                Full Name
+              </label>
               <input 
                 type="text" 
-                placeholder="Institution / Hospital" 
-                className="w-full bg-transparent border-b border-white/20 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white transition-colors hover:border-white/50" 
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                disabled={isLoading || successMsg !== null}
+                required
+                className="w-full bg-transparent border-b border-white/20 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-white transition-colors disabled:opacity-50" 
               />
-            </motion.div>
+            </div>
 
-            {/* Input Password + Toggle Hide/Show */}
-            <motion.div variants={itemVariants} className="relative group flex items-center">
+            <div className="relative group">
+              <label className="text-[10px] font-mono uppercase tracking-widest text-white/40 mb-1 block group-focus-within:text-white transition-colors">
+                Email Address
+              </label>
               <input 
-                type={showPassword ? 'text' : 'password'} 
-                placeholder="Create Password" 
-                className="w-full bg-transparent border-b border-white/20 py-3 pr-10 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white transition-colors hover:border-white/50" 
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading || successMsg !== null}
+                required
+                className="w-full bg-transparent border-b border-white/20 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-white transition-colors disabled:opacity-50" 
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-0 flex items-center justify-center p-2 text-white/30 hover:text-white/80 transition-colors focus:outline-none"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                <AnimatePresence mode="wait" initial={false}>
-                  {showPassword ? (
-                    <motion.svg
-                      key="eye-open"
-                      initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ duration: 0.2 }}
-                      className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </motion.svg>
-                  ) : (
-                    <motion.svg
-                      key="eye-closed"
-                      initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ duration: 0.2 }}
-                      className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.978 9.978 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                    </motion.svg>
-                  )}
-                </AnimatePresence>
-              </button>
-            </motion.div>
-
-            {/* Submit Button */}
-            <motion.div variants={itemVariants}>
+            </div>
+            
+            <div className="relative group flex flex-col">
+              <label className="text-[10px] font-mono uppercase tracking-widest text-white/40 mb-1 block group-focus-within:text-white transition-colors">
+                Password
+              </label>
+              <div className="relative flex items-center">
+                <input 
+                  type={showPassword ? 'text' : 'password'} 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading || successMsg !== null}
+                  required
+                  minLength={8}
+                  className="w-full bg-transparent border-b border-white/20 py-2 pr-10 text-sm text-white focus:outline-none focus:border-white transition-colors disabled:opacity-50" 
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(!showPassword)} 
+                  className="absolute right-0 text-[10px] font-mono text-white/30 hover:text-white transition-colors p-2"
+                >
+                  {showPassword ? "HIDE" : "SHOW"}
+                </button>
+              </div>
+              <p className="text-[9px] font-mono text-white/30 mt-2">Minimum 8 characters.</p>
+            </div>
+            
+            <div className="mt-4">
               <button 
-                type="button" 
-                className="w-full mt-6 py-4 bg-white text-black text-xs font-medium uppercase tracking-widest hover:bg-white/90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 rounded-sm"
+                type="submit" 
+                disabled={isLoading || successMsg !== null}
+                className="w-full py-4 bg-white text-black text-xs font-bold uppercase tracking-[0.2em] rounded-sm hover:bg-white/90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-70 disabled:hover:scale-100 flex items-center justify-center gap-3"
               >
-                Create Account
+                {isLoading ? (
+                  <>
+                    <div className="w-3 h-3 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                    Processing
+                  </>
+                ) : (
+                  'Create Account'
+                )}
               </button>
-            </motion.div>
+            </div>
 
-            {/* Link ke Login */}
-            <motion.div variants={itemVariants} className="text-center mt-6">
-              <span className="text-[10px] text-white/40">Already have an account? </span>
-              <Link href="/login" className="text-[10px] text-white hover:text-accent transition-colors">
-                Sign in here
+          </form>
+
+          <div className="mt-8 text-center">
+            <p className="text-xs text-white/50">
+              Already have an account?{' '}
+              <Link href="/login" className="text-white hover:underline transition-all font-medium">
+                Sign in
               </Link>
-            </motion.div>
+            </p>
           </div>
 
         </motion.div>
       </div>
+
     </main>
   );
 }

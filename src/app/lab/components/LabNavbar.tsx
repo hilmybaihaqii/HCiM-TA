@@ -1,16 +1,40 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FlaskConical, ActivitySquare, User, LogOut, ChevronDown } from 'lucide-react';
+import { api } from '@/lib/api'; 
+
+// Tipe data profil sesuai kontrak backend
+interface UserProfile {
+  id: string;
+  email: string;
+  display_name: string;
+}
 
 export default function LabNavbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  // Verifikasi Sesi & Ambil Data Profil saat komponen dimuat
+  useEffect(() => {
+    api("/auth/me")
+      .then((data) => {
+        setUser(data as UserProfile);
+      })
+      .catch((err) => {
+        if (err.status === 401) {
+          router.push('/login');
+        }
+      });
+  }, [router]);
 
   const navItems = [
     { name: 'Digital Lab', path: '/lab', icon: FlaskConical },
@@ -22,25 +46,47 @@ export default function LabNavbar() {
     setShowLogoutModal(true);
   };
 
-  const executeLogout = () => {
-    setShowLogoutModal(false);
-    router.push('/login');
+  const executeLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await api("/auth/logout", { method: "POST" }); 
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      setShowLogoutModal(false);
+      setIsLoggingOut(false);
+      router.push('/login');
+    }
+  };
+
+  // Helper untuk mengambil nama depan agar lebih singkat & profesional
+  const getFirstName = (name?: string) => {
+    if (!name) return '...';
+    return name.trim().split(' ')[0];
   };
 
   return (
     <>
-      <header className="fixed top-0 left-0 w-full z-[100] pt-4 md:pt-6 px-4 md:px-12 pointer-events-none flex justify-center">
-        <div className="w-full max-w-7xl flex justify-between items-center pointer-events-auto bg-surface-white/70 backdrop-blur-xl border border-foreground/5 shadow-[0_4px_20px_rgba(0,0,0,0.02)] rounded-full px-3 md:px-4 py-2.5">
+      <header className="fixed top-0 left-0 w-full z-100 pt-4 md:pt-6 px-4 md:px-12 pointer-events-none flex justify-center">
+        {/* Hapus justify-between, gunakan items-center saja karena kita pakai flex-1 di child */}
+        <div className="w-full max-w-7xl flex items-center pointer-events-auto bg-surface-white/70 backdrop-blur-xl border border-foreground/5 shadow-[0_4px_20px_rgba(0,0,0,0.02)] rounded-full px-3 md:px-4 py-2.5">
           
-          {/* LOGO */}
-          <Link href="/lab" className="flex items-center pl-2 md:pl-3 group shrink-0">
-            <span className="text-sm md:text-base font-medium tracking-tight text-foreground transition-transform duration-300 group-hover:scale-[1.02]">
-              cardiotox<span className="text-accent">.</span>
-            </span>
-          </Link>
+          {/* ============================== */}
+          {/* BAGIAN KIRI: LOGO (flex-1)     */}
+          {/* ============================== */}
+          <div className="flex-1 flex justify-start">
+            <Link href="/lab" className="flex items-center pl-1 md:pl-2 group shrink-0">
+              <span className="text-sm md:text-base font-medium tracking-tight text-foreground transition-transform duration-300 group-hover:scale-[1.02]">
+                cardiotox<span className="text-accent">.</span>
+              </span>
+            </Link>
+          </div>
 
-          {/* PILL NAVIGATION (Sekarang Terlihat di Mobile - Menampilkan Ikon Saja di Layar Kecil) */}
-          <nav className="flex items-center gap-1 md:gap-1.5 bg-foreground/[0.03] p-1 rounded-full border border-foreground/[0.05]">
+          {/* ============================== */}
+          {/* BAGIAN TENGAH: MENU (shrink-0) */}
+          {/* ============================== */}
+          {/* ID TOUR DITAMBAHKAN DI SINI */}
+          <nav id="tour-navbar-menu" className="shrink-0 flex items-center gap-1 md:gap-1.5 bg-foreground/3 p-1 rounded-full border border-foreground/5">
             {navItems.map((item) => {
               const isActive = pathname === item.path;
               const Icon = item.icon;
@@ -55,13 +101,13 @@ export default function LabNavbar() {
                   {isActive && (
                     <motion.div 
                       layoutId="activeNavIndicator"
-                      className="absolute inset-0 bg-surface-white rounded-full shadow-sm border border-foreground/[0.02]"
+                      className="absolute inset-0 bg-surface-white rounded-full shadow-sm border border-foreground/2"
                       transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     />
                   )}
                   <span className={`relative flex items-center gap-2 z-10 transition-colors duration-300 ${isActive ? 'text-foreground font-semibold' : 'text-muted hover:text-foreground'}`}>
                     <Icon className="w-4 h-4 md:w-3.5 md:h-3.5" />
-                    {/* Teks dihilangkan pada mobile, muncul di desktop */}
+                    {/* Hanya tampil di layar md ke atas */}
                     <span className="hidden md:block">{item.name}</span>
                   </span>
                 </Link>
@@ -69,27 +115,37 @@ export default function LabNavbar() {
             })}
           </nav>
 
-          {/* USER PROFILE DROPDOWN */}
-          <div className="relative pr-1 shrink-0">
+          {/* ============================== */}
+          {/* BAGIAN KANAN: PROFIL (flex-1)  */}
+          {/* ============================== */}
+          <div className="flex-1 flex justify-end relative">
+            {/* ID TOUR DITAMBAHKAN DI SINI */}
             <button 
+              id="tour-user-profile"
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="flex items-center gap-2 pl-3 pr-2 py-1 rounded-full hover:bg-foreground/[0.04] transition-colors focus:outline-none"
+              className="flex items-center gap-2 pl-3 pr-1 py-1 rounded-full hover:bg-foreground/4 transition-colors focus:outline-none"
             >
-              <div className="flex flex-col items-end hidden sm:flex">
-                <span className="text-xs font-medium text-foreground leading-none">Hilmy B.</span>
-                <span className="text-[9px] text-muted font-mono mt-0.5 uppercase tracking-wider">Researcher</span>
+              {/* Info teks: Disembunyikan di HP (hidden sm:flex) agar rapi */}
+              <div className="hidden sm:flex flex-col items-end mr-1">
+                {/* Menampilkan First Name dengan Batasan Lebar (max-w) */}
+                <span className="text-xs font-medium text-foreground leading-none truncate max-w-[120px]">
+                  {user ? getFirstName(user.display_name) : '...'}
+                </span>
+                {/* Menampilkan Email dengan Batasan Lebar (max-w) */}
+                <span className="text-[10px] text-muted font-mono mt-0.5 tracking-wide truncate max-w-[130px]">
+                  {user ? user.email : '...'}
+                </span>
               </div>
               
               <div className="flex items-center gap-1.5">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-foreground/10 to-foreground/[0.02] border border-foreground/5 flex items-center justify-center text-muted shadow-sm">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-foreground/10 to-foreground/2 border border-foreground/5 flex items-center justify-center text-muted shadow-sm overflow-hidden">
                   <User className="w-3.5 h-3.5" />
                 </div>
-                {/* Jarak ikon chevron dirapikan agar tidak mepet batas kanan */}
                 <ChevronDown className={`w-3.5 h-3.5 text-muted transition-transform duration-300 ${showProfileMenu ? 'rotate-180' : ''}`} />
               </div>
             </button>
 
-            {/* Glassmorphic Dropdown - Jarak dan Padding Disimetriskan */}
+            {/* Glassmorphic Dropdown */}
             <AnimatePresence>
               {showProfileMenu && (
                 <motion.div 
@@ -102,12 +158,11 @@ export default function LabNavbar() {
                   <Link 
                     href="/lab/profile" 
                     onClick={() => setShowProfileMenu(false)} 
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-muted hover:text-foreground hover:bg-foreground/[0.03] transition-colors"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-muted hover:text-foreground hover:bg-foreground/3 transition-colors"
                   >
                     <User className="w-4 h-4" /> My Profile
                   </Link>
                   
-                  {/* Garis pembatas (divider) diposisikan secara seimbang */}
                   <div className="h-px bg-foreground/5 my-1 mx-2" />
                   
                   <button 
@@ -134,10 +189,9 @@ export default function LabNavbar() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-background/60 backdrop-blur-sm"
           >
-            {/* Background Overlay Click to Cancel */}
             <div 
               className="absolute inset-0 cursor-pointer" 
-              onClick={() => setShowLogoutModal(false)} 
+              onClick={() => !isLoggingOut && setShowLogoutModal(false)} 
             />
             
             <motion.div 
@@ -162,13 +216,22 @@ export default function LabNavbar() {
               <div className="flex flex-col gap-2">
                 <button 
                   onClick={executeLogout}
-                  className="w-full py-3 rounded-full bg-accent text-white text-xs font-semibold tracking-wide hover:bg-accent/90 hover:scale-[1.02] transition-all duration-300 shadow-sm"
+                  disabled={isLoggingOut}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-full bg-accent text-white text-xs font-semibold tracking-wide hover:bg-accent/90 hover:scale-[1.02] transition-all duration-300 shadow-sm disabled:opacity-70 disabled:hover:scale-100"
                 >
-                  Yes, Log Out
+                  {isLoggingOut ? (
+                    <>
+                      <div className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                      Logging out
+                    </>
+                  ) : (
+                    'Yes, Log Out'
+                  )}
                 </button>
                 <button 
                   onClick={() => setShowLogoutModal(false)}
-                  className="w-full py-3 rounded-full border border-foreground/10 bg-transparent text-foreground text-xs font-semibold tracking-wide hover:bg-foreground/[0.03] transition-colors"
+                  disabled={isLoggingOut}
+                  className="w-full py-3 rounded-full border border-foreground/10 bg-transparent text-foreground text-xs font-semibold tracking-wide hover:bg-foreground/3 transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
