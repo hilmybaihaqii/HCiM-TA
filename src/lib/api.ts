@@ -1,7 +1,7 @@
 // src/lib/api.ts
 
-// Menggunakan variabel env resmi sesuai rekomendasi panduan integrasi
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "https://cardiotox-backend.onrender.com"; 
+// Gunakan proxy same-origin Next.js supaya cookie sesi tersimpan untuk domain frontend
+const BASE = "/api"; 
 
 interface ApiOptions {
   method?: string;
