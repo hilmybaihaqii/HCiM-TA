@@ -69,7 +69,11 @@ export default function LabTutorial() {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    // Membisukan linter khusus untuk baris ini, karena kita MEMANG 
+    // sengaja memicu render untuk menghindari error Hydration di Next.js
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMounted(true);
+    
     const hasSeenTutorial = localStorage.getItem('hasSeenLabTutorial');
     
     if (!hasSeenTutorial) {
@@ -138,6 +142,7 @@ export default function LabTutorial() {
     }
   ];
 
+  // Mencegah Joyride dirender di server untuk menghindari Hydration Mismatch
   if (!isMounted) return null;
 
   return (
@@ -147,12 +152,8 @@ export default function LabTutorial() {
       continuous={true}
       onEvent={handleJoyrideEvent}
       tooltipComponent={CustomTooltip} 
-      
-      // Menggantikan disableBeacon yang usang (100% type-safe)
       beaconComponent={() => null}
       scrollToFirstStep={true}
-      
-      // PERBAIKAN: Memindahkan options keluar dari styles
       options={{
         zIndex: 10000,
         overlayColor: 'rgba(10, 10, 10, 0.65)', 
