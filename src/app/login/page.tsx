@@ -2,16 +2,15 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '@/lib/api';
-import { CheckCircle2, Loader2 } from 'lucide-react';
+import { CheckCircle2, Loader2, X } from 'lucide-react';
 
 // ============================================================================
 // KOMPONEN FORM & REDIRECT UTAMA
 // ============================================================================
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   
   const isVerified = searchParams.get('verified') === '1';
@@ -25,18 +24,20 @@ function LoginForm() {
   
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  
   const [countdown, setCountdown] = useState(3);
 
+  // Auto Redirect Logic (Google OAuth / Verification)
   useEffect(() => {
     if (isAutoRedirecting) {
       const timer = setInterval(() => {
         setCountdown((prev) => {
           if (prev <= 1) {
             clearInterval(timer);
-            // Verifikasi sesi sebelum masuk lab
+            // Validasi akhir sesi ke backend, lalu Hard-Redirect ke Lab
             api("/auth/me")
-              .then(() => router.push('/lab'))
+              .then(() => {
+                window.location.href = '/lab'; 
+              })
               .catch(() => {
                 window.location.href = '/login'; 
               });
@@ -47,8 +48,9 @@ function LoginForm() {
       }, 1000);
       return () => clearInterval(timer);
     }
-  }, [isAutoRedirecting, router]);
+  }, [isAutoRedirecting]);
 
+  // Manual Login Logic
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -59,7 +61,8 @@ function LoginForm() {
         method: "POST", 
         body: { email, password } 
       });
-      router.push('/lab');
+      // Gunakan Hard-Redirect agar browser mensinkronisasi Cookie baru
+      window.location.href = '/lab';
     } catch (error) { 
       setIsLoading(false);
       const e = error as { status?: number };
@@ -70,7 +73,7 @@ function LoginForm() {
   };
 
   const handleGoogleLogin = () => {
-    setIsLoading(true); // Tambahkan ini agar UX lebih responsif sebelum ter-redirect
+    setIsLoading(true);
     const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "https://cardiotox-backend.onrender.com";
     window.location.href = `${BASE}/auth/google`; 
   };
@@ -81,11 +84,13 @@ function LoginForm() {
       {!isAutoRedirecting && (
         <AnimatePresence>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute top-8 right-8 z-50">
-            <Link href="/" className="text-white/50 hover:text-white transition-colors duration-300 p-2 block">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </Link>
+            {/* Tombol X yang diperbaiki dengan Hard Redirect ke Landing Page */}
+            <button 
+              onClick={() => window.location.href = '/'}
+              className="text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all duration-300 p-2 block outline-none"
+            >
+              <X className="w-6 h-6" />
+            </button>
           </motion.div>
         </AnimatePresence>
       )}
@@ -94,18 +99,10 @@ function LoginForm() {
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         className="w-full max-w-sm flex flex-col"
       >
-        
         {isAutoRedirecting ? (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center text-center py-10"
-          >
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center text-center py-10">
             <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mb-6 relative">
-              <motion.div 
-                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="absolute inset-0 bg-emerald-500/20 rounded-full"
-              />
+              <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 2, repeat: Infinity }} className="absolute inset-0 bg-emerald-500/20 rounded-full" />
               <CheckCircle2 className="w-8 h-8 text-emerald-500 relative z-10" />
             </div>
             
@@ -113,9 +110,7 @@ function LoginForm() {
               {isVerified ? 'Verification Complete' : 'Authentication Success'}
             </h2>
             <p className="text-sm text-white/50 mb-8 leading-relaxed px-4">
-              {isVerified 
-                ? 'Your identity has been successfully verified. Establishing secure connection...' 
-                : 'Google OAuth linked successfully. Establishing secure connection...'}
+              {isVerified ? 'Your identity has been successfully verified. Establishing secure connection...' : 'Google OAuth linked successfully. Establishing secure connection...'}
             </p>
 
             <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-5 py-3 rounded-full">
@@ -144,25 +139,15 @@ function LoginForm() {
             
             <form onSubmit={handleSignIn} className="flex flex-col gap-6 w-full">
               <div className="relative group">
-                <label className="text-[10px] font-mono uppercase tracking-widest text-white/40 mb-1 block group-focus-within:text-white transition-colors">
-                  Email Address
-                </label>
-                <input 
-                  type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={isLoading} required
-                  className="w-full bg-transparent border-b border-white/20 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-white transition-colors disabled:opacity-50" 
-                />
+                <label className="text-[10px] font-mono uppercase tracking-widest text-white/40 mb-1 block group-focus-within:text-white transition-colors">Email Address</label>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={isLoading} required className="w-full bg-transparent border-b border-white/20 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-white transition-colors disabled:opacity-50" />
               </div>
               
               <div className="relative group flex flex-col">
-                <label className="text-[10px] font-mono uppercase tracking-widest text-white/40 mb-1 block group-focus-within:text-white transition-colors">
-                  Password
-                </label>
+                <label className="text-[10px] font-mono uppercase tracking-widest text-white/40 mb-1 block group-focus-within:text-white transition-colors">Password</label>
                 <div className="relative flex items-center">
-                  <input 
-                    type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoading} required
-                    className="w-full bg-transparent border-b border-white/20 py-2 pr-10 text-sm text-white focus:outline-none focus:border-white transition-colors disabled:opacity-50" 
-                  />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-0 text-[10px] font-mono text-white/30 hover:text-white transition-colors p-2">
+                  <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoading} required className="w-full bg-transparent border-b border-white/20 py-2 pr-10 text-sm text-white focus:outline-none focus:border-white transition-colors disabled:opacity-50" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-0 text-[10px] font-mono text-white/30 hover:text-white transition-colors p-2 outline-none">
                     {showPassword ? "HIDE" : "SHOW"}
                   </button>
                 </div>
@@ -191,7 +176,6 @@ function LoginForm() {
                 </div>
 
                 <button type="button" onClick={handleGoogleLogin} disabled={isLoading} className="w-full py-3.5 bg-transparent border border-white/20 text-white text-xs font-bold uppercase tracking-[0.2em] rounded-sm hover:bg-white/5 hover:border-white/40 transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-50">
-                  {/* Ikon spinner saat loading Google OAuth */}
                   {isLoading ? (
                      <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                   ) : (
@@ -219,9 +203,6 @@ function LoginForm() {
   );
 }
 
-// ============================================================================
-// WRAPPER HALAMAN UTAMA (Tidak ada perubahan)
-// ============================================================================
 export default function LoginPage() {
   return (
     <main className="fixed inset-0 z-50 w-full h-screen flex bg-background font-sans overflow-hidden">

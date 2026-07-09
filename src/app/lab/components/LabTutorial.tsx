@@ -2,14 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Joyride, STATUS } from 'react-joyride';
-// Perhatikan: Menggunakan CallBackProps, bukan EventData untuk v3
-import type { EventData, Step, TooltipRenderProps } from 'react-joyride';
+import type { TooltipRenderProps, EventData, Step } from 'react-joyride';
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, X, ChevronLeft } from 'lucide-react';
 
-// ============================================================================
-// KOMPONEN TOOLTIP KUSTOM (TETAP PREMIUM & ELEGAN)
-// ============================================================================
 const CustomTooltip = ({
   index,
   step,
@@ -41,7 +37,7 @@ const CustomTooltip = ({
             </span>
           </div>
           
-          <button {...closeProps} type="button" className="p-1.5 text-neutral-300 hover:text-neutral-900 hover:bg-neutral-100 rounded-full transition-colors outline-none group" title="Skip Tour">
+          <button {...closeProps} className="p-1.5 text-neutral-300 hover:text-neutral-900 hover:bg-neutral-100 rounded-full transition-colors outline-none group" title="Skip Tour">
             <X className="w-4 h-4 transition-transform group-hover:rotate-90" />
           </button>
         </div>
@@ -53,12 +49,12 @@ const CustomTooltip = ({
 
         <div className="flex items-center justify-between mt-auto">
           {index > 0 ? (
-            <button {...backProps} type="button" className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-neutral-400 hover:text-neutral-900 transition-colors outline-none">
+            <button {...backProps} className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-neutral-400 hover:text-neutral-900 transition-colors outline-none">
               <ChevronLeft className="w-3 h-3" /> Back
             </button>
           ) : <div />}
 
-          <button {...primaryProps} type="button" className="group flex items-center gap-2 px-5 py-2.5 bg-neutral-900 hover:bg-[#E63946] text-white text-[11px] font-bold uppercase tracking-widest rounded-full transition-all duration-300 shadow-sm hover:shadow-[0_8px_20px_rgba(230,57,70,0.25)] hover:-translate-y-0.5 outline-none">
+          <button {...primaryProps} className="group flex items-center gap-2 px-5 py-2.5 bg-neutral-900 hover:bg-[#E63946] text-white text-[11px] font-bold uppercase tracking-widest rounded-full transition-all duration-300 shadow-sm hover:shadow-[0_8px_20px_rgba(230,57,70,0.25)] hover:-translate-y-0.5 outline-none">
             {isLastStep ? 'Get Started' : 'Next'}
             {!isLastStep && <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />}
           </button>
@@ -68,23 +64,26 @@ const CustomTooltip = ({
   );
 };
 
-// ============================================================================
-// KOMPONEN UTAMA
-// ============================================================================
 export default function LabTutorial() {
   const [run, setRun] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     const hasSeenTutorial = localStorage.getItem('hasSeenLabTutorial');
+    
     if (!hasSeenTutorial) {
+      // DIPERLAMA (2.5 detik): Memastikan SEMUA animasi framer-motion 
+      // selesai bergerak dan diam di tempat sebelum Joyride mengambil koordinat.
       const timer = setTimeout(() => {
         setRun(true);
-      }, 1500); 
+        // Memaksa browser menghitung ulang posisi setelah animasi selesai
+        window.dispatchEvent(new Event('resize')); 
+      }, 2500); 
       return () => clearTimeout(timer);
     }
   }, []);
 
-  // Perbaikan tipe data parameter menggunakan CallBackProps dari v3
   const handleJoyrideEvent = (data: EventData) => {
     const { status, action } = data;
     const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
@@ -111,7 +110,7 @@ export default function LabTutorial() {
     },
     {
       target: '#tour-user-profile',
-      placement: 'bottom-end', 
+      placement: 'bottom', 
       isFixed: true, 
       title: 'Identity & Security',
       content: 'Access your profile to manage account configurations, verify credentials, and securely terminate your active session.',
@@ -142,30 +141,29 @@ export default function LabTutorial() {
     }
   ];
 
+  if (!isMounted) return null;
+
   return (
     <Joyride
       steps={steps}
       run={run}
       continuous={true}
-      
-      // PERBAIKAN v3: onEvent diubah menjadi callback
       onEvent={handleJoyrideEvent}
-      
       tooltipComponent={CustomTooltip} 
-      beaconComponent={() => null}
+      
+      disableBeacon={true}
       scrollToFirstStep={true}
+      // DITAMBAHKAN: Jarak 200px agar elemen tidak pernah tertutup oleh Navbar fixed
+      scrollOffset={200} 
+      disableOverlayClose={true} 
+      disableScrollParentFix={true} 
       
-      
-      // PERBAIKAN v3: Menghapus object 'options' sepenuhnya, langsung tembak ke 'overlay'
-      options={{
-        zIndex: 10000,
-        overlayColor: 'rgba(10,10,10,.65)',
-      }}
-
       styles={{
-        overlay: {
-          backdropFilter: 'blur(3px)',
+        options: {
+          zIndex: 10000,
+          overlayColor: 'rgba(10, 10, 10, 0.65)', 
         },
+        // MENGHAPUS SPOTLIGHT STYLES (Memperbaiki Error TypeScript)
       }}
     />
   );
