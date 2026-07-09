@@ -59,7 +59,8 @@ export default function LabForm({ onSubmit }: { onSubmit: (data: number[]) => vo
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       className="w-full mb-16"
     >
-      <div className="bg-surface-white/80 backdrop-blur-3xl border border-foreground/4 shadow-[0_24px_60px_rgba(0,0,0,0.02)] rounded-4xl p-5 md:p-8 relative overflow-hidden">
+      {/* ID TOUR DITAMBAHKAN DI SINI */}
+      <div id="tour-lab-form" className="bg-surface-white/80 backdrop-blur-3xl border border-foreground/4 shadow-[0_24px_60px_rgba(0,0,0,0.02)] rounded-4xl p-5 md:p-8 relative overflow-hidden">
         
         {/* Dekorasi Garis Kaca HUD */}
         <div className="absolute top-0 left-10 w-px h-4 bg-foreground/10" />
@@ -138,7 +139,8 @@ export default function LabForm({ onSubmit }: { onSubmit: (data: number[]) => vo
           {/* =========================================================
               3. AUTO-FILL COMPOUND LIBRARY (PAGINATED GRID)
               ========================================================= */}
-          <div className="mt-8 pt-8 border-t border-foreground/4">
+          {/* ID TOUR DITAMBAHKAN DI SINI */}
+          <div id="tour-preset-drugs" className="mt-8 pt-8 border-t border-foreground/4">
             
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
               <div>
@@ -299,7 +301,9 @@ export default function LabForm({ onSubmit }: { onSubmit: (data: number[]) => vo
               </div>
             </div>
 
+            {/* ID TOUR DITAMBAHKAN DI SINI */}
             <button 
+              id="tour-start-button"
               type="submit"
               disabled={!isReady}
               className={`group flex items-center justify-center gap-3 w-full sm:w-auto px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.15em] transition-all duration-300 rounded-full shadow-lg 
