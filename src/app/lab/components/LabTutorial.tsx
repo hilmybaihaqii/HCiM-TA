@@ -73,11 +73,8 @@ export default function LabTutorial() {
     const hasSeenTutorial = localStorage.getItem('hasSeenLabTutorial');
     
     if (!hasSeenTutorial) {
-      // DIPERLAMA (2.5 detik): Memastikan SEMUA animasi framer-motion 
-      // selesai bergerak dan diam di tempat sebelum Joyride mengambil koordinat.
       const timer = setTimeout(() => {
         setRun(true);
-        // Memaksa browser menghitung ulang posisi setelah animasi selesai
         window.dispatchEvent(new Event('resize')); 
       }, 2500); 
       return () => clearTimeout(timer);
@@ -151,19 +148,14 @@ export default function LabTutorial() {
       onEvent={handleJoyrideEvent}
       tooltipComponent={CustomTooltip} 
       
-      disableBeacon={true}
+      // Menggantikan disableBeacon yang usang (100% type-safe)
+      beaconComponent={() => null}
       scrollToFirstStep={true}
-      // DITAMBAHKAN: Jarak 200px agar elemen tidak pernah tertutup oleh Navbar fixed
-      scrollOffset={200} 
-      disableOverlayClose={true} 
-      disableScrollParentFix={true} 
       
-      styles={{
-        options: {
-          zIndex: 10000,
-          overlayColor: 'rgba(10, 10, 10, 0.65)', 
-        },
-        // MENGHAPUS SPOTLIGHT STYLES (Memperbaiki Error TypeScript)
+      // PERBAIKAN: Memindahkan options keluar dari styles
+      options={{
+        zIndex: 10000,
+        overlayColor: 'rgba(10, 10, 10, 0.65)', 
       }}
     />
   );
