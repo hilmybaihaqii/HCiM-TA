@@ -32,6 +32,7 @@ export default function ProcessingLoader({ stage }: { stage: LoaderStage }) {
     
     // Set stempel waktu riil saat fasa berganti
     const now = new Date();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLiveTimestamp(`${now.toLocaleTimeString()}. ${String(now.getMilliseconds()).padStart(3, '0')}`);
 
     const telemetryInterval = setInterval(() => {
@@ -48,13 +49,13 @@ export default function ProcessingLoader({ stage }: { stage: LoaderStage }) {
   const activeSubLog = currentLogs[logIndex];
 
   // Fluktuasi BPM murni berbasis gelombang matematik ticker
-  const noiseBpm = Math.sin(ticker / 400) * 1.8 + (Math.random() * 0.3);
-  const displayBpm = parseFloat((71.4 + noiseBpm).toFixed(1));
+  const noiseBpm = Math.sin(ticker / 400) * 1.8 + (Math.cos(ticker / 55) * 0.3);
+   const displayBpm = parseFloat((71.4 + noiseBpm).toFixed(1));
 
   // Fluktuasi beban matriks tensor terenkripsi
   const baseTensor = stage === 'inference' ? 1420 : 2840;
-  const noiseTensor = Math.floor(Math.sin(ticker / 200) * 14 + (Math.random() * 4));
-  const displayTensor = baseTensor + noiseTensor;
+   const noiseTensor = Math.floor(Math.sin(ticker / 200) * 14 + (Math.cos(ticker / 85) * 4));
+   const displayTensor = baseTensor + noiseTensor;
 
   return (
     <div className="w-full flex flex-col items-center justify-center py-24 px-6 relative overflow-hidden select-none">
