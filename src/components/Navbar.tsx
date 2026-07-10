@@ -65,7 +65,7 @@ export default function Navbar() {
             className="relative z-50 text-xl md:text-2xl tracking-tight font-medium text-foreground"
             onClick={() => setIsMenuOpen(false)}
           >
-            cardiotox<span className="text-accent">.</span>
+            cardivex<span className="text-accent">.</span>
           </Link>
 
           <div className="flex items-center gap-5 md:gap-8">

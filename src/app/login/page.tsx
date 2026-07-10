@@ -13,9 +13,14 @@ import { CheckCircle2, Loader2, X } from 'lucide-react';
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isVerified = searchParams.get('verified') === '1';
-  const isGoogleSuccess = searchParams.get('login') === 'success';
-  const isAutoRedirecting = isVerified || isGoogleSuccess;
+  
+  // Capture initial URL state (will survive the history.replaceState)
+  const [initialIsVerified] = useState(searchParams.get('verified') === '1');
+  const [initialIsGoogleSuccess] = useState(searchParams.get('login') === 'success');
+  
+  const [authStatus, setAuthStatus] = useState<'idle' | 'verifying' | 'success'>(
+    (initialIsVerified || initialIsGoogleSuccess) ? 'verifying' : 'idle'
+  );
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,40 +31,40 @@ function LoginForm() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(3);
 
-  // Auto Redirect Logic (Google OAuth / Verification)
+  // Verifying Effect
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-
-    if (isAutoRedirecting) {
-      // 1. Strip the query parameter silently so back-navigation or logout doesn't trigger this again
+    if (authStatus === 'verifying') {
       window.history.replaceState(null, '', '/login');
-
-      // 2. Guard: Only proceed if actually authenticated
       api("/auth/me")
         .then(() => {
-          // Genuinely authenticated: start countdown and redirect
-          timer = setInterval(() => {
-            setCountdown((prev) => {
-              if (prev <= 1) {
-                clearInterval(timer);
-                router.push('/lab');
-                router.refresh();
-                return 0;
-              }
-              return prev - 1;
-            });
-          }, 1000);
+          setAuthStatus('success');
         })
         .catch(() => {
-          // Not authenticated (e.g., stale URL after logout): reset to plain login
-          window.location.href = '/login';
+          setAuthStatus('idle');
         });
     }
+  }, [authStatus]);
 
+  // Countdown Effect
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (authStatus === 'success') {
+      timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            router.push('/lab');
+            router.refresh();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [isAutoRedirecting, router]);
+  }, [authStatus, router]);
 
   // Manual Login Logic
   const handleSignIn = async (e: React.FormEvent) => {
@@ -91,7 +96,7 @@ function LoginForm() {
   return (
     <div className="w-full lg:w-1/2 h-full bg-[#0A0A0A] relative flex flex-col items-center justify-center p-6 md:p-12">
       
-      {!isAutoRedirecting && (
+      {authStatus === 'idle' && (
         <AnimatePresence>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute top-8 right-8 z-50">
             {/* Tombol X yang diperbaiki dengan Hard Redirect ke Landing Page */}
@@ -109,7 +114,19 @@ function LoginForm() {
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         className="w-full max-w-sm flex flex-col"
       >
-        {isAutoRedirecting ? (
+        {authStatus === 'verifying' ? (
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center text-center py-10">
+            <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mb-6 relative">
+              <Loader2 className="w-8 h-8 text-emerald-500 animate-spin relative z-10" />
+            </div>
+            <h2 className="text-2xl font-medium text-white mb-2 tracking-tight">
+              Verifying Session
+            </h2>
+            <p className="text-sm text-white/50 mb-8 leading-relaxed px-4">
+              Establishing secure connection to the research node...
+            </p>
+          </motion.div>
+        ) : authStatus === 'success' ? (
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center text-center py-10">
             <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mb-6 relative">
               <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 2, repeat: Infinity }} className="absolute inset-0 bg-emerald-500/20 rounded-full" />
@@ -117,10 +134,10 @@ function LoginForm() {
             </div>
             
             <h2 className="text-2xl font-medium text-white mb-2 tracking-tight">
-              {isVerified ? 'Verification Complete' : 'Authentication Success'}
+              {initialIsVerified ? 'Verification Complete' : 'Authentication Success'}
             </h2>
             <p className="text-sm text-white/50 mb-8 leading-relaxed px-4">
-              {isVerified ? 'Your identity has been successfully verified. Establishing secure connection...' : 'Google OAuth linked successfully. Establishing secure connection...'}
+              {initialIsVerified ? 'Your identity has been successfully verified. Establishing secure connection...' : 'Google OAuth linked successfully. Establishing secure connection...'}
             </p>
 
             <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-5 py-3 rounded-full">
@@ -222,7 +239,7 @@ export default function LoginPage() {
         
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1 }}>
           <Link href="/" className="relative z-10 text-2xl font-bold tracking-tight text-foreground hover:opacity-70 transition-opacity">
-            cardiotox<span className="text-[#E63946]">.</span>
+            cardivex<span className="text-[#E63946]">.</span>
           </Link>
         </motion.div>
 

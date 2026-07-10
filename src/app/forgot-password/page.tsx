@@ -52,7 +52,7 @@ export default function ForgotPasswordPage() {
         
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1 }}>
           <Link href="/" className="relative z-10 text-2xl font-bold tracking-tight text-foreground hover:opacity-70 transition-opacity">
-            cardiotox<span className="text-[#E63946]">.</span>
+            cardivex<span className="text-[#E63946]">.</span>
           </Link>
         </motion.div>
 

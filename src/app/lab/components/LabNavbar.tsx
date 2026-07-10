@@ -75,7 +75,7 @@ export default function LabNavbar() {
           <div className="flex-1 flex justify-start">
             <Link href="/lab" className="flex items-center pl-1 md:pl-2 group shrink-0">
               <span className="text-sm md:text-base font-medium tracking-tight text-foreground transition-transform duration-300 group-hover:scale-[1.02]">
-                cardiotox<span className="text-accent">.</span>
+                cardivex<span className="text-accent">.</span>
               </span>
             </Link>
           </div>

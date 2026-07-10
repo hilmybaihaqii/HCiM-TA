@@ -60,7 +60,7 @@ export default function Footer() {
               href="/"
               className="text-3xl font-medium tracking-tighter text-foreground hover:opacity-80 transition-opacity"
             >
-              cardiotox<span className="text-accent">.</span>
+              cardivex<span className="text-accent">.</span>
             </Link>
             <p className="mt-6 text-sm text-muted max-w-sm leading-relaxed">
               Advanced <span className="italic font-medium text-foreground">in silico</span> modeling for cardiac safety and animal-free research. Redefining predictive precision.
@@ -113,7 +113,7 @@ export default function Footer() {
             <AnimatedLink title="Twitter" href="#" />
             <AnimatedLink title="LinkedIn" href="#" />
             <AnimatedLink title="GitHub" href="#" />
-            <AnimatedLink title="Email Us" href="mailto:contact@cardiotox.id" />
+            <AnimatedLink title="Email Us" href="mailto:hcim.ta01@gmail.com" />
           </ul>
         </div>
       </motion.div>
@@ -128,7 +128,7 @@ export default function Footer() {
       >
         <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
           <p className="text-[11px] font-mono uppercase tracking-widest text-foreground font-medium">
-            © {currentYear} Cardiotox.
+            © {currentYear} Cardivex.
           </p>
           <span className="hidden md:block w-1 h-1 bg-foreground/20 rounded-full" />
           <p className="text-[11px] font-mono uppercase tracking-widest text-muted">
