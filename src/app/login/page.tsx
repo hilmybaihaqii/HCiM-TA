@@ -74,7 +74,7 @@ function LoginForm() {
 
   const handleGoogleLogin = () => {
     setIsLoading(true);
-    window.location.href = '/api/auth/google'; 
+    window.location.href = `/api/auth/google?t=${Date.now()}`; 
   };
 
   return (
