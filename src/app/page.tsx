@@ -22,16 +22,8 @@ function HomeContent() {
 
   useEffect(() => {
     if (isLoginSuccess) {
-      // Verifikasi sesi cookie ke backend
-      api("/auth/me")
-        .then(() => {
-          // Jika aman, langsung masukkan ke Lab
-          router.push('/lab');
-        })
-        .catch(() => {
-          // Jika gagal, kembalikan ke login
-          router.push('/login');
-        });
+      // Forward ke halaman login agar menampilkan countdown sukses
+      router.push('/login?login=success');
     }
   }, [isLoginSuccess, router]);
 
