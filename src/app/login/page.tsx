@@ -28,28 +28,38 @@ function LoginForm() {
 
   // Auto Redirect Logic (Google OAuth / Verification)
   useEffect(() => {
+    let timer: NodeJS.Timeout;
+
     if (isAutoRedirecting) {
-      const timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            // Validasi akhir sesi ke backend, lalu Redirect ke Lab
-            api("/auth/me")
-              .then(() => {
+      // 1. Strip the query parameter silently so back-navigation or logout doesn't trigger this again
+      window.history.replaceState(null, '', '/login');
+
+      // 2. Guard: Only proceed if actually authenticated
+      api("/auth/me")
+        .then(() => {
+          // Genuinely authenticated: start countdown and redirect
+          timer = setInterval(() => {
+            setCountdown((prev) => {
+              if (prev <= 1) {
+                clearInterval(timer);
                 router.push('/lab');
                 router.refresh();
-              })
-              .catch(() => {
-                router.push('/login');
-              });
-            return 0;
-          }
-          return prev - 1;
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
+        })
+        .catch(() => {
+          // Not authenticated (e.g., stale URL after logout): reset to plain login
+          window.location.href = '/login';
         });
-      }, 1000);
-      return () => clearInterval(timer);
     }
-  }, [isAutoRedirecting]);
+
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isAutoRedirecting, router]);
 
   // Manual Login Logic
   const handleSignIn = async (e: React.FormEvent) => {

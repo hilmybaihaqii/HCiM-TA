@@ -53,7 +53,7 @@ export default function LabNavbar() {
     } finally {
       setShowLogoutModal(false);
       setIsLoggingOut(false);
-      router.push('/login');
+      router.replace('/login');
     }
   };
 
