@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '@/lib/api';
 import { CheckCircle2, Loader2, X } from 'lucide-react';
@@ -11,8 +11,8 @@ import { CheckCircle2, Loader2, X } from 'lucide-react';
 // KOMPONEN FORM & REDIRECT UTAMA
 // ============================================================================
 function LoginForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  
   const isVerified = searchParams.get('verified') === '1';
   const isGoogleSuccess = searchParams.get('login') === 'success';
   const isAutoRedirecting = isVerified || isGoogleSuccess;
@@ -33,13 +33,14 @@ function LoginForm() {
         setCountdown((prev) => {
           if (prev <= 1) {
             clearInterval(timer);
-            // Validasi akhir sesi ke backend, lalu Hard-Redirect ke Lab
+            // Validasi akhir sesi ke backend, lalu Redirect ke Lab
             api("/auth/me")
               .then(() => {
-                window.location.href = '/lab'; 
+                router.push('/lab');
+                router.refresh();
               })
               .catch(() => {
-                window.location.href = '/login'; 
+                router.push('/login');
               });
             return 0;
           }
@@ -61,8 +62,8 @@ function LoginForm() {
         method: "POST", 
         body: { email, password } 
       });
-      // Gunakan Hard-Redirect agar browser mensinkronisasi Cookie baru
-      window.location.href = '/lab';
+      router.push('/lab');
+      router.refresh();
     } catch (error) { 
       setIsLoading(false);
       const e = error as { status?: number };
@@ -74,8 +75,7 @@ function LoginForm() {
 
   const handleGoogleLogin = () => {
     setIsLoading(true);
-    const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "https://cardiotox-backend.onrender.com";
-    window.location.href = `${BASE}/auth/google`; 
+    window.location.href = '/api/auth/google'; 
   };
 
   return (
@@ -86,7 +86,7 @@ function LoginForm() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute top-8 right-8 z-50">
             {/* Tombol X yang diperbaiki dengan Hard Redirect ke Landing Page */}
             <button 
-              onClick={() => window.location.href = '/'}
+              onClick={() => router.push('/')}
               className="text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all duration-300 p-2 block outline-none"
             >
               <X className="w-6 h-6" />

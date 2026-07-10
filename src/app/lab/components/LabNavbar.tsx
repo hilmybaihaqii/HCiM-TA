@@ -30,9 +30,7 @@ export default function LabNavbar() {
         setUser(data as UserProfile);
       })
       .catch((err) => {
-        if (err.status === 401) {
-          router.push('/login');
-        }
+        console.warn('Profile load skipped because session check failed:', err);
       });
   }, [router]);
 
