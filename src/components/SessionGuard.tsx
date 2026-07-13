@@ -54,20 +54,18 @@ export default function SessionGuard({ children }: { children: React.ReactNode }
     };
   }, [router]);
 
-  // Selama sesi masih dicek, jangan render halaman Lab (cegah kedipan/bocor data)
+ // Selama sesi masih dicek, jangan render halaman Lab (cegah kedipan/bocor data)
   if (!isAuthorized) {
     return (
-      <div className="fixed inset-0 w-full h-screen flex items-center justify-center bg-background z-[9999]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-2 border-foreground/20 border-t-foreground rounded-full animate-spin" />
-          <span className="text-xs font-mono text-foreground/50 uppercase tracking-widest">
+      <div className="fixed inset-0 w-full h-screen flex items-center justify-center bg-background z-9999">
+        <div className="animate-pulse">
+          <span className="text-sm font-medium text-foreground/60 tracking-wider">
             Verifying Session...
           </span>
         </div>
       </div>
     );
   }
-
   // Jika sah, render halamannya
   return <>{children}</>;
 }

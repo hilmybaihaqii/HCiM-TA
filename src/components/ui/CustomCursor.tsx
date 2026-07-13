@@ -71,7 +71,7 @@ export default function CustomCursor() {
       {/* ELEMEN 1: Cincin / Lensa (Trailing Ring) */}
       {/* 2. SOLUSI TAILWIND: Ubah z-[9998] menjadi z-9998 */}
       <motion.div
-        className="fixed top-0 left-0 z-9998 pointer-events-none rounded-full flex items-center justify-center mix-blend-difference"
+        className="fixed top-0 left-0 z-99998 pointer-events-none rounded-full flex items-center justify-center mix-blend-difference"
         style={{
           x: smoothX,
           y: smoothY,
@@ -100,7 +100,7 @@ export default function CustomCursor() {
       {/* ELEMEN 2: Titik Pusat (Core Dot) */}
       {/* 2. SOLUSI TAILWIND: Ubah z-[9999] menjadi z-9999 */}
       <motion.div
-        className="fixed top-0 left-0 z-9999 pointer-events-none rounded-full bg-white mix-blend-difference"
+        className="fixed top-0 left-0 z-99999 pointer-events-none rounded-full bg-white mix-blend-difference"
         style={{
           x: mouseX,
           y: mouseY,
