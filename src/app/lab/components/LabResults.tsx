@@ -78,11 +78,6 @@ export default function LabResults({ tier, shap, onReset }: { tier: string; shap
           </div>
         </div>
 
-        {/* 
-            DYNAMIC ZERO-AXIS
-            Garis sekarang dikunci absolut di tengah-tengah (left-1/2) 
-            dengan batasan persentase SHAP dihitung relatif terhadap maxShap.
-        */}
         <div className="relative w-full">
           <div className="absolute left-1/2 -top-6 -translate-x-1/2 flex flex-col items-center justify-center z-0">
             <span className="text-[9px] font-mono text-muted/60 bg-surface-white px-2 py-0.5 rounded border border-foreground/4 mb-1">
@@ -95,7 +90,6 @@ export default function LabResults({ tier, shap, onReset }: { tier: string; shap
           
           <motion.div variants={containerVariants} initial="hidden" animate="show" className="flex flex-col gap-1 md:gap-2 relative z-10 pt-2">
             {sortedContributions.map((item, i) => {
-              // Normalisasi hingga max 100% untuk satu sisi (kiri atau kanan dari tengah)
               const percentage = (Math.abs(item.shap) / maxShap) * 100; 
               const isPositive = item.shap > 0;
 

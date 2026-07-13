@@ -20,7 +20,7 @@ export default function LabFooter() {
 
         {/* Copyright & Info */}
         <div className="text-[10px] md:text-xs text-muted/60 font-medium tracking-tight text-center sm:text-right">
-          © {currentYear} <span className="text-foreground">cardiotox.</span> All rights reserved. <br className="sm:hidden" />
+          © {currentYear} <span className="text-foreground">cardivex.</span> All rights reserved. <br className="sm:hidden" />
           <span className="hidden sm:inline"> | </span> Designed for In-Silico Pharmacovigilance.
         </div>
 

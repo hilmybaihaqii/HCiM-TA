@@ -35,7 +35,8 @@ export default function EngineVisualizer({ activeStage }: { activeStage: Stage }
   return (
     <div className="w-full pt-20 md:pt-28 relative z-10 flex flex-col items-center">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12">
-        <div className="w-full bg-surface-white/80 backdrop-blur-3xl border border-foreground/[0.04] shadow-[0_24px_60px_rgba(0,0,0,0.02)] rounded-[2rem] p-5 md:p-10 relative overflow-hidden flex flex-col">
+        {/* ID TOUR DITAMBAHKAN DI SINI */}
+        <div id="tour-engine-visualizer" className="w-full bg-surface-white/80 backdrop-blur-3xl border border-foreground/4 shadow-[0_24px_60px_rgba(0,0,0,0.02)] rounded-4xl p-5 md:p-10 relative overflow-hidden flex flex-col">
           
           {/* Subtle Micro-Grid Background for Premium "Empty Space" filling */}
           <div 
@@ -46,7 +47,7 @@ export default function EngineVisualizer({ activeStage }: { activeStage: Stage }
           {/* =========================================================
               CLEAN HUD HEADER
               ========================================================= */}
-          <div className="flex items-center justify-between border-b border-foreground/[0.04] pb-4 mb-8 md:mb-12 relative z-10">
+          <div className="flex items-center justify-between border-b border-foreground/4 pb-4 mb-8 md:mb-12 relative z-10">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] md:text-xs font-mono uppercase tracking-[0.2em] text-foreground font-semibold">
@@ -58,7 +59,7 @@ export default function EngineVisualizer({ activeStage }: { activeStage: Stage }
                     key={activeStage}
                     initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 5 }}
                     transition={{ duration: 0.2 }}
-                    className="text-[10px] md:text-xs font-mono uppercase tracking-[0.1em] text-accent hidden sm:inline"
+                    className="text-[10px] md:text-xs font-mono uppercase tracking-widest text-accent hidden sm:inline"
                   >
                     {getStageDescription()}
                   </motion.span>
@@ -75,16 +76,14 @@ export default function EngineVisualizer({ activeStage }: { activeStage: Stage }
           {/* =========================================================
               PERFECTLY ALIGNED TRACKS & NODES
               ========================================================= */}
-          {/* Container ini membungkus lingkaran secara proporsional. */}
           <div className="relative w-full mb-2">
             
-            {/* 
-              MATHEMATICAL ALIGNMENT: 
+            {/* MATHEMATICAL ALIGNMENT: 
               Karena node lebarnya 25% (1/4), pusat node pertama ada di 12.5%.
               Tinggi lingkaran adalah h-10 (40px) di mobile, h-12 (48px) di md.
               Maka garis harus di top-5 (20px) di mobile, top-6 (24px) di md.
             */}
-            <div className="absolute top-5 md:top-6 left-[12.5%] right-[12.5%] h-px bg-foreground/[0.06] z-0 pointer-events-none" />
+            <div className="absolute top-5 md:top-6 left-[12.5%] right-[12.5%] h-px bg-foreground/6 z-0 pointer-events-none" />
             
             {/* Garis Aktif Animasi */}
             <div className="absolute top-5 md:top-6 left-[12.5%] right-[12.5%] h-px z-0 pointer-events-none">
@@ -112,7 +111,7 @@ export default function EngineVisualizer({ activeStage }: { activeStage: Stage }
                       {/* Premium Lens Ring (Active State) - Clean, no dirty glow */}
                       {isActive && (
                         <motion.div 
-                          className="absolute -inset-2 md:-inset-2.5 border-[1px] border-accent/30 rounded-full"
+                          className="absolute -inset-2 md:-inset-2.5 border border-accent/30 rounded-full"
                           initial={{ scale: 0.8, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
                           transition={{ type: "spring", stiffness: 200, damping: 20 }}
