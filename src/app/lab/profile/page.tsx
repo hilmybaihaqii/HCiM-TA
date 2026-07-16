@@ -1,65 +1,150 @@
 'use client';
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { User, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import React, { useState, useEffect, Suspense } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { api } from '@/lib/api';
 
-export default function ProfilePage() {
+import ProfileCard from './components/ProfileCard';
+import SecuritySettings from './components/SecuritySettings';
+import DangerZone from './components/DangerZone';
+
+interface UserProfileData {
+  display_name?: string;
+  email?: string;
+  role?: string;
+}
+
+interface AuthMeResponse {
+  items?: UserProfileData[];
+  display_name?: string;
+  email?: string;
+  role?: string;
+}
+
+function ProfileOrchestrator() {
+  const searchParams = useSearchParams();
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [profile, setProfile] = useState<{ name: string; email: string; role: string } | null>(null);
+
+  const [activeTab, setActiveTab] = useState<'security' | 'danger'>('security');
+  // Dihitung langsung saat inisialisasi (bukan lewat effect), karena searchParams
+  // sudah tersedia secara sinkron pas render pertama — gak perlu "menyusul" lewat effect.
+  const [initialPwdStep] = useState<'request' | 'form'>(() =>
+    searchParams.get('action') === 'change-password' ? 'form' : 'request'
+  );
+
+  useEffect(() => {
+    // Ambil data profil
+    api('/auth/me')
+      .then((res: unknown) => {
+        const rawData = res as AuthMeResponse;
+        const data = rawData?.items ? rawData.items[0] : rawData;
+
+        setProfile({
+          name: data?.display_name || 'Unknown',
+          email: data?.email || 'No email',
+          role: data?.role?.toLowerCase() || 'user'
+        });
+      })
+      .catch(() => console.warn("Failed to load profile data."))
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  const canShowDangerZone = !isLoading && profile?.role !== 'admin';
+
   return (
-    <div className="w-full flex flex-col bg-background text-foreground overflow-x-hidden pt-28 md:pt-32 pb-20">
-      {/* Container presisi sejajar dengan halaman Lab dan Logs */}
-      <div className="w-full max-w-7xl mx-auto px-6 md:px-12 relative">
-        
-        {/* HEADER PAGE */}
-        <div className="mb-8 md:mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <User className="w-5 h-5 text-accent" />
-              <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted font-semibold">
-                Account Settings
-              </span>
-            </div>
-            <h1 className="text-3xl md:text-4xl font-medium tracking-tight text-foreground mb-2">
-              My Profile
-            </h1>
-            <p className="text-xs text-muted max-w-xl leading-relaxed">
-              Manage your personal researcher identity, security credentials, and platform preferences.
-            </p>
-          </div>
-        </div>
+    <div className="w-full flex flex-col bg-background text-foreground overflow-x-hidden pt-20 sm:pt-24 md:pt-32 pb-16 sm:pb-20 min-h-screen">
+      {/* PENTING: max-width di sini disamakan (max-w-4xl) dengan max-width ProfileCard/tabs/content
+          di bawah. Sebelumnya wrapper ini pakai max-w-7xl sementara isinya max-w-4xl tanpa mx-auto
+          sendiri, jadi konten nempel ke kiri wrapper yang lebih lebar alih-alih ikut center. */}
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6">
 
-        {/* WORK IN PROGRESS CONTAINER */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full bg-surface-white/80 backdrop-blur-3xl border border-foreground/4 shadow-[0_24px_60px_rgba(0,0,0,0.02)] rounded-4xl p-10 md:p-24 flex flex-col items-center justify-center text-center relative overflow-hidden min-h-[50vh]"
+        <motion.h1
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+          className="text-2xl sm:text-3xl font-medium tracking-tight text-foreground mb-6 sm:mb-8"
         >
-          <div className="relative z-10 flex flex-col items-center max-w-md mx-auto">
-            
-            {/* Badge Minimalis */}
-            <div className="text-[10px] font-mono uppercase tracking-widest text-accent mb-6 border border-accent/20 bg-accent/10 px-4 py-1.5 rounded-full">
-              Status: In Progress
-            </div>
+          Profile Settings
+        </motion.h1>
 
-            <h2 className="text-2xl font-medium tracking-tight text-foreground mb-3">
-              Module Under Construction
-            </h2>
-            
-            <p className="text-xs text-muted leading-relaxed mb-10">
-              The engineering team is currently building the account management dashboard. Profile updates and security configurations will be available in the upcoming release.
-            </p>
-
-            <Link href="/lab" className="group flex items-center justify-center gap-3 px-8 py-3.5 bg-foreground/5 border border-foreground/10 text-foreground text-xs font-semibold uppercase tracking-[0.1em] rounded-full hover:bg-foreground hover:text-surface-white transition-all duration-300">
-              <ArrowLeft className="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1" />
-              Return to Digital Lab
-            </Link>
-            
-          </div>
+        {/* 1. Profile Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }}
+          className="mb-10 sm:mb-12"
+        >
+          <ProfileCard isLoading={isLoading} profile={profile} />
         </motion.div>
+
+        {/* 2. Tabs Navigation dengan sliding underline */}
+        <motion.div
+          initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}
+          className="flex items-center gap-6 sm:gap-8 border-b border-foreground/10 mb-8 overflow-x-auto scrollbar-hide"
+        >
+          <button
+            onClick={() => setActiveTab('security')}
+            className={`relative pb-3 text-sm font-medium whitespace-nowrap transition-colors shrink-0 ${
+              activeTab === 'security' ? 'text-foreground' : 'text-muted hover:text-foreground'
+            }`}
+          >
+            Security & Password
+            {activeTab === 'security' && (
+              <motion.div
+                layoutId="profile-tab-underline"
+                className="absolute left-0 right-0 -bottom-px h-0.5 bg-foreground rounded-full"
+                transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+              />
+            )}
+          </button>
+
+          {canShowDangerZone && (
+            <button
+              onClick={() => setActiveTab('danger')}
+              className={`relative pb-3 text-sm font-medium whitespace-nowrap transition-colors shrink-0 ${
+                activeTab === 'danger' ? 'text-foreground' : 'text-muted hover:text-foreground'
+              }`}
+            >
+              Danger Zone
+              {activeTab === 'danger' && (
+                <motion.div
+                  layoutId="profile-tab-underline"
+                  className="absolute left-0 right-0 -bottom-px h-0.5 bg-foreground rounded-full"
+                  transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                />
+              )}
+            </button>
+          )}
+        </motion.div>
+
+        {/* 3. Tab Content */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            {activeTab === 'security' && <SecuritySettings initialStep={initialPwdStep} />}
+            {activeTab === 'danger' && canShowDangerZone && <DangerZone />}
+          </motion.div>
+        </AnimatePresence>
 
       </div>
     </div>
+  );
+}
+
+// Dibungkus Suspense karena pakai useSearchParams()
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-muted" />
+      </div>
+    }>
+      <ProfileOrchestrator />
+    </Suspense>
   );
 }

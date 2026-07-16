@@ -131,16 +131,16 @@ export default function LabNavbar() {
               className="flex items-center gap-2 pl-3 pr-1 py-1 rounded-full hover:bg-foreground/4 transition-colors focus:outline-none"
             >
               <div className="hidden sm:flex flex-col items-end mr-1">
-                <span className="text-xs font-medium text-foreground leading-none truncate max-w-[120px]">
+                <span className="text-xs font-medium text-foreground leading-none truncate max-w-30">
                   {user ? getFirstName(user.display_name) : '...'}
                 </span>
-                <span className="text-[10px] text-muted font-mono mt-0.5 tracking-wide truncate max-w-[130px]">
+                <span className="text-[10px] text-muted font-mono mt-0.5 tracking-wide truncate max-w-32.5">
                   {user ? user.email : '...'}
                 </span>
               </div>
               
               <div className="flex items-center gap-1.5">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-foreground/10 to-foreground/2 border border-foreground/5 flex items-center justify-center text-muted shadow-sm overflow-hidden">
+                <div className="w-7 h-7 rounded-full bg-linear-to-tr from-foreground/10 to-foreground/2 border border-foreground/5 flex items-center justify-center text-muted shadow-sm overflow-hidden">
                   <User className="w-3.5 h-3.5" />
                 </div>
                 <ChevronDown className={`w-3.5 h-3.5 text-muted transition-transform duration-300 ${showProfileMenu ? 'rotate-180' : ''}`} />
@@ -155,7 +155,7 @@ export default function LabNavbar() {
                   animate={{ opacity: 1, y: 0, scale: 1 }} 
                   exit={{ opacity: 0, y: 8, scale: 0.98 }}
                   transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                  className="absolute right-0 top-full mt-3 w-52 bg-surface-white/90 backdrop-blur-2xl border border-foreground/5 shadow-[0_16px_40px_rgba(0,0,0,0.08)] rounded-2xl p-2 flex flex-col z-[101]"
+                  className="absolute right-0 top-full mt-3 w-52 bg-surface-white/90 backdrop-blur-2xl border border-foreground/5 shadow-[0_16px_40px_rgba(0,0,0,0.08)] rounded-2xl p-2 flex flex-col z-101"
                 >
                   <Link 
                     href="/lab/profile" 
@@ -213,7 +213,7 @@ export default function LabNavbar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-background/60 backdrop-blur-sm"
+            className="fixed inset-0 z-200 flex items-center justify-center p-4 bg-background/60 backdrop-blur-sm"
           >
             <div className="absolute inset-0 cursor-pointer" onClick={() => !isLoggingOut && setShowLogoutModal(false)} />
             
