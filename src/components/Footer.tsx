@@ -3,6 +3,9 @@
 import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { Mail, ArrowUp } from 'lucide-react';
+import { FaGithub, FaLinkedin, FaXTwitter } from 'react-icons/fa6';
+import type { IconType } from 'react-icons';
 
 const luxEase = [0.16, 1, 0.3, 1] as const;
 
@@ -12,8 +15,8 @@ const luxEase = [0.16, 1, 0.3, 1] as const;
 const AnimatedLink = ({ title, href }: { title: string; href: string }) => {
   return (
     <li>
-      <Link 
-        href={href} 
+      <Link
+        href={href}
         className="group relative flex items-center w-max overflow-hidden text-sm font-medium text-muted transition-colors duration-300 hover:text-foreground"
       >
         <span className="relative flex flex-col h-[1.2em] overflow-hidden">
@@ -27,10 +30,10 @@ const AnimatedLink = ({ title, href }: { title: string; href: string }) => {
           </span>
         </span>
         {/* Panah kecil yang muncul secara elegan dari kiri */}
-        <svg 
-          className="w-3 h-3 text-accent opacity-0 -translate-x-3 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-100 group-hover:translate-x-1 ml-1" 
-          fill="none" 
-          viewBox="0 0 24 24" 
+        <svg
+          className="w-3 h-3 text-accent opacity-0 -translate-x-3 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-100 group-hover:translate-x-1 ml-1"
+          fill="none"
+          viewBox="0 0 24 24"
           stroke="currentColor"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -40,19 +43,54 @@ const AnimatedLink = ({ title, href }: { title: string; href: string }) => {
   );
 };
 
+/* =========================================================
+   REUSABLE COMPONENT: SOCIAL ICON BUTTON (bulat, hover glow)
+   ========================================================= */
+const SocialIcon = ({ icon: Icon, href, label }: { icon: IconType | typeof Mail; href: string; label: string }) => {
+  return (
+    <Link
+      href={href}
+      aria-label={label}
+      className="group relative w-10 h-10 rounded-full border border-foreground/10 flex items-center justify-center text-muted transition-all duration-300 hover:text-accent hover:border-accent/40 hover:scale-105"
+    >
+      <Icon className="w-4 h-4" />
+      <span className="absolute inset-0 rounded-full bg-accent/0 group-hover:bg-accent/5 transition-colors duration-300" />
+    </Link>
+  );
+};
+
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
-    <footer className="w-full bg-background pt-24 pb-8 px-6 md:px-12 border-t border-foreground/10 font-sans overflow-hidden">
-      <motion.div 
-        initial={{ opacity: 0, y: 30 }} 
-        whileInView={{ opacity: 1, y: 0 }} 
-        viewport={{ once: true, margin: "-10%" }} 
-        transition={{ duration: 1, ease: luxEase }}
-        className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8"
+    <footer className="relative w-full bg-background pt-24 pb-8 px-6 md:px-12 border-t border-foreground/10 font-sans overflow-hidden">
+
+      {/* ==================== WATERMARK BACKGROUND TEXT ==================== */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1.4, ease: luxEase }}
+        aria-hidden="true"
+        className="pointer-events-none select-none absolute -bottom-8 sm:-bottom-12 md:-bottom-16 left-1/2 -translate-x-1/2 w-full text-center whitespace-nowrap"
       >
-        
+        <span className="text-[18vw] leading-none font-medium tracking-tighter text-foreground/3">
+          cardivex
+        </span>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-10%" }}
+        transition={{ duration: 1, ease: luxEase }}
+        className="relative max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8"
+      >
+
         {/* ==================== LEFT COLUMN: BRANDING ==================== */}
         <div className="md:col-span-5 flex flex-col justify-between">
           <div>
@@ -65,9 +103,17 @@ export default function Footer() {
             <p className="mt-6 text-sm text-muted max-w-sm leading-relaxed">
               Advanced <span className="italic font-medium text-foreground">in silico</span> modeling for cardiac safety and animal-free research. Redefining predictive precision.
             </p>
+
+            {/* Social icons */}
+            <div className="flex items-center gap-3 mt-8">
+              <SocialIcon icon={FaXTwitter} href="#" label="Twitter" />
+              <SocialIcon icon={FaLinkedin} href="#" label="LinkedIn" />
+              <SocialIcon icon={FaGithub} href="#" label="GitHub" />
+              <SocialIcon icon={Mail} href="mailto:hcim.ta01@gmail.com" label="Email" />
+            </div>
           </div>
 
-          <div className="mt-12 md:mt-24">
+          <div className="mt-12 md:mt-16">
             <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted mb-2">
               Origin
             </div>
@@ -105,26 +151,37 @@ export default function Footer() {
           </ul>
         </div>
 
-        <div className="md:col-span-2">
-          <h4 className="text-[10px] font-mono uppercase tracking-[0.2em] text-foreground mb-6">
-            Connect
-          </h4>
-          <ul className="space-y-4">
-            <AnimatedLink title="Twitter" href="#" />
-            <AnimatedLink title="LinkedIn" href="#" />
-            <AnimatedLink title="GitHub" href="#" />
-            <AnimatedLink title="Email Us" href="mailto:hcim.ta01@gmail.com" />
-          </ul>
+        <div className="md:col-span-2 flex flex-col justify-between">
+          <div>
+            <h4 className="text-[10px] font-mono uppercase tracking-[0.2em] text-foreground mb-6">
+              Connect
+            </h4>
+            <ul className="space-y-4">
+              <AnimatedLink title="Contact" href="mailto:hcim.ta01@gmail.com" />
+              <AnimatedLink title="Support" href="#" />
+            </ul>
+          </div>
+
+          {/* Back to top */}
+          <button
+            onClick={scrollToTop}
+            className="group hidden md:flex items-center gap-2 mt-12 text-[10px] font-mono uppercase tracking-[0.2em] text-muted hover:text-foreground transition-colors duration-300 w-max"
+          >
+            <span className="w-8 h-8 rounded-full border border-foreground/10 flex items-center justify-center group-hover:border-foreground/30 group-hover:-translate-y-0.5 transition-all duration-300">
+              <ArrowUp className="w-3.5 h-3.5" />
+            </span>
+            Back to top
+          </button>
         </div>
       </motion.div>
 
       {/* ==================== BOTTOM COPYRIGHT BAR ==================== */}
-      <motion.div 
-        initial={{ opacity: 0 }} 
-        whileInView={{ opacity: 1 }} 
-        viewport={{ once: true }} 
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
         transition={{ duration: 1, delay: 0.3, ease: luxEase }}
-        className="max-w-7xl mx-auto mt-24 pt-8 border-t border-foreground/10 flex flex-col md:flex-row justify-between items-center gap-6"
+        className="relative max-w-7xl mx-auto mt-24 pt-8 border-t border-foreground/10 flex flex-col md:flex-row justify-between items-center gap-6"
       >
         <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
           <p className="text-[11px] font-mono uppercase tracking-widest text-foreground font-medium">
@@ -138,22 +195,22 @@ export default function Footer() {
 
         <div className="flex items-center gap-6">
           {/* Animated EQ Visualizer */}
-          <div className="flex gap-[3px] h-3 mr-4 items-end">
+          <div className="flex gap-0.75 h-3 mr-4 items-end">
             {[1, 0.6, 0.8, 0.4, 1].map((h, idx) => (
               <motion.div
                 key={idx}
-                className="w-[2px] bg-foreground/30 rounded-t-sm"
+                className="w-0.5 bg-foreground/30 rounded-t-sm"
                 animate={{ height: [`${h * 100}%`, '100%', `${h * 100}%`] }}
-                transition={{ 
-                  duration: 1.5, 
-                  repeat: Infinity, 
-                  delay: idx * 0.15, 
-                  ease: "easeInOut" 
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  delay: idx * 0.15,
+                  ease: "easeInOut"
                 }}
               />
             ))}
           </div>
-          
+
           <Link href="#" className="text-[11px] font-mono uppercase tracking-widest text-muted hover:text-foreground transition-colors duration-300">
             Privacy
           </Link>
