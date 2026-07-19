@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { api } from '@/lib/api'; 
 import EngineVisualizer from './components/EngineVisualizer';
 import LabForm from './components/LabForm';
-import LabResults from './components/LabResults';
+import LabResults, { parsePredictResponse, PredictionOutput } from './components/LabResults';
 import ProcessingLoader from './components/ProcessingLoader';
 import TutorialGuide from './components/LabTutorial'; 
 
@@ -21,6 +21,7 @@ type SimulationResult = {
   success: boolean; 
   tier?: string; 
   shapData?: SHAPData; 
+  prediction?: PredictionOutput | null;
   error?: string; 
 };
 
@@ -147,6 +148,8 @@ export default function DigitalLabPage() {
       
       const tierLabel = predictData.data[0].label;
       const shapResult = explainData.data[0];
+      // Parse response /api/predict yang lebih lengkap (confidences + conformal prediction)
+      const parsedPrediction = parsePredictResponse(predictData.data);
 
       setResult({
         success: true,
@@ -155,7 +158,8 @@ export default function DigitalLabPage() {
           predicted_class: tierLabel, 
           base_value: shapResult.base_value,
           contributions: shapResult.contributions
-        }
+        },
+        prediction: parsedPrediction,
       });
       setActiveStage('completed');
 
@@ -250,7 +254,7 @@ export default function DigitalLabPage() {
                     animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                     transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    <LabResults tier={result.tier} shap={result.shapData} onReset={handleReset} />
+                    <LabResults tier={result.tier} shap={result.shapData} prediction={result.prediction} onReset={handleReset} />
                   </motion.div>
                 )}
               </AnimatePresence>
