@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Figtree } from "next/font/google";
+import SplashScreen from "@/components/SplashScreen";
+import { SplashProvider } from "@/components/SplashProvider";
 import "./globals.css";
 
 import CustomCursor from "@/components/ui/CustomCursor";
@@ -23,8 +25,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${figtree.variable} font-sans`}>
       <body className="antialiased bg-white text-black">
-        <CustomCursor />
-        {children}
+        <SplashProvider>
+          <SplashScreen />
+          <CustomCursor />
+          {children}
+        </SplashProvider>
       </body>
     </html>
   );

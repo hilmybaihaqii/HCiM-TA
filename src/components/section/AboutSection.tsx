@@ -10,6 +10,7 @@ import {
   useInView,
   animate,
 } from 'framer-motion';
+import { getTierColor, type RiskTier } from '@/lib/tierColor';
 
 /* =========================================================
    INTERACTIVE CARDIAC-RISK SIMULATOR (Dashboard UI)
@@ -51,6 +52,7 @@ const DRUGS: Drug[] = [
   { name: 'Quinidine',      tier: 2, qNet: 37.6, apd: 642, risk: 0.94 },
 ];
 const TIER_NAME = ['Low Risk', 'Intermediate', 'High Risk'];
+const TIER_KEYS: RiskTier[] = ['low', 'intermediate', 'high'];
 
 export default function AboutSection() {
   const [tier, setTier] = useState(0);
@@ -125,9 +127,20 @@ export default function AboutSection() {
   };
 
   const isHigh = tier === 2;
+  const tc = getTierColor(TIER_KEYS[tier]);
+  const shadowByTier = [
+    '0 10px 40px rgba(22,133,111,0.16)',
+    '0 10px 50px rgba(217,139,30,0.18)',
+    '0 10px 50px rgba(184,84,92,0.16)',
+  ][tier];
+  const panelBgByTier = [
+    'color-mix(in srgb, var(--accent-teal) 8%, var(--surface-white))',
+    'color-mix(in srgb, var(--accent-amber) 9%, var(--surface-white))',
+    'color-mix(in srgb, var(--accent-red) 8%, var(--surface-white))',
+  ][tier];
 
   return (
-    <section id="about" className="relative w-full py-20 md:py-32 bg-background font-sans overflow-hidden">
+    <section id="about" className="relative w-full py-20 md:py-32 font-sans overflow-hidden">
       <div className="max-w-7xl mx-auto px-5 md:px-12 relative z-10">
 
         {/* --- 1. HEADLINE NARRATIVE --- */}
@@ -163,9 +176,8 @@ export default function AboutSection() {
         {/* --- 2. BENTO BOX / DASHBOARD SIMULATOR --- */}
         <div
           ref={simRef}
-          className={`relative w-full rounded-3xl md:rounded-4xl border overflow-hidden flex flex-col lg:flex-row transition-all duration-700 bg-surface-white ${
-            isHigh ? 'border-accent/30 shadow-[0_10px_50px_rgba(184,84,92,0.08)]' : 'border-foreground/10 shadow-[0_10px_40px_rgba(0,0,0,0.03)]'
-          }`}
+          className={`relative w-full rounded-3xl md:rounded-4xl border overflow-hidden flex flex-col lg:flex-row transition-all duration-700 ${tc.border}`}
+          style={{ boxShadow: shadowByTier, backgroundColor: panelBgByTier }}
         >
           
           {/* PANEL KIRI: VISUALISASI DISPLAY */}
@@ -177,15 +189,15 @@ export default function AboutSection() {
                 <span className="text-[9px] md:text-[10px] font-mono uppercase tracking-[0.2em] text-foreground font-bold">TdP Electrophysicology Trace</span>
               </div>
               
-              <div className={`flex items-center gap-2 rounded-full border px-3 py-1.5 transition-colors duration-500 ${isHigh ? 'bg-accent/10 border-accent/25' : 'bg-secondary/10 border-secondary/25'}`}>
-                <span className={`w-1.5 h-1.5 rounded-full transition-colors duration-500 ${tier === 2 ? 'bg-accent' : tier === 1 ? 'bg-foreground' : 'bg-foreground/40'}`} />
-                <span className={`text-[9px] font-mono uppercase tracking-[0.15em] transition-colors duration-500 ${isHigh ? 'text-accent font-bold' : 'text-foreground'}`}>{TIER_NAME[tier]}</span>
+              <div className={`flex items-center gap-2 rounded-full border px-3 py-1.5 transition-colors duration-500 ${tc.bgSoft} ${tc.border}`}>
+                <span className={`w-1.5 h-1.5 rounded-full transition-colors duration-500 ${tc.dot}`} />
+                <span className={`text-[9px] font-mono uppercase tracking-[0.15em] transition-colors duration-500 ${isHigh ? tc.textStrong : tc.text}`}>{TIER_NAME[tier]}</span>
               </div>
             </div>
 
             {/* SVG Grafik */}
             <div className="px-5 py-6 md:px-8 md:py-8 relative">
-              <div className={`relative z-10 w-full transition-colors duration-700 ${isHigh ? 'text-accent' : 'text-foreground'}`}>
+              <div className={`relative z-10 w-full transition-colors duration-700 ${tc.text}`}>
                 <svg viewBox="0 0 1000 160" className="w-full h-auto max-h-25 md:max-h-35" preserveAspectRatio="none">
                   <line x1="0" y1={BASELINE} x2="1000" y2={BASELINE} stroke="var(--color-muted)" strokeWidth="0.5" strokeDasharray="4 4" />
                   <motion.path 
@@ -205,12 +217,12 @@ export default function AboutSection() {
 
               {/* Anotasi Sumbu */}
               <div className="relative z-10 flex items-start justify-between mt-4 md:mt-6">
-                {[{ t: 'Normal Sinus', danger: false }, { t: 'QT Prolongation', danger: false }, { t: 'Torsade de Pointes', danger: true }].map((a, i) => {
-                  const hot = a.danger && isHigh;
+                {[{ t: 'Normal Sinus', tierIdx: 0 }, { t: 'QT Prolongation', tierIdx: 1 }, { t: 'Torsade de Pointes', tierIdx: 2 }].map((a, i) => {
+                  const hot = a.tierIdx === tier;
                   return (
                     <div key={a.t} className={`flex flex-col gap-1.5 ${i === 1 ? 'items-center text-center' : i === 2 ? 'items-end text-right' : 'items-start'}`}>
-                      <div className={`w-px h-2 transition-colors duration-500 ${hot ? 'bg-accent' : 'bg-foreground/20'}`} />
-                      <span className={`text-[8px] md:text-[9px] font-mono uppercase tracking-[0.15em] transition-colors duration-500 ${hot ? 'text-accent font-bold' : 'text-muted'}`}>{a.t}</span>
+                      <div className={`w-px h-2 transition-colors duration-500 ${hot ? tc.dot : 'bg-foreground/20'}`} />
+                      <span className={`text-[8px] md:text-[9px] font-mono uppercase tracking-[0.15em] transition-colors duration-500 ${hot ? tc.textStrong : 'text-muted'}`}>{a.t}</span>
                     </div>
                   );
                 })}
@@ -231,9 +243,9 @@ export default function AboutSection() {
                 <div className="text-[7px] md:text-[8px] font-mono uppercase tracking-[0.2em] text-muted mt-2">+ 9 more</div>
               </div>
 
-              <div className={`px-4 py-4 md:px-6 md:py-5 flex flex-col justify-between transition-colors duration-500 ${isHigh ? 'bg-accent/10' : ''}`}>
+              <div className={`px-4 py-4 md:px-6 md:py-5 flex flex-col justify-between transition-colors duration-500 ${tc.bgSoft}`}>
                 <div className="text-[8px] md:text-[9px] font-mono uppercase tracking-[0.15em] text-muted mb-2">Risk tier</div>
-                <div className={`text-xl md:text-3xl font-medium tracking-tight transition-colors duration-500 ${isHigh ? 'text-accent' : 'text-foreground'} truncate`}>
+                <div className={`text-xl md:text-3xl font-medium tracking-tight transition-colors duration-500 ${tc.text} truncate`}>
                   {TIER_NAME[tier]}
                 </div>
                 <div className="text-[7px] md:text-[8px] font-mono uppercase tracking-[0.2em] text-muted mt-2 truncate">
@@ -258,13 +270,14 @@ export default function AboutSection() {
                 <div className="flex lg:flex-wrap gap-2 overflow-x-auto pb-2 lg:pb-0 snap-x scrollbar-none">
                   {DRUGS.map((d) => {
                     const on = activeDrug === d.name;
+                    const dc = getTierColor(TIER_KEYS[d.tier]);
                     return (
-                      <button 
+                      <button
                         key={d.name}
                         onClick={() => applyDrug(d)}
                         className={`snap-start shrink-0 relative rounded-full px-3 py-1.5 md:px-4 md:py-2 text-[10px] md:text-[11px] font-medium tracking-tight transition-colors duration-300 border ${
-                          on 
-                            ? 'bg-foreground border-foreground text-surface-white' 
+                          on
+                            ? `${dc.bg} border-transparent text-surface-white`
                             : 'bg-surface-white border-foreground/15 text-foreground hover:border-accent/50'
                         }`}
                       >
@@ -298,7 +311,7 @@ export default function AboutSection() {
                   <div className="absolute h-3 w-0.5 bg-foreground/20" style={{ left: '34%' }} />
                   <div className="absolute h-3 w-0.5 bg-foreground/20" style={{ left: '67%' }} />
                   
-                  <motion.div className="absolute left-0 h-0.75 rounded-full bg-accent" style={{ width: fillPct }} />
+                  <motion.div className={`absolute left-0 h-0.75 rounded-full transition-colors duration-500 ${tc.bg}`} style={{ width: fillPct }} />
                   
                   <motion.div className="absolute w-3 h-5 md:w-3.5 md:h-6 rounded-full bg-black shadow-md -ml-1.5 md:-ml-1.75 cursor-grab active:cursor-grabbing"
                     style={{ left: thumbPct }} animate={{ scale: dragging ? 1.1 : 1 }} transition={{ duration: 0.2 }} />

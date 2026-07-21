@@ -1,28 +1,44 @@
 'use client';
 
 import React from 'react';
+import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
-import Heart3D from '../ui/Heart3D'; 
+import { useSplash } from '../SplashProvider';
+
+// ssr:false → tidak dicoba di-render di server (menghindari WebGL API
+// yang gak ada di Node), dan module three/fiber/drei baru di-load
+// begitu chunk ini benar-benar diminta oleh browser.
+const Heart3D = dynamic(() => import('../ui/Heart3D'), {
+  ssr: false,
+  loading: () => <Heart3DPlaceholder />,
+});
+
+// Placeholder elegan selagi chunk 3D belum dimount — cuma denyut lembut,
+// biar area kosongnya gak kelihatan "hilang" tiba-tiba.
+function Heart3DPlaceholder() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <div className="w-24 h-24 rounded-full bg-accent/5 animate-pulse blur-xl" />
+    </div>
+  );
+}
 
 export default function HeroSection() {
+  const { splashStarted } = useSplash();
+
   return (
-    <section className="relative w-full h-svh bg-background font-sans overflow-hidden flex items-center justify-center"> 
-      
-      {/* === 1. GIANT BACKGROUND TYPOGRAPHY === */}
-      {/* PERBAIKAN MOBILE ALIGNMENT: 
-        Menggunakan top-[40%] di mobile agar teks naik sedikit dan berada pas di tengah ruang kosong.
-        Di desktop kembali ke top-1/2. 
-      */}
+    <section className="relative w-full h-svh font-sans overflow-hidden flex items-center justify-center">
+
       <div className="absolute top-[40%] md:top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none select-none z-0 w-full">
-        <motion.h1 
+        <motion.h1
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1.5, ease: "easeOut" }}
           className="text-[17vw] md:text-[14vw] font-black uppercase leading-[0.85] md:leading-[0.8] tracking-tighter text-center"
         >
-          <span 
-            className="block text-transparent" 
-            style={{ WebkitTextStroke: '2px rgba(42, 42, 42, 0.06)' }}
+          <span
+            className="block text-transparent"
+            style={{ WebkitTextStroke: '2px rgba(43, 34, 35, 0.06)' }}
           >
             IN-SILICO
           </span>
@@ -32,22 +48,19 @@ export default function HeroSection() {
         </motion.h1>
       </div>
 
-      {/* === 2. THE CENTERPIECE: 3D MODEL === */}
-      {/* Batas kanvas 3D di HP dibatasi agar tidak nabrak teks bawah */}
+      {/* Heart3D baru dimount setelah splash mulai berjalan, supaya
+          WebGL init tidak bentrok dengan frame pertama GSAP splash. */}
       <div className="absolute top-24 bottom-[38vh] left-0 right-0 md:inset-0 z-10 cursor-grab active:cursor-grabbing pointer-events-auto flex items-center justify-center">
-        <Heart3D />
+        {splashStarted ? <Heart3D /> : <Heart3DPlaceholder />}
       </div>
 
-      {/* === 3. SPATIAL HUD INTERFACE === */}
+      {/* === SISA JSX SAMA PERSIS, TIDAK DIUBAH === */}
       <div className="absolute inset-0 z-20 flex flex-col justify-between pointer-events-none pt-28 pb-8 md:pt-36 md:pb-12">
-        
-        {/* --- TOP ANCHORS --- */}
         <div className="w-full max-w-7xl mx-auto px-6 md:px-12 flex justify-between items-start">
-          
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ duration: 1, delay: 0.5 }} 
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.5 }}
             className="flex flex-col gap-1.5 md:gap-2"
           >
             <div className="flex items-center gap-2 md:gap-3 bg-secondary/15 border border-secondary/30 px-3 py-1.5 rounded-full">
@@ -61,10 +74,10 @@ export default function HeroSection() {
             </div>
           </motion.div>
 
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ duration: 1, delay: 0.6 }} 
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.6 }}
             className="px-4 py-2 bg-surface-white/60 backdrop-blur-md shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-foreground/5 rounded-full flex items-center gap-2 pointer-events-auto"
           >
             <div className="w-1.5 h-1.5 rounded-full bg-foreground animate-pulse" />
@@ -74,15 +87,14 @@ export default function HeroSection() {
           </motion.div>
         </div>
 
-        {/* --- BOTTOM ANCHORS --- */}
         <div className="w-full max-w-7xl mx-auto px-6 md:px-12 flex flex-col lg:flex-row justify-between items-stretch lg:items-end gap-6 relative">
-          
-          <motion.div 
-            initial={{ opacity: 0, x: -30 }} 
-            animate={{ opacity: 1, x: 0 }} 
-            transition={{ duration: 1, delay: 0.8 }} 
-            className="w-full lg:max-w-md bg-surface-white/60 backdrop-blur-2xl border border-foreground/5 shadow-[0_20px_80px_rgba(0,0,0,0.04)] p-5 md:p-6 lg:p-8 rounded-3xl pointer-events-auto relative overflow-hidden group"
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 1, delay: 0.8 }}
+            className="w-full lg:max-w-md bg-surface-white/25 backdrop-blur-2xl backdrop-saturate-150 border border-white/40 shadow-[0_20px_80px_rgba(0,0,0,0.06)] p-5 md:p-6 lg:p-8 rounded-3xl pointer-events-auto relative overflow-hidden group"
           >
+            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/70 to-transparent" />
             <h2 className="text-lg md:text-xl font-medium text-foreground mb-2 md:mb-3 tracking-tight">
               Rescue Viable Therapeutics.
             </h2>
@@ -91,10 +103,10 @@ export default function HeroSection() {
             </p>
           </motion.div>
 
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ duration: 1, delay: 1 }} 
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 1 }}
             className="absolute bottom-0 left-1/2 transform -translate-x-1/2 pointer-events-auto flex-col items-center gap-3 hidden xl:flex"
           >
             <span className="text-[9px] font-mono text-muted uppercase tracking-widest rotate-90 opacity-0">.</span>
@@ -105,10 +117,10 @@ export default function HeroSection() {
             </a>
           </motion.div>
 
-          <motion.div 
-            initial={{ opacity: 0, x: 30 }} 
-            animate={{ opacity: 1, x: 0 }} 
-            transition={{ duration: 1, delay: 0.9 }} 
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 1, delay: 0.9 }}
             className="flex flex-col sm:flex-row w-full lg:w-auto gap-2 md:gap-3 pointer-events-auto shrink-0"
           >
             <button className="w-full sm:w-auto px-6 py-3.5 md:px-8 md:py-4 text-[10px] md:text-xs font-normal uppercase tracking-widest bg-surface-white/60 backdrop-blur-md border border-foreground/10 text-foreground hover:bg-accent hover:border-accent hover:text-surface-white transition-all duration-300 rounded-full">
@@ -121,7 +133,6 @@ export default function HeroSection() {
               </svg>
             </button>
           </motion.div>
-
         </div>
       </div>
     </section>

@@ -34,7 +34,7 @@ export default function ModelFlowSection() {
   const outActive = useTransform(smoothProgress, [0.95, 1], [0.4, 1]);
 
   return (
-    <section ref={containerRef} id="data-flow" className="relative w-full h-[300vh] bg-background font-sans">
+    <section ref={containerRef} id="data-flow" className="relative w-full h-[300vh] font-sans">
       
       {/* 
         STICKY WRAPPER: 
@@ -95,8 +95,8 @@ export default function ModelFlowSection() {
                     <div className="w-px h-6 md:h-8 bg-foreground/10 overflow-hidden relative shrink-0">
                       <motion.div style={{ y: lToMods }} className="absolute inset-0 bg-foreground/40" />
                     </div>
-                    <motion.div style={{ opacity: modActive }} className="w-[90%] flex-1 flex flex-col justify-center p-4 rounded-xl border border-foreground/10 bg-surface-white text-center shadow-sm relative z-10">
-                      <span className="block text-[8px] font-mono uppercase tracking-widest text-muted mb-1">Base Learner 01</span>
+                    <motion.div style={{ opacity: modActive }} className="w-[90%] flex-1 flex flex-col justify-center p-4 rounded-xl border border-teal/40 bg-surface-white text-center shadow-sm relative z-10">
+                      <span className="block text-[8px] font-mono uppercase tracking-widest text-teal mb-1">Base Learner 01</span>
                       <span className="text-xs md:text-sm font-medium text-foreground leading-tight">Neural Network</span>
                     </motion.div>
                     <div className="w-px h-6 md:h-8 bg-foreground/10 overflow-hidden relative shrink-0">
@@ -109,8 +109,8 @@ export default function ModelFlowSection() {
                     <div className="w-px h-6 md:h-8 bg-foreground/10 overflow-hidden relative shrink-0">
                       <motion.div style={{ y: lToMods }} className="absolute inset-0 bg-foreground/40" />
                     </div>
-                    <motion.div style={{ opacity: modActive }} className="w-[90%] flex-1 flex flex-col justify-center p-4 rounded-xl border border-foreground/10 bg-surface-white text-center shadow-sm relative z-10">
-                      <span className="block text-[8px] font-mono uppercase tracking-widest text-muted mb-1">Base Learner 02</span>
+                    <motion.div style={{ opacity: modActive }} className="w-[90%] flex-1 flex flex-col justify-center p-4 rounded-xl border border-amber/40 bg-surface-white text-center shadow-sm relative z-10">
+                      <span className="block text-[8px] font-mono uppercase tracking-widest text-amber mb-1">Base Learner 02</span>
                       <span className="text-xs md:text-sm font-medium text-foreground leading-tight">XGBoost</span>
                     </motion.div>
                     <div className="w-px h-6 md:h-8 bg-foreground/10 overflow-hidden relative shrink-0">
@@ -123,8 +123,8 @@ export default function ModelFlowSection() {
                     <div className="w-px h-6 md:h-8 bg-foreground/10 overflow-hidden relative shrink-0">
                       <motion.div style={{ y: lToMods }} className="absolute inset-0 bg-foreground/40" />
                     </div>
-                    <motion.div style={{ opacity: modActive }} className="w-[90%] flex-1 flex flex-col justify-center p-4 rounded-xl border border-foreground/10 bg-surface-white text-center shadow-sm relative z-10">
-                      <span className="block text-[8px] font-mono uppercase tracking-widest text-muted mb-1">Base Learner 03</span>
+                    <motion.div style={{ opacity: modActive }} className="w-[90%] flex-1 flex flex-col justify-center p-4 rounded-xl border border-accent/40 bg-surface-white text-center shadow-sm relative z-10">
+                      <span className="block text-[8px] font-mono uppercase tracking-widest text-accent mb-1">Base Learner 03</span>
                       <span className="text-xs md:text-sm font-medium text-foreground leading-tight">Random Forest</span>
                     </motion.div>
                     <div className="w-px h-6 md:h-8 bg-foreground/10 overflow-hidden relative shrink-0">
@@ -179,8 +179,8 @@ export default function ModelFlowSection() {
                       <span className="block text-[8px] font-mono uppercase tracking-widest text-muted mb-2">Primary Output</span>
                       <h5 className="text-sm md:text-base font-medium text-foreground mb-3">3-Tier TdP Risk</h5>
                       <div className="flex flex-wrap justify-center gap-1.5">
-                        <span className="px-2 py-1 bg-foreground/5 border border-foreground/10 rounded text-[9px] font-mono text-muted">Low</span>
-                        <span className="px-2 py-1 bg-foreground/5 border border-foreground/10 rounded text-[9px] font-mono text-muted">Inter</span>
+                        <span className="px-2 py-1 bg-teal/10 border border-teal/20 rounded text-[9px] font-mono text-teal">Low</span>
+                        <span className="px-2 py-1 bg-amber/10 border border-amber/20 rounded text-[9px] font-mono text-amber">Inter</span>
                         <span className="px-2 py-1 bg-accent/10 border border-accent/20 rounded text-[9px] font-mono text-accent font-bold">High</span>
                       </div>
                     </motion.div>

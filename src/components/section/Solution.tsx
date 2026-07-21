@@ -35,8 +35,14 @@ const RevealText = ({ children }: { children: string }) => {
 /* =========================================================
    REUSABLE COMPONENT: BIOMARKER CARD
    ========================================================= */
-const BioCard = ({ name }: { name: string }) => (
-  <div className="flex items-center justify-center py-2.5 md:py-3.5 px-2 bg-foreground/[0.03] border border-foreground/10 rounded-lg text-[10px] md:text-xs font-mono text-muted hover:bg-accent hover:text-surface-white hover:border-accent transition-colors duration-300 cursor-crosshair">
+const CARD_HOVER = [
+  'hover:bg-teal hover:text-surface-white hover:border-teal',
+  'hover:bg-amber hover:text-surface-white hover:border-amber',
+  'hover:bg-accent hover:text-surface-white hover:border-accent',
+];
+
+const BioCard = ({ name, colorIdx = 0 }: { name: string; colorIdx?: number }) => (
+  <div className={`flex items-center justify-center py-2.5 md:py-3.5 px-2 bg-foreground/[0.03] border border-foreground/10 rounded-lg text-[10px] md:text-xs font-mono text-muted transition-colors duration-300 cursor-crosshair ${CARD_HOVER[colorIdx % CARD_HOVER.length]}`}>
     {name}
   </div>
 );
@@ -64,7 +70,7 @@ export default function SolutionSection() {
   };
 
   return (
-    <section ref={containerRef} id="solution" className="relative w-full bg-background font-sans overflow-hidden">
+    <section ref={containerRef} id="solution" className="relative w-full font-sans overflow-hidden">
       
       {/* =========================================================
           PART 1: THE OBJECTIVE 
@@ -105,7 +111,7 @@ export default function SolutionSection() {
       {/* =========================================================
           PART 2: THE STICKY ARCHITECTURE 
           ========================================================= */}
-      <div id="model-architecture" className="relative w-full bg-background pt-12 md:pt-16">
+      <div id="model-architecture" className="relative w-full pt-12 md:pt-16">
         <div className="max-w-7xl mx-auto px-5 md:px-12">
           
           {/* RESPONSIVE LAYOUT: Flex-col on mobile, Flex-row on desktop */}
@@ -139,7 +145,7 @@ export default function SolutionSection() {
                 initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-10%" }} transition={{ duration: 0.8, ease: luxEase }}
                 className="flex flex-col"
               >
-                <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-accent mb-3 block">Phase 01</span>
+                <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-teal mb-3 block">Phase 01</span>
                 <h4 className="text-2xl md:text-3xl font-medium tracking-tight text-foreground mb-4">Data Ingestion</h4>
                 <p className="text-sm text-muted leading-relaxed mb-8 max-w-xl">
                   We extract exactly 11 essential electrophysiological parameters directly from the O'Hara-Rudy cellular simulation. This structured feature matrix serves as the biological foundation for our prediction model.
@@ -149,29 +155,29 @@ export default function SolutionSection() {
                <div className="flex flex-col gap-2 md:gap-3 w-full max-w-lg">
                 {/* Row 1 */}
                 <div className="grid grid-cols-2 gap-2 md:gap-3">
-                  <BioCard name="qNet" />
-                  <BioCard name="APD90" />
+                  <BioCard name="qNet" colorIdx={0} />
+                  <BioCard name="APD90" colorIdx={1} />
                 </div>
 
                 {/* Row 2 */}
                 <div className="grid grid-cols-3 gap-2 md:gap-3">
-                  <BioCard name="APD50" />
-                  <BioCard name="dvdtmax" />
-                  <BioCard name="vmax" />
+                  <BioCard name="APD50" colorIdx={2} />
+                  <BioCard name="dvdtmax" colorIdx={0} />
+                  <BioCard name="vmax" colorIdx={1} />
                 </div>
 
                 {/* Row 3 */}
                 <div className="grid grid-cols-3 gap-2 md:gap-3">
-                  <BioCard name="vrest" />
-                  <BioCard name="max_dv" />
-                  <BioCard name="camax" />
+                  <BioCard name="vrest" colorIdx={2} />
+                  <BioCard name="max_dv" colorIdx={0} />
+                  <BioCard name="camax" colorIdx={1} />
                 </div>
 
                 {/* Row 4 */}
                 <div className="grid grid-cols-3 gap-2 md:gap-3">
-                  <BioCard name="carest" />
-                  <BioCard name="CaTD50" />
-                  <BioCard name="CaTD90" />
+                  <BioCard name="carest" colorIdx={2} />
+                  <BioCard name="CaTD50" colorIdx={0} />
+                  <BioCard name="CaTD90" colorIdx={1} />
                 </div>
               </div>
               </motion.div>
@@ -181,19 +187,24 @@ export default function SolutionSection() {
                 initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-10%" }} transition={{ duration: 0.8, ease: luxEase }}
                 className="flex flex-col"
               >
-                <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-accent mb-3 block">Phase 02</span>
+                <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-amber mb-3 block">Phase 02</span>
                 <h4 className="text-2xl md:text-3xl font-medium tracking-tight text-foreground mb-4">Model Inference</h4>
                 <p className="text-sm text-muted leading-relaxed mb-8 max-w-xl">
                   The extracted data is processed through three distinct machine learning models: Artificial Neural Network, XGBoost, and Random Forest. This parallel approach ensures we capture both linear patterns and complex non-linear interactions accurately.
                 </p>
-                
+
                 <div className="flex flex-col w-full border-t border-foreground/10">
-                  {['Artificial Neural Network', 'XGBoost', 'Random Forest'].map((model, i) => (
+                  {[
+                    { model: 'Artificial Neural Network', dot: 'bg-teal', text: 'group-hover:text-teal' },
+                    { model: 'XGBoost', dot: 'bg-amber', text: 'group-hover:text-amber' },
+                    { model: 'Random Forest', dot: 'bg-accent', text: 'group-hover:text-accent' },
+                  ].map(({ model, dot, text }, i) => (
                     <div key={model} className="group flex items-center justify-between py-4 border-b border-foreground/10 cursor-default hover:bg-foreground/[0.02] transition-colors px-2 rounded-sm">
-                      <span className="text-sm md:text-base font-light tracking-tight text-foreground group-hover:translate-x-2 transition-transform duration-300">
+                      <span className="flex items-center gap-3 text-sm md:text-base font-light tracking-tight text-foreground group-hover:translate-x-2 transition-transform duration-300">
+                        <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
                         {model}
                       </span>
-                      <span className="text-[9px] md:text-[10px] font-mono uppercase tracking-[0.2em] text-muted group-hover:text-accent transition-colors">
+                      <span className={`text-[9px] md:text-[10px] font-mono uppercase tracking-[0.2em] text-muted transition-colors ${text}`}>
                         Layer 0{i+1}
                       </span>
                     </div>
@@ -211,9 +222,11 @@ export default function SolutionSection() {
                 <p className="text-sm text-muted leading-relaxed mb-8 max-w-xl">
                   A Hard Voting mechanism aggregates the predictions from all three models to determine the final risk category (Low, Intermediate, or High). Each result is supported by SHAP values to maintain full clinical transparency.
                 </p>
-                
+
                 <div className="w-full p-6 md:p-8 rounded-2xl border border-foreground/10 bg-surface-white relative overflow-hidden group hover:border-accent/40 hover:shadow-lg transition-all duration-500">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full blur-3xl group-hover:bg-accent/15 transition-colors duration-700" />
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-accent/15 rounded-full blur-3xl group-hover:bg-accent/28 transition-colors duration-700" />
+                  <div className="absolute bottom-0 left-0 w-28 h-28 bg-teal/15 rounded-full blur-3xl group-hover:bg-teal/28 transition-colors duration-700" />
+                  <div className="absolute top-1/2 left-1/3 w-24 h-24 bg-amber/12 rounded-full blur-3xl group-hover:bg-amber/24 transition-colors duration-700" />
                   
                   <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>

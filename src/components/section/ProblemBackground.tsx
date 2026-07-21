@@ -97,7 +97,7 @@ export default function ProblemSection() {
   const crosshairRotate = useTransform(scrollYProgress, [0, 1], [0, 90]);
 
   return (
-    <section ref={containerRef} id="problem" className="relative w-full bg-background font-sans overflow-hidden">
+    <section ref={containerRef} id="problem" className="relative w-full font-sans overflow-hidden">
       
       {/* --- STICKY BACKGROUND --- */}
       <div className="sticky top-0 w-full h-screen overflow-hidden pointer-events-none flex items-center justify-center">
@@ -159,14 +159,14 @@ export default function ProblemSection() {
           >
             <div>
               <span className="block text-[9px] md:text-[10px] font-mono uppercase tracking-[0.2em] text-accent mb-2">The Attrition Rate</span>
-              <span className="text-3xl md:text-5xl font-light tracking-tight text-foreground tabular-nums">30%</span>
+              <span className="text-3xl md:text-5xl font-light tracking-tight text-accent tabular-nums">30%</span>
               <p className="mt-3 text-[11px] md:text-xs text-muted leading-relaxed max-w-70">
                 Over 30% of drug candidates are discarded owing to toxicity, making it the leading cause of costly drug discovery failures.
               </p>
             </div>
             <div>
-              <span className="block text-[9px] md:text-[10px] font-mono uppercase tracking-[0.2em] text-foreground mb-2">The Translational Gap</span>
-              <span className="text-3xl md:text-5xl font-light tracking-tight text-foreground tabular-nums">&lt;30%</span>
+              <span className="block text-[9px] md:text-[10px] font-mono uppercase tracking-[0.2em] text-amber mb-2">The Translational Gap</span>
+              <span className="text-3xl md:text-5xl font-light tracking-tight text-amber tabular-nums">&lt;30%</span>
               <p className="mt-3 text-[11px] md:text-xs text-muted leading-relaxed max-w-70">
                 Animal models successfully predict human target organ adverse reactions in less than 30% of cases, highlighting the flaw in in-vivo testing.
               </p>

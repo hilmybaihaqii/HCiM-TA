@@ -6,11 +6,17 @@
   --surface-white: #ffffff;   /* Putih absolut untuk base kaca/pantulan */
   --foreground: #2A2A2A;      /* Charcoal (Text) */
   --text-muted: color-mix(in srgb, var(--foreground) 60%, var(--background)); /* Diturunkan dari Text + Background */
-  --accent-red: #B8545C;      /* Soft Crimson (Accent) */
+  --accent-red: #B8545C;      /* Soft Crimson (Accent) — High Risk */
   --accent-red-dark: #7F4046; /* Wine Red (Hover) */
   --primary: #2B1F1D;         /* Deep Cardiac Brown (Primary) */
   --secondary: #C98B8B;       /* Dusty Rose (Secondary) */
   --border-color: #E6E0DD;    /* Light Gray (Border) */
+
+  /* === Extended Accents: Risk-Tier Color System === */
+  --accent-teal: #16856F;       /* Low Risk — lebih jenuh & tegas */
+  --accent-teal-dark: #0F6252;
+  --accent-amber: #D98B1E;      /* Intermediate Risk — lebih jenuh & tegas */
+  --accent-amber-dark: #A66A14;
 }
 
 @theme inline {
@@ -24,6 +30,10 @@
   --color-primary: var(--primary);
   --color-secondary: var(--secondary);
   --color-border: var(--border-color);
+  --color-teal: var(--accent-teal);
+  --color-teal-dark: var(--accent-teal-dark);
+  --color-amber: var(--accent-amber);
+  --color-amber-dark: var(--accent-amber-dark);
 
   --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
 }
@@ -66,6 +76,32 @@ body {
 
 @media (prefers-color-scheme: dark) {
   /* Bisa diisi nanti jika ingin menambahkan Dark Mode */
+}
+
+/* Warna seleksi teks mengikuti tema, bukan biru default browser */
+::selection {
+  background-color: color-mix(in srgb, var(--accent-red) 55%, transparent);
+  color: var(--surface-white);
+}
+
+/* Animasi pantul kiri-kanan untuk blob ambient (splash screen, dsb) —
+   tiap blob punya amplitudo, arah vertikal & durasi berbeda supaya
+   gerakannya jelas kelihatan tapi tetap terasa organik, bukan serempak. */
+@keyframes blob-drift-1 {
+  0%, 100% { transform: translate(-22%, -4%) scale(0.95); }
+  50% { transform: translate(22%, 6%) scale(1.1); }
+}
+@keyframes blob-drift-2 {
+  0%, 100% { transform: translate(20%, 5%) scale(1.08); }
+  50% { transform: translate(-20%, -6%) scale(0.93); }
+}
+@keyframes blob-drift-3 {
+  0%, 100% { transform: translate(-16%, 8%) scale(0.92); }
+  50% { transform: translate(16%, -8%) scale(1.12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blob-drift { animation: none !important; }
 }
 
 /* Kustomisasi kursor kustom (jika menggunakan custom cursor) */

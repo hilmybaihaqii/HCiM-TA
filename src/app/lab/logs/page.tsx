@@ -1,64 +1,145 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { ActivitySquare, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import React, { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+import { motion } from "framer-motion";
+import PredictionsTable from "./components/PredictionTable";
+import ShapTable from "./components/ShapTable";
 
-export default function ActivityLogsPage() {
+interface SummaryResponse {
+  total_predictions: number;
+  total_explanations: number;
+  tier_counts: Record<string, number>;
+}
+
+export default function LogsPage() {
+  const [activeTab, setActiveTab] = useState<"predictions" | "shap">(
+    "predictions",
+  );
+  const [summary, setSummary] = useState<SummaryResponse | null>(null);
+
+  useEffect(() => {
+    api("/api/history/summary")
+      .then((res) => setSummary(res as SummaryResponse))
+      .catch(() => console.error("Failed to fetch summary data."));
+  }, []);
+
+  // Membantu membaca key JSON dengan aman (menghindari error jika undefined atau beda casing)
+  const getCount = (key: string) => {
+    if (!summary?.tier_counts) return 0;
+    // Mencari key yang cocok secara case-insensitive
+    const foundKey = Object.keys(summary.tier_counts).find(
+      (k) => k.toLowerCase() === key.toLowerCase(),
+    );
+    return foundKey ? summary.tier_counts[foundKey] : 0;
+  };
+
   return (
-    <div className="w-full flex flex-col bg-background text-foreground overflow-x-hidden pt-28 md:pt-32 pb-20">
-      {/* Container disamakan persis dengan halaman LabForm (max-w-7xl, px-6 md:px-12) */}
-      <div className="w-full max-w-7xl mx-auto px-6 md:px-12 relative">
-        
-        {/* HEADER PAGE */}
-        <div className="mb-8 md:mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <ActivitySquare className="w-5 h-5 text-accent" />
-              <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted font-semibold">
-                System Records
-              </span>
-            </div>
-            <h1 className="text-3xl md:text-4xl font-medium tracking-tight text-foreground mb-2">
-              Activity Feed
+    <div className="w-full flex flex-col bg-background text-foreground pt-28 pb-20 min-h-screen">
+      <div className="w-full max-w-7xl mx-auto px-6 md:px-12">
+        {/* Header & Dashboard Stats */}
+        <div className="mb-12 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+          <div className="max-w-xl">
+            <h1 className="text-3xl font-medium tracking-tight mb-2">
+              History & Records
             </h1>
-            <p className="text-xs text-muted max-w-xl leading-relaxed">
-              Review the narrative history of your Torsade de Pointes (TdP) predictions and model interactions.
+            <p className="text-sm text-muted leading-relaxed">
+              Review your past predictions, understand the model&apos;s
+              decision-making process, and monitor the distribution of your
+              cardiovascular toxicity risks.
             </p>
           </div>
+
+          {summary && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-wrap sm:flex-nowrap gap-3 sm:gap-4"
+            >
+              {/* Card 1: Total Predictions */}
+              <div className="bg-surface-white/60 border border-foreground/10 p-4 sm:p-5 rounded-2xl flex flex-col items-center justify-center flex-1 min-w-27.5">
+                <span className="text-3xl font-bold text-foreground">
+                  {summary.total_predictions}
+                </span>
+                <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted mt-1 text-center">
+                  Total Info
+                </span>
+              </div>
+
+              {/* Card 2: Risk Distribution (High, Intermediate, Low) */}
+              <div className="bg-surface-white/60 border border-foreground/10 p-4 sm:p-5 rounded-2xl flex flex-col justify-center flex-2 min-w-45">
+                <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted text-center mb-3">
+                  Risk Distribution
+                </span>
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="flex items-center gap-2 text-muted">
+                      <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"></span>
+                      High Risk
+                    </span>
+                    <span className="font-mono font-medium">
+                      {getCount("High")}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="flex items-center gap-2 text-muted">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
+                      Intermediate
+                    </span>
+                    <span className="font-mono font-medium">
+                      {getCount("Intermediate")}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="flex items-center gap-2 text-muted">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                      Low Risk
+                    </span>
+                    <span className="font-mono font-medium">
+                      {getCount("Low")}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Total SHAP */}
+              <div className="bg-surface-white/60 border border-foreground/10 p-4 sm:p-5 rounded-2xl flex flex-col items-center justify-center flex-1 min-w-27.5">
+                <span className="text-3xl font-bold text-foreground">
+                  {summary.total_explanations}
+                </span>
+                <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted mt-1 text-center">
+                  Analyses
+                </span>
+              </div>
+            </motion.div>
+          )}
         </div>
 
-        {/* WORK IN PROGRESS CONTAINER */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
+        {/* Minimalist Tabs */}
+        <div className="flex gap-6 mb-8 border-b border-foreground/10">
+          <button
+            onClick={() => setActiveTab("predictions")}
+            className={`pb-3 text-sm font-medium transition-colors border-b-2 outline-none ${activeTab === "predictions" ? "border-foreground text-foreground" : "border-transparent text-muted hover:text-foreground"}`}
+          >
+            Prediction History
+          </button>
+          <button
+            onClick={() => setActiveTab("shap")}
+            className={`pb-3 text-sm font-medium transition-colors border-b-2 outline-none ${activeTab === "shap" ? "border-foreground text-foreground" : "border-transparent text-muted hover:text-foreground"}`}
+          >
+            SHAP History
+          </button>
+        </div>
+
+        {/* Content Area */}
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full bg-surface-white/80 backdrop-blur-3xl border border-foreground/4 shadow-[0_24px_60px_rgba(0,0,0,0.02)] rounded-4xl p-10 md:p-24 flex flex-col items-center justify-center text-center relative overflow-hidden min-h-[50vh]"
+          transition={{ duration: 0.3 }}
         >
-          <div className="relative z-10 flex flex-col items-center max-w-md mx-auto">
-            
-            {/* Badge Minimalis Pengganti Ikon */}
-            <div className="text-[10px] font-mono uppercase tracking-widest text-accent mb-6 border border-accent/20 bg-accent/10 px-4 py-1.5 rounded-full">
-              Status: In Progress
-            </div>
-
-            <h2 className="text-2xl font-medium tracking-tight text-foreground mb-3">
-              Module Under Construction
-            </h2>
-            
-            <p className="text-xs text-muted leading-relaxed mb-10">
-              The engineering team is currently integrating the historical logs with the backend database infrastructure. This feature will be available in the next deployment cycle.
-            </p>
-
-            <Link href="/lab" className="group flex items-center justify-center gap-3 px-8 py-3.5 bg-foreground/5 border border-foreground/10 text-foreground text-xs font-semibold uppercase tracking-[0.1em] rounded-full hover:bg-foreground hover:text-surface-white transition-all duration-300">
-              <ArrowLeft className="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1" />
-              Return to Digital Lab
-            </Link>
-            
-          </div>
+          {activeTab === "predictions" ? <PredictionsTable /> : <ShapTable />}
         </motion.div>
-
       </div>
     </div>
   );

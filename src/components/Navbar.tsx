@@ -3,10 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
+import { useSplash } from './SplashProvider';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { splashDone } = useSplash();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -51,7 +53,12 @@ export default function Navbar() {
   return (
     <>
       {/* === NAVBAR UTAMA === */}
-      <nav className="fixed top-0 left-0 w-full z-50 pt-4 md:pt-6 px-4 md:px-12 pointer-events-none transition-all duration-500 flex justify-center">
+      <motion.nav 
+        initial={{ y: '-100%' }}
+        animate={{ y: splashDone ? '0%' : '-100%' }}
+        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+        className="fixed top-0 left-0 w-full z-50 pt-4 md:pt-6 px-4 md:px-12 pointer-events-none flex justify-center"
+      >
         <div 
           className={`w-full max-w-7xl flex justify-between items-center pointer-events-auto transition-all duration-500 ease-out px-5 md:px-6 py-2.5 md:py-3 rounded-full border ${
             scrolled || isMenuOpen
@@ -93,7 +100,7 @@ export default function Navbar() {
 
           </div>
         </div>
-      </nav>
+      </motion.nav>
 
       {/* === OVERLAY MENU === */}
       <AnimatePresence>

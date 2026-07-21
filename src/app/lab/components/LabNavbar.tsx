@@ -4,26 +4,29 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FlaskConical, ActivitySquare, User, LogOut, ChevronDown } from 'lucide-react';
+import { FlaskConical, ActivitySquare, User, LogOut, ChevronDown, Shield, MonitorPlay } from 'lucide-react';
 import { api } from '@/lib/api'; 
 
-// Tipe data profil sesuai kontrak backend
 interface UserProfile {
   id: string;
   email: string;
   display_name: string;
+  role: 'user' | 'admin';
 }
 
 export default function LabNavbar() {
   const pathname = usePathname();
   const router = useRouter();
+  
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // Verifikasi Sesi & Ambil Data Profil saat komponen dimuat
+  // Deteksi apakah user sedang berada di area admin
+  const isAdminRoute = pathname?.startsWith('/lab/admin');
+
   useEffect(() => {
     api("/auth/me")
       .then((data) => {
@@ -57,7 +60,6 @@ export default function LabNavbar() {
     }
   };
 
-  // Helper untuk mengambil nama depan agar lebih singkat & profesional
   const getFirstName = (name?: string) => {
     if (!name) return '...';
     return name.trim().split(' ')[0];
@@ -65,12 +67,11 @@ export default function LabNavbar() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 w-full z-100 pt-4 md:pt-6 px-4 md:px-12 pointer-events-none flex justify-center">
-        {/* Hapus justify-between, gunakan items-center saja karena kita pakai flex-1 di child */}
+      <header className="fixed top-0 left-0 w-full z-50 pt-4 md:pt-6 px-4 md:px-12 pointer-events-none flex justify-center">
         <div className="w-full max-w-7xl flex items-center pointer-events-auto bg-surface-white/70 backdrop-blur-xl border border-foreground/5 shadow-[0_4px_20px_rgba(0,0,0,0.02)] rounded-full px-3 md:px-4 py-2.5">
           
           {/* ============================== */}
-          {/* BAGIAN KIRI: LOGO (flex-1)     */}
+          {/* BAGIAN KIRI: LOGO              */}
           {/* ============================== */}
           <div className="flex-1 flex justify-start">
             <Link href="/lab" className="flex items-center pl-1 md:pl-2 group shrink-0">
@@ -81,69 +82,72 @@ export default function LabNavbar() {
           </div>
 
           {/* ============================== */}
-          {/* BAGIAN TENGAH: MENU (shrink-0) */}
+          {/* BAGIAN TENGAH: MENU DINAMIS    */}
           {/* ============================== */}
-          {/* ID TOUR DITAMBAHKAN DI SINI */}
-          <nav id="tour-navbar-menu" className="shrink-0 flex items-center gap-1 md:gap-1.5 bg-foreground/3 p-1 rounded-full border border-foreground/5">
-            {navItems.map((item) => {
-              const isActive = pathname === item.path;
-              const Icon = item.icon;
-
-              return (
-                <Link 
-                  key={item.name} 
-                  href={item.path} 
-                  title={item.name}
-                  className="relative px-3 py-2 md:px-4 md:py-1.5 rounded-full text-xs font-medium transition-colors flex items-center justify-center"
+          <div className="shrink-0 flex items-center justify-center">
+            <AnimatePresence mode="wait">
+              {!isAdminRoute && (
+                <motion.nav 
+                  key="user-nav"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  id="tour-navbar-menu" 
+                  className="flex items-center gap-1 md:gap-1.5 bg-foreground/3 p-1 rounded-full border border-foreground/5"
                 >
-                  {isActive && (
-                    <motion.div 
-                      layoutId="activeNavIndicator"
-                      className="absolute inset-0 bg-surface-white rounded-full shadow-sm border border-foreground/2"
-                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                    />
-                  )}
-                  <span className={`relative flex items-center gap-2 z-10 transition-colors duration-300 ${isActive ? 'text-accent font-semibold' : 'text-muted hover:text-accent'}`}>
-                    <Icon className="w-4 h-4 md:w-3.5 md:h-3.5" />
-                    {/* Hanya tampil di layar md ke atas */}
-                    <span className="hidden md:block">{item.name}</span>
-                  </span>
-                </Link>
-              );
-            })}
-          </nav>
+                  {navItems.map((item) => {
+                    const isActive = pathname === item.path;
+                    const Icon = item.icon;
+                    return (
+                      <Link 
+                        key={item.name} 
+                        href={item.path} 
+                        title={item.name}
+                        // UI Menu Disederhanakan (Tanpa layoutId framer-motion)
+                        className={`relative px-3 py-2 md:px-4 md:py-1.5 rounded-full text-xs font-medium transition-all duration-300 flex items-center justify-center gap-2 ${
+                          isActive 
+                            ? 'bg-surface-white text-foreground shadow-sm border border-foreground/5' 
+                            : 'text-muted hover:text-foreground hover:bg-foreground/5'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4 md:w-3.5 md:h-3.5" />
+                        <span className="hidden md:block">{item.name}</span>
+                      </Link>
+                    );
+                  })}
+                </motion.nav>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* ============================== */}
-          {/* BAGIAN KANAN: PROFIL (flex-1)  */}
+          {/* BAGIAN KANAN: PROFIL           */}
           {/* ============================== */}
           <div className="flex-1 flex justify-end relative">
-            {/* ID TOUR DITAMBAHKAN DI SINI */}
             <button 
               id="tour-user-profile"
               onClick={() => setShowProfileMenu(!showProfileMenu)}
               className="flex items-center gap-2 pl-3 pr-1 py-1 rounded-full hover:bg-foreground/4 transition-colors focus:outline-none"
             >
-              {/* Info teks: Disembunyikan di HP (hidden sm:flex) agar rapi */}
               <div className="hidden sm:flex flex-col items-end mr-1">
-                {/* Menampilkan First Name dengan Batasan Lebar (max-w) */}
-                <span className="text-xs font-medium text-foreground leading-none truncate max-w-[120px]">
+                <span className="text-xs font-medium text-foreground leading-none truncate max-w-30">
                   {user ? getFirstName(user.display_name) : '...'}
                 </span>
-                {/* Menampilkan Email dengan Batasan Lebar (max-w) */}
-                <span className="text-[10px] text-muted font-mono mt-0.5 tracking-wide truncate max-w-[130px]">
+                <span className="text-[10px] text-muted font-mono mt-0.5 tracking-wide truncate max-w-32.5">
                   {user ? user.email : '...'}
                 </span>
               </div>
               
               <div className="flex items-center gap-1.5">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-foreground/10 to-foreground/2 border border-foreground/5 flex items-center justify-center text-muted shadow-sm overflow-hidden">
+                <div className="w-7 h-7 rounded-full bg-linear-to-tr from-foreground/10 to-foreground/2 border border-foreground/5 flex items-center justify-center text-muted shadow-sm overflow-hidden">
                   <User className="w-3.5 h-3.5" />
                 </div>
                 <ChevronDown className={`w-3.5 h-3.5 text-muted transition-transform duration-300 ${showProfileMenu ? 'rotate-180' : ''}`} />
               </div>
             </button>
 
-            {/* Glassmorphic Dropdown */}
+            {/* Dropdown Menu */}
             <AnimatePresence>
               {showProfileMenu && (
                 <motion.div 
@@ -151,7 +155,7 @@ export default function LabNavbar() {
                   animate={{ opacity: 1, y: 0, scale: 1 }} 
                   exit={{ opacity: 0, y: 8, scale: 0.98 }}
                   transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                  className="absolute right-0 top-full mt-3 w-52 bg-surface-white/90 backdrop-blur-2xl border border-foreground/5 shadow-[0_16px_40px_rgba(0,0,0,0.08)] rounded-2xl p-2 flex flex-col z-[101]"
+                  className="absolute right-0 top-full mt-3 w-52 bg-surface-white/90 backdrop-blur-2xl border border-foreground/5 shadow-[0_16px_40px_rgba(0,0,0,0.08)] rounded-2xl p-2 flex flex-col z-101"
                 >
                   <Link 
                     href="/lab/profile" 
@@ -160,6 +164,30 @@ export default function LabNavbar() {
                   >
                     <User className="w-4 h-4" /> My Profile
                   </Link>
+
+                  {/* LOGIKA SWITCHER (Menggunakan Link Biasa Tanpa Animasi Tambahan) */}
+                  {user?.role === 'admin' && (
+                    <>
+                      <div className="h-px bg-foreground/5 my-1 mx-2" />
+                      {!isAdminRoute ? (
+                        <Link 
+                          href="/lab/admin" 
+                          onClick={() => setShowProfileMenu(false)} 
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-muted hover:text-foreground hover:bg-foreground/3 transition-colors"
+                        >
+                          <Shield className="w-4 h-4" /> Admin Panel
+                        </Link>
+                      ) : (
+                        <Link 
+                          href="/lab" 
+                          onClick={() => setShowProfileMenu(false)} 
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-muted hover:text-foreground hover:bg-foreground/3 transition-colors"
+                        >
+                          <MonitorPlay className="w-4 h-4" /> User View
+                        </Link>
+                      )}
+                    </>
+                  )}
                   
                   <div className="h-px bg-foreground/5 my-1 mx-2" />
                   
@@ -185,12 +213,9 @@ export default function LabNavbar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-background/60 backdrop-blur-sm"
+            className="fixed inset-0 z-200 flex items-center justify-center p-4 bg-background/60 backdrop-blur-sm"
           >
-            <div 
-              className="absolute inset-0 cursor-pointer" 
-              onClick={() => !isLoggingOut && setShowLogoutModal(false)} 
-            />
+            <div className="absolute inset-0 cursor-pointer" onClick={() => !isLoggingOut && setShowLogoutModal(false)} />
             
             <motion.div 
               initial={{ scale: 0.95, y: 20, opacity: 0 }}
