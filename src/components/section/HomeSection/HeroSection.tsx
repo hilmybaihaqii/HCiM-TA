@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import React from 'react';
-import dynamic from 'next/dynamic';
-import { motion } from 'framer-motion';
-import { useSplash } from '../SplashProvider';
+import React from "react";
+import dynamic from "next/dynamic";
+import { motion } from "framer-motion";
+import { useSplash } from "../../SplashProvider";
 
 // ssr:false → tidak dicoba di-render di server (menghindari WebGL API
 // yang gak ada di Node), dan module three/fiber/drei baru di-load
 // begitu chunk ini benar-benar diminta oleh browser.
-const Heart3D = dynamic(() => import('../ui/Heart3D'), {
+const Heart3D = dynamic(() => import("../../ui/Heart3D"), {
   ssr: false,
   loading: () => <Heart3DPlaceholder />,
 });
@@ -28,7 +28,6 @@ export default function HeroSection() {
 
   return (
     <section className="relative w-full h-svh bg-background font-sans overflow-hidden flex items-center justify-center">
-
       <div className="absolute top-[40%] md:top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none select-none z-0 w-full">
         <motion.h1
           initial={{ opacity: 0, scale: 0.95 }}
@@ -38,7 +37,7 @@ export default function HeroSection() {
         >
           <span
             className="block text-transparent"
-            style={{ WebkitTextStroke: '2px rgba(43, 34, 35, 0.06)' }}
+            style={{ WebkitTextStroke: "2px rgba(43, 34, 35, 0.06)" }}
           >
             IN-SILICO
           </span>
@@ -98,7 +97,11 @@ export default function HeroSection() {
               Rescue Viable Therapeutics.
             </h2>
             <p className="text-[11px] sm:text-xs lg:text-sm text-muted font-normal leading-relaxed">
-              False-positive hERG testing forces the pharmaceutical industry to abandon perfectly safe compounds. We utilize <span className="font-medium text-foreground">Ensemble ML</span> to predict TdP risk with precision, saving investments and expediting approvals.
+              False-positive hERG testing forces the pharmaceutical industry to
+              abandon perfectly safe compounds. We utilize{" "}
+              <span className="font-medium text-foreground">Ensemble ML</span>{" "}
+              to predict TdP risk with precision, saving investments and
+              expediting approvals.
             </p>
           </motion.div>
 
@@ -108,10 +111,25 @@ export default function HeroSection() {
             transition={{ duration: 1, delay: 1 }}
             className="absolute bottom-0 left-1/2 transform -translate-x-1/2 pointer-events-auto flex-col items-center gap-3 hidden xl:flex"
           >
-            <span className="text-[9px] font-mono text-muted uppercase tracking-widest rotate-90 opacity-0">.</span>
-            <a href="#about" className="w-12 h-12 flex items-center justify-center rounded-full border border-foreground/20 text-muted hover:border-foreground hover:text-foreground transition-all duration-300">
-              <svg className="w-5 h-5 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M19 13l-7 7-7-7m14-8l-7 7-7-7" />
+            <span className="text-[9px] font-mono text-muted uppercase tracking-widest rotate-90 opacity-0">
+              .
+            </span>
+            <a
+              href="#about"
+              className="w-12 h-12 flex items-center justify-center rounded-full border border-foreground/20 text-muted hover:border-foreground hover:text-foreground transition-all duration-300"
+            >
+              <svg
+                className="w-5 h-5 animate-bounce"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1"
+                  d="M19 13l-7 7-7-7m14-8l-7 7-7-7"
+                />
               </svg>
             </a>
           </motion.div>
@@ -127,8 +145,18 @@ export default function HeroSection() {
             </button>
             <button className="group flex items-center justify-center gap-3 w-full sm:w-auto px-6 py-3.5 md:px-8 md:py-4 bg-foreground text-surface-white text-[10px] md:text-xs font-normal uppercase tracking-widest transition-all duration-300 rounded-full shadow-lg hover:shadow-foreground/20 hover:scale-[1.02]">
               Run Prediction
-              <svg className="w-3.5 h-3.5 md:w-4 md:h-4 transform transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              <svg
+                className="w-3.5 h-3.5 md:w-4 md:h-4 transform transition-transform duration-300 group-hover:translate-x-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.5"
+                  d="M14 5l7 7m0 0l-7 7m7-7H3"
+                />
               </svg>
             </button>
           </motion.div>
