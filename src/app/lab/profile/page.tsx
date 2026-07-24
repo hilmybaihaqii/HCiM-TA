@@ -56,7 +56,7 @@ function ProfileOrchestrator() {
   const canShowDangerZone = !isLoading && profile?.role !== 'admin';
 
   return (
-    <div className="w-full flex flex-col bg-background text-foreground overflow-x-hidden pt-20 sm:pt-24 md:pt-32 pb-16 sm:pb-20 min-h-screen">
+    <div className="w-full flex flex-col text-foreground overflow-x-hidden pt-20 sm:pt-24 md:pt-32 pb-16 sm:pb-20 min-h-screen">
       {/* PENTING: max-width di sini disamakan (max-w-4xl) dengan max-width ProfileCard/tabs/content
           di bawah. Sebelumnya wrapper ini pakai max-w-7xl sementara isinya max-w-4xl tanpa mx-auto
           sendiri, jadi konten nempel ke kiri wrapper yang lebih lebar alih-alih ikut center. */}
