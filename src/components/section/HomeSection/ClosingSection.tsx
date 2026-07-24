@@ -81,13 +81,6 @@ const RollingButton = ({ title, href, primary = false }: { title: string; href: 
   );
 };
 
-/* =========================================================
-   ARC PATH HELPER
-   Builds a single quadratic bezier that always bows "upward"
-   (toward smaller y), independent of where the two nodes sit
-   relative to each other — reads as a flight-path arc rather
-   than a straight line or a random curve.
-   ========================================================= */
 function arcPath(x1: number, y1: number, x2: number, y2: number) {
   const mx = (x1 + x2) / 2;
   const my = (y1 + y2) / 2;
@@ -109,11 +102,6 @@ function arcPath(x1: number, y1: number, x2: number, y2: number) {
   return `M${x1} ${y1} Q${cx.toFixed(1)} ${cy.toFixed(1)} ${x2} ${y2}`;
 }
 
-/* =========================================================
-   ROUTE — a single drawn arc + destination marker + a slow
-   traveling square that rides the path (native SVG animateMotion,
-   not a pulsing radar ring).
-   ========================================================= */
 const Route = ({ from, to, delay }: { from: NodeKey; to: NodeKey; delay: number }) => {
   const a = NODES[from];
   const b = NODES[to];
@@ -123,8 +111,6 @@ const Route = ({ from, to, delay }: { from: NodeKey; to: NodeKey; delay: number 
   return (
     <g>
       <defs>
-        {/* Fades the line in near Jakarta and out near the destination —
-            reads as a flight path instead of a hard-edged stroke. */}
         <linearGradient id={gradId} gradientUnits="userSpaceOnUse" x1={a.x} y1={a.y} x2={b.x} y2={b.y}>
           <stop offset="0%" stopColor="currentColor" stopOpacity={0.05} />
           <stop offset="18%" stopColor="currentColor" stopOpacity={0.55} />
@@ -141,8 +127,7 @@ const Route = ({ from, to, delay }: { from: NodeKey; to: NodeKey; delay: number 
         strokeLinecap="round"
         className="text-foreground/70"
         initial={{ pathLength: 0, opacity: 0 }}
-        whileInView={{ pathLength: 1, opacity: 1 }}
-        viewport={{ once: true, amount: 0 }}
+        animate={{ pathLength: 1, opacity: 1 }}
         transition={{ duration: 1.6, ease: luxEase, delay }}
       />
 
@@ -154,40 +139,15 @@ const Route = ({ from, to, delay }: { from: NodeKey; to: NodeKey; delay: number 
         className="fill-background stroke-foreground/60"
         strokeWidth={1.25}
         initial={{ opacity: 0, scale: 0.4 }}
-        whileInView={{ opacity: 1, scale: 1 }}
-        viewport={{ once: true, amount: 0 }}
+        animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, ease: luxEase, delay: delay + 1.3 }}
         style={{ transformOrigin: `${b.x}px ${b.y}px` }}
       />
-
-      <motion.rect
-        width={3.5}
-        height={3.5}
-        className="fill-accent"
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true, amount: 0 }}
-        transition={{ delay: delay + 1.3, duration: 0.4 }}
-      >
-        <animateMotion
-          path={d}
-          dur={`${6 + delay}s`}
-          begin={`${delay + 1.3}s`}
-          repeatCount="indefinite"
-          rotate="auto"
-        />
-      </motion.rect>
     </g>
   );
 };
 
-/* =========================================================
-   AMBIENT LAYER — quiet, unlabeled pulses spread across every
-   continent. Purely decorative texture so the map reads as "a
-   connected world" instead of "six scattered pins." No lines,
-   no labels, no claims — see the comment on AMBIENT_NODES in
-   world-map-data.ts before adding to this list.
-   ========================================================= */
+
 const AmbientDots = () => (
   <>
     {AMBIENT_NODES.map((n, i) => (
@@ -198,8 +158,7 @@ const AmbientDots = () => (
         r={1.6}
         className="fill-foreground/25"
         initial={{ opacity: 0 }}
-        whileInView={{ opacity: [0, 0.6, 0.25] }}
-        viewport={{ once: true, amount: 0 }}
+        animate={{ opacity: [0, 0.6, 0.25] }}
         transition={{ duration: 2, delay: 0.4 + (i % 7) * 0.15, ease: luxEase }}
       />
     ))}
@@ -211,13 +170,6 @@ const AmbientDots = () => (
    ========================================================= */
 export default function CTASection() {
   const jakarta = NODES.jakarta;
-  // 460 / 1000 as a percentage, used for the bulletproof padding-box
-  // technique below instead of relying solely on the `aspect-ratio` CSS
-  // property (which needs a bracketed Tailwind value — `aspect-1000/460`
-  // silently fails to compile — and which some mobile WebViews still
-  // handle inconsistently inside flex layouts). The padding-top trick
-  // works identically on every browser, so the map can never collapse to
-  // zero height again.
   const mapAspectPercent = (460 / 1000) * 100;
 
   return (
@@ -267,44 +219,32 @@ export default function CTASection() {
           clinic on the other side of the world.
         </motion.p>
 
-        {/* World Map — bulletproof responsive wrapper.
-            The outer div's height is driven by padding-top (a percentage
-            of its own width), which every browser computes the same way,
-            mobile included. The inner div is absolutely positioned to
-            fill that box, and the SVG scales via viewBox as before. */}
         <motion.div
           initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, amount: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: 1.2, ease: luxEase }}
           className="relative w-full max-w-7xl mb-16 md:mb-20"
           style={{ paddingTop: `${mapAspectPercent}%` }}
         >
           <div className="absolute inset-0">
             <svg viewBox={MAP_VIEWBOX} className="w-full h-full overflow-visible" aria-hidden preserveAspectRatio="xMidYMid meet">
-              {/* Land silhouette — one path, generated offline */}
               <motion.path
                 d={WORLD_DOTS}
-                className="fill-foreground/[0.24]"
+                className="fill-foreground/24"
                 initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true, amount: 0 }}
+                animate={{ opacity: 1 }}
                 transition={{ duration: 1.4, ease: luxEase }}
               />
 
-              {/* Ambient global texture — decorative only, see AmbientDots */}
               <AmbientDots />
 
-              {/* Routes out of Jakarta */}
               {ROUTES.map((key, i) => (
                 <Route key={key} from="jakarta" to={key} delay={0.3 + i * 0.22} />
               ))}
 
-              {/* Origin node */}
               <motion.g
                 initial={{ opacity: 0, scale: 0.6 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true, amount: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.6, ease: luxEase, delay: 0.15 }}
                 style={{ transformOrigin: `${jakarta.x}px ${jakarta.y}px` }}
               >
@@ -328,13 +268,6 @@ export default function CTASection() {
             </svg>
           </div>
 
-          {/* Node labels as an HTML overlay, not native SVG <text>.
-              SVG <text> font-size is measured in viewBox user-units, so it
-              scales DOWN with the container — fine on a ~1200px desktop
-              container, but on a ~360px mobile width the same units render
-              at a third of the size (unreadably thin). Positioning plain
-              HTML spans by percentage keeps the CSS font-size in real px
-              at every breakpoint. */}
           <div className="absolute inset-0 pointer-events-none">
             <span
               className="absolute -translate-x-1/2 -translate-y-full font-mono text-[10px] sm:text-[11px] font-semibold tracking-[0.15em] uppercase text-foreground whitespace-nowrap"

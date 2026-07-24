@@ -4,6 +4,7 @@ import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform, useSpring, MotionValue } from 'framer-motion';
 
 const luxEase = [0.16, 1, 0.3, 1] as const;
+const CARD = 'rounded-2xl border border-foreground/10 bg-foreground/[0.03]';
 
 /* =========================================================
    TEXT REVEAL COMPONENT
@@ -73,16 +74,18 @@ const BiomarkerExplorer = () => {
   const info = BIOMARKERS[active];
 
   return (
-    <div className="flex flex-col md:flex-row gap-6 md:gap-8 w-full max-w-2xl">
-      <div className="grid grid-cols-6 gap-2 md:gap-2.5 content-start md:w-[58%]">
+    <div className="flex flex-col md:flex-row gap-6 md:gap-8 w-full max-w-7xl">
+      <div className="grid grid-cols-6 gap-2 md:gap-2.5 content-start md:w-[58%]" role="tablist" aria-label="Biomarker selector">
         {BIOMARKER_ORDER.map((key, index) => {
           const isActive = key === active;
-          const isTopRow = index < 2; 
-          
+          const isTopRow = index < 2;
+
           return (
             <button
               key={key}
               type="button"
+              role="tab"
+              aria-selected={isActive}
               onMouseEnter={() => setActive(key)}
               onFocus={() => setActive(key)}
               onClick={() => setActive(key)}
@@ -90,8 +93,8 @@ const BiomarkerExplorer = () => {
                 isTopRow ? 'col-span-3' : 'col-span-2'
               } ${
                 isActive
-                  ? 'border-accent/60 bg-accent/[0.06] text-foreground -translate-y-0.5'
-                  : 'border-foreground/10 bg-foreground/[0.02] text-muted hover:border-foreground/25 hover:-translate-y-0.5'
+                  ? 'border-accent/60 bg-accent/6 text-foreground -translate-y-0.5'
+                  : 'border-foreground/10 bg-foreground/2 text-muted hover:border-foreground/25 hover:-translate-y-0.5'
               }`}
             >
               <span
@@ -105,7 +108,7 @@ const BiomarkerExplorer = () => {
         })}
       </div>
 
-      <div className="md:w-[42%] relative h-[140px] md:h-[180px] rounded-2xl border border-foreground/10 bg-foreground/1,5 overflow-hidden">
+      <div className={`md:w-[42%] relative h-37.5 md:h-45 ${CARD} overflow-hidden`}>
         <AnimatePresence initial={false}>
           <motion.div
             key={active}
@@ -152,34 +155,33 @@ const MODELS: Record<ModelKey, { title: string; tag: string; desc: string }> = {
 };
 
 const MODEL_ORDER: ModelKey[] = ['ann', 'xgb', 'rf'];
+const diagramContainer = { hidden: {}, show: { transition: { staggerChildren: 0.02 } } };
+const diagramLine = { hidden: { opacity: 0, pathLength: 0 }, show: { opacity: 1, pathLength: 1, transition: { duration: 0.4, ease: luxEase } } };
+const diagramNode = { hidden: { opacity: 0, scale: 0.4 }, show: { opacity: 1, scale: 1, transition: { duration: 0.3, ease: luxEase } } };
 
-/* ---- SVG DIAGRAMS ---- */
 const NetworkDiagram = () => {
   const inputs = [22, 55, 88];
   const hidden = [15, 42, 68, 95];
   const outputY = 55;
-  const container = { hidden: {}, show: { transition: { staggerChildren: 0.02 } } };
-  const line = { hidden: { opacity: 0, pathLength: 0 }, show: { opacity: 1, pathLength: 1, transition: { duration: 0.4, ease: luxEase } } };
-  const node = { hidden: { opacity: 0, scale: 0.4 }, show: { opacity: 1, scale: 1, transition: { duration: 0.3, ease: luxEase } } };
 
   return (
     <svg viewBox="0 0 180 110" className="w-full h-full overflow-visible">
-      <motion.g variants={container} initial="hidden" animate="show">
+      <motion.g variants={diagramContainer} initial="hidden" animate="show">
         {inputs.map((iy, i) =>
           hidden.map((hy, j) => (
-            <motion.line key={`ih-${i}-${j}`} variants={line} x1={20} y1={iy} x2={90} y2={hy} stroke="currentColor" strokeWidth={0.75} className="text-foreground/20" />
+            <motion.line key={`ih-${i}-${j}`} variants={diagramLine} x1={20} y1={iy} x2={90} y2={hy} stroke="currentColor" strokeWidth={0.75} className="text-foreground/20" />
           ))
         )}
         {hidden.map((hy, j) => (
-          <motion.line key={`ho-${j}`} variants={line} x1={90} y1={hy} x2={158} y2={outputY} stroke="currentColor" strokeWidth={0.75} className="text-foreground/20" />
+          <motion.line key={`ho-${j}`} variants={diagramLine} x1={90} y1={hy} x2={158} y2={outputY} stroke="currentColor" strokeWidth={0.75} className="text-foreground/20" />
         ))}
         {inputs.map((iy, i) => (
-          <motion.rect key={`in-${i}`} variants={node} x={18} y={iy - 2.5} width={5} height={5} className="fill-background stroke-foreground/50" strokeWidth={1} />
+          <motion.rect key={`in-${i}`} variants={diagramNode} x={18} y={iy - 2.5} width={5} height={5} className="fill-background stroke-foreground/50" strokeWidth={1} />
         ))}
         {hidden.map((hy, j) => (
-          <motion.rect key={`hd-${j}`} variants={node} x={87.5} y={hy - 2.5} width={5} height={5} className="fill-background stroke-foreground/50" strokeWidth={1} />
+          <motion.rect key={`hd-${j}`} variants={diagramNode} x={87.5} y={hy - 2.5} width={5} height={5} className="fill-background stroke-foreground/50" strokeWidth={1} />
         ))}
-        <motion.rect variants={node} x={155.5} y={outputY - 3} width={6} height={6} className="fill-accent" />
+        <motion.rect variants={diagramNode} x={155.5} y={outputY - 3} width={6} height={6} className="fill-accent" />
       </motion.g>
     </svg>
   );
@@ -198,16 +200,17 @@ const MiniTree = ({ x, y, scale = 1 }: { x: number; y: number; scale?: number })
   </g>
 );
 
+const boostContainer = { hidden: {}, show: { transition: { staggerChildren: 0.18 } } };
+const boostItem = { hidden: { opacity: 0, x: -8 }, show: { opacity: 1, x: 0, transition: { duration: 0.4, ease: luxEase } } };
+
 const BoostDiagram = () => {
   const stages = [30, 90, 150];
-  const container = { hidden: {}, show: { transition: { staggerChildren: 0.18 } } };
-  const item = { hidden: { opacity: 0, x: -8 }, show: { opacity: 1, x: 0, transition: { duration: 0.4, ease: luxEase } } };
 
   return (
     <svg viewBox="0 0 180 110" className="w-full h-full overflow-visible">
-      <motion.g variants={container} initial="hidden" animate="show">
+      <motion.g variants={boostContainer} initial="hidden" animate="show">
         {stages.map((x, i) => (
-          <motion.g key={i} variants={item}>
+          <motion.g key={i} variants={boostItem}>
             <MiniTree x={x} y={62} />
             <text x={x} y={90} textAnchor="middle" className="fill-muted font-mono" style={{ fontSize: 7, letterSpacing: 1 }}>
               ROUND {i + 1}
@@ -227,6 +230,10 @@ const BoostDiagram = () => {
   );
 };
 
+const forestContainer = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } };
+const forestItem = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: luxEase } } };
+const forestVote = { hidden: { opacity: 0, scaleY: 0 }, show: { opacity: 1, scaleY: 1, transition: { duration: 0.4, ease: luxEase, delay: 0.5 } } };
+
 const ForestDiagram = () => {
   const trees = [
     { x: 26, y: 45, s: 0.85 },
@@ -235,20 +242,17 @@ const ForestDiagram = () => {
     { x: 122, y: 38, s: 0.95 },
     { x: 154, y: 45, s: 0.85 },
   ];
-  const container = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } };
-  const item = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: luxEase } } };
-  const vote = { hidden: { opacity: 0, scaleY: 0 }, show: { opacity: 1, scaleY: 1, transition: { duration: 0.4, ease: luxEase, delay: 0.5 } } };
 
   return (
     <svg viewBox="0 0 180 110" className="w-full h-full overflow-visible">
-      <motion.g variants={container} initial="hidden" animate="show">
+      <motion.g variants={forestContainer} initial="hidden" animate="show">
         {trees.map((t, i) => (
-          <motion.g key={i} variants={item}>
+          <motion.g key={i} variants={forestItem}>
             <MiniTree x={t.x} y={t.y} scale={t.s} />
           </motion.g>
         ))}
-        <motion.line variants={vote} x1={90} y1={62} x2={90} y2={82} stroke="currentColor" strokeWidth={1} className="text-foreground/30" style={{ transformOrigin: '90px 62px' }} />
-        <motion.g variants={item}>
+        <motion.line variants={forestVote} x1={90} y1={62} x2={90} y2={82} stroke="currentColor" strokeWidth={1} className="text-foreground/30" style={{ transformOrigin: '90px 62px' }} />
+        <motion.g variants={forestItem}>
           <rect x={55} y={84} width={70} height={18} rx={4} className="fill-background stroke-foreground/25" strokeWidth={1} />
           <text x={90} y={95.5} textAnchor="middle" className="fill-foreground font-mono" style={{ fontSize: 5.5, letterSpacing: 1 }}>
             Majority Vote
@@ -262,7 +266,7 @@ const ForestDiagram = () => {
 const DIAGRAMS: Record<ModelKey, React.FC> = { ann: NetworkDiagram, xgb: BoostDiagram, rf: ForestDiagram };
 
 /* =========================================================
-   MODEL EXPLORER (UPDATED - FULL WIDTH PILLS)
+   MODEL EXPLORER
    ========================================================= */
 const ModelExplorer = () => {
   const [active, setActive] = useState<ModelKey>('ann');
@@ -271,15 +275,15 @@ const ModelExplorer = () => {
 
   return (
     <div className="w-full max-w-lg">
-      
-      {/* Container ini sekarang match dengan border radius kotak konten di bawahnya (rounded-2xl) */}
-      <div className="flex w-full p-1.5 mb-6 rounded-2xl border border-foreground/10 bg-foreground/1,5">
+      <div className={`flex w-full p-1.5 mb-6 ${CARD}`} role="tablist" aria-label="Model selector">
         {MODEL_ORDER.map((key) => {
           const isActive = key === active;
           return (
             <button
               key={key}
               type="button"
+              role="tab"
+              aria-selected={isActive}
               onClick={() => setActive(key)}
               onFocus={() => setActive(key)}
               className={`relative flex-1 py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-mono uppercase tracking-[0.15em] transition-colors duration-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent ${
@@ -293,7 +297,6 @@ const ModelExplorer = () => {
                   transition={{ duration: 0.4, ease: luxEase }}
                 />
               )}
-              {/* Teks di tengah dengan proporsi yang sama persis */}
               <span className="relative z-10 block text-center">
                 {MODELS[key].title === 'XGBoost' ? 'XGBoost' : MODELS[key].title.split(' ').map((w) => w[0]).join('')}
               </span>
@@ -302,12 +305,12 @@ const ModelExplorer = () => {
         })}
       </div>
 
-      <div className="rounded-2xl border border-foreground/10 bg-foreground/1,5 p-5 md:p-7 flex flex-col md:flex-row gap-6 md:gap-8 items-center">
-        <div className="w-full md:w-[45%] aspect-[180/110] text-foreground">
+      <div className={`${CARD} p-5 md:p-7 flex flex-col md:flex-row gap-6 md:gap-8 items-center`}>
+        <div className="w-full md:w-[45%] aspect-180/110 text-foreground">
           <Diagram />
         </div>
 
-        <div className="relative w-full md:w-[55%] h-[150px] md:h-[160px]">
+        <div className="relative w-full md:w-[55%] h-37.5 md:h-40">
           <AnimatePresence initial={false}>
             <motion.div
               key={active}
@@ -329,58 +332,54 @@ const ModelExplorer = () => {
 };
 
 /* =========================================================
-   SHAP VISUALIZER (UPDATED - FULL WIDTH BOX)
+   SHAP VISUALIZER
    ========================================================= */
-const SHAPVisualizer = () => {
-  const shapData = [
-    { label: 'qNet', val: 75, color: 'bg-rose-500/90' }, 
-    { label: 'vmax', val: -40, color: 'bg-blue-500/90' }, 
-    { label: 'CaTD90', val: 30, color: 'bg-rose-500/90' },
-  ];
+type ShapRow = { label: string; val: number };
 
-  return (
-    <div className="w-full flex flex-col gap-4">
-      <div className="flex justify-between items-center mb-1 border-b border-foreground/10 pb-4">
-        <span className="text-[10px] md:text-xs font-mono uppercase tracking-[0.2em] text-foreground">SHAP Feature Audit</span>
-        <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-      </div>
-      
-      {shapData.map((b, i) => (
-        <div key={i} className="flex items-center gap-4">
-          <span className="text-[10px] font-mono text-muted-foreground w-12 shrink-0">{b.label}</span>
+const SHAP_DATA: ShapRow[] = [
+  { label: 'qNet', val: 75 },
+  { label: 'vmax', val: -40 },
+  { label: 'CaTD90', val: 30 },
+];
+
+const SHAPVisualizer = () => (
+  <div className="w-full flex flex-col gap-4">
+    <div className="flex justify-between items-center mb-1 border-b border-foreground/10 pb-4">
+      <span className="text-[10px] md:text-xs font-mono uppercase tracking-[0.2em] text-foreground">SHAP Feature Audit</span>
+      <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    </div>
+
+    {SHAP_DATA.map((b, i) => {
+      const isPositive = b.val > 0;
+      const magnitude = Math.abs(b.val);
+      return (
+        <div key={b.label} className="flex items-center gap-3">
+          <span className="text-[10px] font-mono text-muted w-14 shrink-0">{b.label}</span>
           <div className="relative flex-1 h-2 bg-foreground/5 rounded-full overflow-hidden">
             <div className="absolute left-1/2 top-0 bottom-0 w-px bg-foreground/20 z-10" />
-            
-            {b.val > 0 ? (
-              <motion.div 
-                className={`absolute left-1/2 top-0 bottom-0 ${b.color}`} 
-                initial={{ width: 0 }} 
-                whileInView={{ width: `${b.val / 2}%` }} 
-                viewport={{ once: true }}
-                transition={{ duration: 1, delay: 0.3 + i * 0.15, ease: luxEase }}
-              />
-            ) : (
-              <motion.div 
-                className={`absolute right-1/2 top-0 bottom-0 ${b.color}`} 
-                initial={{ width: 0 }} 
-                whileInView={{ width: `${Math.abs(b.val) / 2}%` }} 
-                viewport={{ once: true }}
-                transition={{ duration: 1, delay: 0.3 + i * 0.15, ease: luxEase }}
-              />
-            )}
+            <motion.div
+              className={`absolute top-0 bottom-0 ${isPositive ? 'left-1/2 bg-accent' : 'right-1/2 bg-foreground/30'}`}
+              initial={{ width: 0 }}
+              animate={{ width: `${magnitude / 2}%` }}
+              transition={{ duration: 1, delay: 0.3 + i * 0.15, ease: luxEase }}
+            />
           </div>
+          <span className={`text-[10px] font-mono w-9 text-right shrink-0 ${isPositive ? 'text-accent' : 'text-foreground/50'}`}>
+            {isPositive ? '+' : '−'}
+            {magnitude}
+          </span>
         </div>
-      ))}
+      );
+    })}
 
-      <div className="flex justify-between mt-1 text-[8px] md:text-[9px] font-mono uppercase tracking-widest text-muted">
-        <span>← Reduces Risk</span>
-        <span>Increases Risk →</span>
-      </div>
+    <div className="flex justify-between mt-1 text-[8px] md:text-[9px] font-mono uppercase tracking-widest text-muted">
+      <span>← Reduces Risk</span>
+      <span>Increases Risk →</span>
     </div>
-  );
-};
+  </div>
+);
 
 /* =========================================================
    RISK TIERS
@@ -393,6 +392,8 @@ const TIERS: { label: string; note: string }[] = [
 
 const RiskTiers = () => {
   const [hovered, setHovered] = useState<number | null>(null);
+  const [selected, setSelected] = useState<number | null>(null);
+  const shown = hovered ?? selected;
 
   return (
     <div className="flex flex-col gap-2 w-full">
@@ -401,36 +402,45 @@ const RiskTiers = () => {
           <button
             key={t.label}
             type="button"
+            aria-pressed={shown === i}
             onMouseEnter={() => setHovered(i)}
-            onFocus={() => setHovered(i)}
             onMouseLeave={() => setHovered(null)}
+            onFocus={() => setHovered(i)}
             onBlur={() => setHovered(null)}
+            onClick={() => setSelected(i)}
             className={`flex-1 py-2.5 rounded-lg text-[10px] font-mono uppercase tracking-[0.15em] border transition-all duration-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent ${
-              hovered === i ? 'border-accent/60 bg-accent/[0.06] text-foreground' : 'border-foreground/10 text-muted hover:border-foreground/25'
+              shown === i ? 'border-accent/60 bg-accent/6 text-foreground' : 'border-foreground/10 text-muted hover:border-foreground/25'
             }`}
           >
             {t.label}
           </button>
         ))}
       </div>
-      
-      <div className="relative h-[40px] md:h-[32px] px-1 mt-1">
+
+      <div className="relative h-10 md:h-8 px-1 mt-1">
         <AnimatePresence initial={false}>
           <motion.p
-            key={hovered ?? 'default'}
+            key={shown ?? 'default'}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="absolute inset-0 text-[11px] md:text-xs text-muted leading-relaxed"
           >
-            {hovered === null ? 'Hover a tier to see what it means.' : TIERS[hovered].note}
+            {shown === null ? 'Tap or hover a tier to see what it means.' : TIERS[shown].note}
           </motion.p>
         </AnimatePresence>
       </div>
     </div>
   );
 };
+
+const Stat = ({ value, label }: { value: string | number; label: string }) => (
+  <div className="flex items-baseline gap-2">
+    <span className="text-lg md:text-xl font-medium text-foreground tabular-nums">{value}</span>
+    <span className="text-[9px] md:text-[10px] font-mono uppercase tracking-[0.15em] text-muted">{label}</span>
+  </div>
+);
 
 /* =========================================================
    MAIN SECTION: SOLUTION
@@ -453,7 +463,7 @@ export default function SolutionSection() {
     }
   };
 
-  const reveal = { initial: { opacity: 0, y: 22 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, amount: 0.2 } };
+  const reveal = { initial: { opacity: 0, y: 22 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true } };
 
   return (
     <section ref={containerRef} id="solution" className="relative w-full bg-background font-sans overflow-hidden">
@@ -467,7 +477,7 @@ export default function SolutionSection() {
       />
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-28 md:pt-36 pb-16 md:pb-24 border-b border-foreground/10">
-        <div className="flex flex-col justify-center max-w-5xl">
+        <div className="flex flex-col justify-center max-w-7xl">
           <motion.div {...reveal} transition={{ duration: 0.7, ease: luxEase }} className="flex items-center gap-4 mb-10 md:mb-16">
             <span className="text-[10px] md:text-xs font-mono uppercase tracking-[0.3em] text-muted">
               03 — The Objective
@@ -484,8 +494,17 @@ export default function SolutionSection() {
           </RevealText>
 
           <motion.div
+            initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8, delay: 0.15, ease: luxEase }}
+            className="mt-8 md:mt-10 flex flex-wrap gap-x-8 gap-y-3"
+          >
+            <Stat value={BIOMARKER_ORDER.length} label="Biomarkers" />
+            <Stat value={MODEL_ORDER.length} label="Models" />
+            <Stat value={TIERS.length} label="Risk Tiers" />
+          </motion.div>
+
+          <motion.div
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1, delay: 0.2, ease: luxEase }}
-            className="mt-12 md:mt-16 flex items-center gap-6"
+            className="mt-10 md:mt-14 flex items-center gap-6"
           >
             <a
               href="#model-architecture"
@@ -506,7 +525,7 @@ export default function SolutionSection() {
       <div id="model-architecture" className="relative z-10 w-full bg-background pt-16 md:pt-24">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
           <div className="flex flex-col md:flex-row relative" ref={lineRef}>
-            
+
             <div className="w-full md:w-1/3 md:border-r border-foreground/10 relative">
               <div className="md:sticky md:top-32 pt-4 md:pt-10 pb-8 md:pb-10 flex flex-col">
                 <h3 className="text-2xl md:text-4xl font-medium tracking-tight text-foreground mb-4">
@@ -526,9 +545,9 @@ export default function SolutionSection() {
             </div>
 
             <div className="w-full md:w-2/3 md:pl-16 lg:pl-24 pt-4 md:pt-10 pb-24 md:pb-32 flex flex-col gap-16 md:gap-24">
-              
+
               <motion.div
-                initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-10%' }} transition={{ duration: 0.8, ease: luxEase }}
+                initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8, ease: luxEase }}
                 className="flex flex-col"
               >
                 <div className="flex items-center gap-3 mb-4">
@@ -536,16 +555,16 @@ export default function SolutionSection() {
                   <div className="flex-1 h-px bg-foreground/10" />
                 </div>
                 <h4 className="text-2xl md:text-3xl font-medium tracking-tight text-foreground mb-4">Data Ingestion</h4>
-                <p className="text-sm text-muted leading-relaxed mb-8 max-w-xl">
+                <p className="text-sm text-muted leading-relaxed mb-8 max-w-7xl">
                   We extract exactly 11 essential electrophysiological parameters directly from the O&apos;Hara-Rudy cellular simulation.
-                  Hover any marker below to see what it actually measures.
+                  Hover or tap any marker below to see what it actually measures.
                 </p>
 
                 <BiomarkerExplorer />
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-10%' }} transition={{ duration: 0.8, ease: luxEase }}
+                initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8, ease: luxEase }}
                 className="flex flex-col"
               >
                 <div className="flex items-center gap-3 mb-4">
@@ -553,7 +572,7 @@ export default function SolutionSection() {
                   <div className="flex-1 h-px bg-foreground/10" />
                 </div>
                 <h4 className="text-2xl md:text-3xl font-medium tracking-tight text-foreground mb-4">Model Inference</h4>
-                <p className="text-sm text-muted leading-relaxed mb-8 max-w-xl">
+                <p className="text-sm text-muted leading-relaxed mb-8 max-w-7xl">
                   The extracted matrix is processed through three distinct models in parallel, each contributing a different
                   strength to the final vote. Switch between them to see how each one reasons.
                 </p>
@@ -562,7 +581,7 @@ export default function SolutionSection() {
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-10%' }} transition={{ duration: 0.8, ease: luxEase }}
+                initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8, ease: luxEase }}
                 className="flex flex-col"
               >
                 <div className="flex items-center gap-3 mb-4">
@@ -570,16 +589,13 @@ export default function SolutionSection() {
                   <div className="flex-1 h-px bg-foreground/10" />
                 </div>
                 <h4 className="text-2xl md:text-3xl font-medium tracking-tight text-foreground mb-4">Risk Synthesis</h4>
-                <p className="text-sm text-muted leading-relaxed mb-8 max-w-xl">
+                <p className="text-sm text-muted leading-relaxed mb-8 max-w-7xl">
                   A Hard Voting mechanism aggregates the three predictions into a final tier. Each result is supported by
                   SHAP values to maintain full clinical transparency.
                 </p>
 
-                {/* PHASE 03 - UPDATED STRUCTURE */}
                 <div className="w-full max-w-lg flex flex-col gap-4">
-                  
-                  {/* BOX 1: Final Output */}
-                  <div className="p-6 md:p-8 rounded-2xl border border-foreground/10 bg-foreground/1,5 flex flex-col gap-6">
+                  <div className={`p-6 md:p-8 ${CARD} flex flex-col gap-6`}>
                     <div>
                       <span className="block text-[9px] font-mono uppercase tracking-[0.2em] text-muted mb-2">Final Output</span>
                       <span className="text-xl md:text-2xl font-medium tracking-tight text-foreground block">3-Tier Risk Classification</span>
@@ -587,11 +603,9 @@ export default function SolutionSection() {
                     <RiskTiers />
                   </div>
 
-                  {/* BOX 2: SHAP Audit (Berada tepat di bawah dan seukuran) */}
-                  <div className="p-6 md:p-8 rounded-2xl border border-foreground/10 bg-foreground/1,5 flex flex-col">
+                  <div className={`p-6 md:p-8 ${CARD} flex flex-col`}>
                     <SHAPVisualizer />
                   </div>
-
                 </div>
               </motion.div>
 

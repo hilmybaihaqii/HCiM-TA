@@ -9,12 +9,11 @@ const luxEase = [0.16, 1, 0.3, 1] as const;
 
 export default function ProblemBackground() {
   const sectionRef = useRef<HTMLElement>(null);
-  
-  const reveal = { initial: { opacity: 0, y: 22 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, amount: 0.2 } };
+  const reveal = { initial: { opacity: 0, y: 22 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true } };
 
   return (
     <section id="problem" ref={sectionRef} className="relative w-full py-24 md:py-40 bg-background font-sans overflow-hidden">
-      
+
       {/* Film-grain texture — Konsisten dengan AboutSection */}
       <div
         aria-hidden
@@ -26,7 +25,7 @@ export default function ProblemBackground() {
       />
 
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
-        
+
         {/* --- EYEBROW / CHAPTER NAME --- */}
         <motion.div {...reveal} transition={{ duration: 0.7, ease: luxEase }} className="flex items-center gap-4 mb-10 md:mb-24 pt-8">
           <span className="text-[10px] md:text-xs font-mono uppercase tracking-[0.3em] text-muted">
@@ -60,7 +59,7 @@ export default function ProblemBackground() {
           <RevealText>
             For decades, animal models have anchored preclinical evaluation. Yet they fail to accurately predict human electrophysiological responses, creating a costly gap between laboratory assays and clinical outcomes.
           </RevealText>
-          
+
           <motion.div {...reveal} transition={{ duration: 0.9, ease: luxEase }} className="grid grid-cols-1 md:grid-cols-3 gap-8 py-10 md:py-16 border-t border-b border-foreground/10 mt-16 md:mt-24">
             <div>
               <span className="block text-[10px] font-mono uppercase tracking-[0.2em] text-muted mb-4">Attrition Due To Toxicity</span>
@@ -96,8 +95,8 @@ export default function ProblemBackground() {
           <motion.div {...reveal} transition={{ duration: 0.9, delay: 0.3, ease: luxEase }} className="mt-16 inline-flex">
             <a href="#architecture" className="group relative overflow-hidden inline-flex items-center gap-3 rounded-full border border-foreground/15 px-7 py-3.5 shrink-0">
               <span className="absolute inset-0 bg-foreground translate-y-[101%] group-hover:translate-y-0 transition-transform duration-600 ease-[cubic-bezier(0.16,1,0.3,1)]" />
-              <span className="relative z-10 text-[11px] font-mono uppercase tracking-[0.15em] text-foreground group-hover:text-surface-white transition-colors duration-500 whitespace-nowrap">Examine the Architecture</span>
-              <svg className="relative z-10 w-4 h-4 text-foreground group-hover:text-surface-white transition-all duration-500 group-hover:translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <span className="relative z-10 text-[11px] font-mono uppercase tracking-[0.15em] text-foreground group-hover:text-background transition-colors duration-500 whitespace-nowrap">Examine the Architecture</span>
+              <svg className="relative z-10 w-4 h-4 text-foreground group-hover:text-background transition-all duration-500 group-hover:translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
               </svg>
             </a>
