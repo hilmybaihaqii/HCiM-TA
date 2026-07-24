@@ -273,7 +273,7 @@ export default function SplashScreen() {
     <div ref={containerRef}>
       <div
         ref={overlayRef}
-        className="fixed inset-0 z-[9999] flex flex-col items-center justify-center w-screen h-screen overflow-hidden bg-[#FAFAFA] text-black font-sans"
+        className="fixed inset-0 z-9999 flex flex-col items-center justify-center w-screen h-screen overflow-hidden bg-[#FAFAFA] text-black font-sans"
         style={{ clipPath: "inset(0% 0% 0% 0%)", willChange: "clip-path" }}
       >
         <div
