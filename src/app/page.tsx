@@ -1,47 +1,42 @@
-'use client';
+"use client";
 
-import React, { useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
-import { api } from '@/lib/api';
+import React, { useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
 
 import HomeLayout from "@/components/layout/HomeLayout";
-import HeroSection from "@/components/section/HeroSection";
-import AboutSection from "@/components/section/AboutSection";
-import ProblemBackground from "@/components/section/ProblemBackground";
-import SolutionSection from "@/components/section/Solution";
-import ModelFlowSection from "@/components/section/ModelFlowSection";
+import HeroSection from "@/components/section/HomeSection/HeroSection";
+import AboutSection from "@/components/section/HomeSection/AboutSection";
+import ProblemBackground from "@/components/section/HomeSection/ProblemBackground";
+import SolutionSection from "@/components/section/HomeSection/Solution";
+import ClosingSection from "@/components/section/HomeSection/ClosingSection";
+
 
 function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
-  // Deteksi apakah user baru saja berhasil login via Google
-  const isLoginSuccess = searchParams.get('login') === 'success';
+  const isLoginSuccess = searchParams.get("login") === "success";
 
   useEffect(() => {
     if (isLoginSuccess) {
-      // Forward ke halaman login agar menampilkan countdown sukses
-      router.push('/login?login=success');
+      router.push("/login?login=success");
     }
   }, [isLoginSuccess, router]);
-
-  // =======================================================================
-  // JIKA SEDANG REDIRECT: TAMPILKAN LOADING SCREEN SIMPEL & ESTETIK
-  // =======================================================================
   if (isLoginSuccess) {
     return (
-      <div className="fixed inset-0 z-[100] flex h-screen w-full flex-col items-center justify-center bg-[#0A0A0A]">
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }} 
+      <div className="fixed inset-0 z-100 flex h-screen w-full flex-col items-center justify-center bg-[#0A0A0A]">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="flex flex-col items-center gap-6"
         >
-          {/* Spinner Minimalis yang Clean */}
-          <Loader2 className="w-7 h-7 text-white/80 animate-spin" strokeWidth={1.5} />
-          
+          <Loader2
+            className="w-7 h-7 text-white/80 animate-spin"
+            strokeWidth={1.5}
+          />
+
           {/* Teks elegan, tidak terlalu "AI" */}
           <div className="flex flex-col items-center gap-2">
             <h2 className="text-base font-medium tracking-tight text-white">
@@ -56,23 +51,20 @@ function HomeContent() {
     );
   }
 
-  // =======================================================================
-  // JIKA KUNJUNGAN BIASA: TAMPILKAN LANDING PAGE
-  // =======================================================================
+
   return (
     <HomeLayout>
       <HeroSection />
       <AboutSection />
       <ProblemBackground />
       <SolutionSection />
-      <ModelFlowSection />
+      <ClosingSection/>
     </HomeLayout>
   );
 }
 
 export default function Home() {
   return (
-    // Membungkus seluruh konten dengan Suspense agar aman saat Build
     <Suspense fallback={null}>
       <HomeContent />
     </Suspense>
