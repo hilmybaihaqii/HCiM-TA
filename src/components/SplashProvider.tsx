@@ -18,7 +18,13 @@ export function SplashProvider({ children }: { children: React.ReactNode }) {
   const [splashDone, setSplashDone] = useState(false);
   const [splashStarted, setSplashStarted] = useState(false);
 
+  // 1. Cek sessionStorage saat komponen dimount
   useEffect(() => {
+    const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
+    if (hasSeenSplash === 'true') {
+      setSplashDone(true); // Jika sudah pernah lihat, langsung tandai selesai
+    }
+
     const handleLoad = () => setPageReady(true);
     if (document.readyState === 'complete') {
       setPageReady(true);
@@ -36,9 +42,24 @@ export function SplashProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // 2. Buat custom fungsi untuk setSplashDone agar otomatis simpan ke sessionStorage
+  const handleSetSplashDone = (v: boolean) => {
+    setSplashDone(v);
+    if (v === true) {
+      sessionStorage.setItem('hasSeenSplash', 'true');
+    }
+  };
+
   return (
     <SplashContext.Provider
-      value={{ pageReady, setPageReady, splashDone, setSplashDone, splashStarted, setSplashStarted }}
+      value={{ 
+        pageReady, 
+        setPageReady, 
+        splashDone, 
+        setSplashDone: handleSetSplashDone, // Gunakan custom fungsi di sini
+        splashStarted, 
+        setSplashStarted 
+      }}
     >
       {children}
     </SplashContext.Provider>
