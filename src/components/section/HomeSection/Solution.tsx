@@ -466,7 +466,7 @@ export default function SolutionSection() {
   const reveal = { initial: { opacity: 0, y: 22 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true } };
 
   return (
-    <section ref={containerRef} id="solution" className="relative w-full bg-background font-sans overflow-hidden">
+    <section ref={containerRef} id="architecture" className="relative w-full bg-background font-sans overflow-hidden">
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none opacity-[0.045] mix-blend-overlay z-0"
