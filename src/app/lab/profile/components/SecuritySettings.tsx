@@ -464,12 +464,6 @@ export default function SecuritySettings({ initialStep }: { initialStep: 'reques
                 Your password has been updated. Use your new password next time you sign in.
               </p>
             </div>
-            <button
-              onClick={() => router.replace('/lab/profile')}
-              className="px-8 py-3 bg-foreground text-surface-white text-[11px] font-bold uppercase tracking-widest rounded-xl hover:bg-foreground/90 transition-all"
-            >
-              Back to Profile
-            </button>
           </motion.div>
         )}
       </AnimatePresence>

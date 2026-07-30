@@ -3,6 +3,18 @@ import type { NextConfig } from "next";
 const backendOrigin = process.env.NEXT_PUBLIC_API_BASE_URL || "https://cardiotox-backend.onrender.com";
 
 const nextConfig: NextConfig = {
+
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        port: "",
+        pathname: "/**",
+      },
+    ],
+  },
+
   async rewrites() {
     return [
       {
