@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { api } from '@/lib/api';
 import AdminTable from '../components/AdminTable';
-import UserActionModal, { ActionType } from './components/UserActionModal';
+import UserActionModal, { ActionType } from '../components/UserActionModal';
 import { Shield, User, RotateCcw, Search, Ban, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
