@@ -12,25 +12,28 @@ export default function ArticleGrid() {
   const gridArticles = ARTICLES_DATA.filter((a) => !a.featured);
 
   return (
-    <section className="relative w-full py-20 md:py-32 bg-background font-sans">
+    <section className="relative w-full py-16 md:py-24 bg-background font-sans">
       <div className="max-w-7xl mx-auto px-6 md:px-12">
         
-        {/* SECTION HEADER */}
-        <div className="flex items-end justify-between border-b border-foreground/10 pb-6 mb-12 md:mb-16">
+        {/* ==================== 1. SECTION HEADER ==================== */}
+        {/* Header yang lebih bersih dan ramah layaknya platform modern */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-foreground/10 pb-6 mb-12 gap-6">
           <div>
-            <span className="block text-[10px] font-mono uppercase tracking-[0.25em] text-muted mb-1.5">
-              Archive & Dispatches
-            </span>
-            <h3 className="text-xl md:text-2xl font-medium tracking-tight text-foreground">
-              Recent Publications
+            <h3 className="text-2xl md:text-3xl font-medium tracking-tight text-foreground mb-2">
+              Latest insights and trends
             </h3>
+            <p className="text-sm md:text-base text-muted font-light max-w-lg">
+              Explore our comprehensive archive of research, computational strategies, and technical dispatches.
+            </p>
           </div>
-          <span className="text-xs font-mono text-muted">
-            {gridArticles.length} ARTICLES
-          </span>
+          <div className="px-4 py-2 bg-foreground/5 rounded-md">
+            <span className="text-sm font-medium text-foreground/80">
+              {gridArticles.length} Articles
+            </span>
+          </div>
         </div>
 
-        {/* ARTICLES GRID */}
+        {/* ==================== 2. ARTICLES GRID ==================== */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-16 gap-x-8 md:gap-x-12">
           {gridArticles.map((article, index) => (
             <motion.article
@@ -41,59 +44,64 @@ export default function ArticleGrid() {
               transition={{ duration: 0.8, delay: index * 0.1, ease: luxEase }}
               className="group flex flex-col justify-between h-full"
             >
-              <div>
-                {/* THUMBNAIL */}
-                <Link
-                  href={`/articles/${article.slug}`}
-                  className="block relative w-full aspect-16/10 overflow-hidden rounded-sm bg-foreground/5 mb-6"
-                >
+              <Link href={`/articles/${article.slug}`} className="flex flex-col grow">
+                
+                {/* THUMBNAIL (Rounded-2xl, Full Color, Smooth Zoom) */}
+                <div className="block relative w-full aspect-4/3 overflow-hidden rounded-md bg-foreground/5 mb-6">
                   <Image
                     src={article.image}
                     alt={article.title}
                     fill
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                    className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 filter grayscale-20 group-hover:grayscale-0"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
                   />
-                  <div className="absolute top-3 right-3 text-[10px] font-mono text-surface-white/90 bg-foreground/70 px-2 py-0.5 rounded-sm">
-                    {article.number}
-                  </div>
-                </Link>
-
-                {/* META */}
-                <div className="flex items-center gap-3 text-[10px] font-mono uppercase tracking-[0.2em] text-muted mb-3">
-                  <span>{article.category}</span>
-                  <span>·</span>
-                  <span>{article.readTime}</span>
                 </div>
 
-                {/* TITLE */}
-                <Link href={`/articles/${article.slug}`}>
-                  <h4 className="text-lg md:text-xl font-medium tracking-tight text-foreground leading-snug group-hover:text-accent transition-colors duration-300 mb-3 block">
-                    {article.title}
-                  </h4>
-                </Link>
+                {/* META DATA (Badge Kategori & Waktu Baca) */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="px-2.5 py-1 bg-foreground/5 text-foreground/80 text-[10px] font-semibold rounded-md uppercase tracking-wider">
+                    {article.category}
+                  </div>
+                  <span className="text-muted/40">•</span>
+                  <span className="text-xs text-muted font-medium">
+                    {article.readTime}
+                  </span>
+                </div>
 
-                {/* EXCERPT */}
-                <p className="text-xs md:text-sm text-muted leading-relaxed line-clamp-3 mb-6">
+                {/* TITLE (Tegas & Proporsional) */}
+                <h4 className="text-xl md:text-2xl font-medium tracking-tight text-foreground leading-tight group-hover:text-accent transition-colors duration-300 mb-3">
+                  {article.title}
+                </h4>
+
+                {/* EXCERPT (Terbaca Jelas & Terbatas 3 Baris) */}
+                <p className="text-sm text-muted/90 font-light leading-relaxed line-clamp-3 mb-6">
                   {article.excerpt}
                 </p>
-              </div>
+                
+              </Link>
 
-              {/* READ CTA */}
-              <div className="pt-4 border-t border-foreground/10 flex items-center justify-between">
-                <span className="text-[10px] font-mono text-muted uppercase tracking-[0.15em]">
+              {/* ACTION & DATE (Bagian Bawah Kartu) */}
+              <div className="pt-5 border-t border-foreground/10 flex items-center justify-between mt-auto">
+                <span className="text-xs text-muted/80 font-medium">
                   {article.date}
                 </span>
+                
+                {/* Teks Link dengan Panah Interaktif */}
                 <Link
                   href={`/articles/${article.slug}`}
-                  className="flex items-center gap-1.5 text-xs font-mono uppercase tracking-widest text-foreground group-hover:text-accent transition-colors duration-300"
+                  className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-accent transition-colors duration-300 group/link"
                 >
-                  <span>Read Article</span>
+                  Read more 
+                  <span className="text-lg leading-none font-normal transition-transform duration-300 group-hover/link:translate-x-1.5">
+                    &rarr;
+                  </span>
                 </Link>
               </div>
+
             </motion.article>
           ))}
         </div>
+
       </div>
     </section>
   );

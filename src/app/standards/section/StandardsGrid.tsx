@@ -68,16 +68,24 @@ export default function StandardsGrid() {
                     </h3>
                   </div>
 
-                  {/* MINIMALIST SHARP PLUS/MINUS */}
+                  {/* ARROW TOGGLE (chevron, rotates on open) */}
                   <div className="md:w-1/6 flex md:justify-end items-center">
                     <div className="w-8 h-8 flex items-center justify-center text-muted group-hover:text-foreground transition-colors">
-                      <motion.span
-                        animate={{ rotate: isOpen ? 45 : 0 }}
+                      <motion.svg
+                        animate={{ rotate: isOpen ? 180 : 0 }}
                         transition={{ duration: 0.3, ease: 'easeInOut' }}
-                        className="text-xl font-light leading-none"
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
                       >
-                        +
-                      </motion.span>
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="1.5"
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </motion.svg>
                     </div>
                   </div>
                 </button>
@@ -120,7 +128,12 @@ export default function StandardsGrid() {
                               viewBox="0 0 24 24"
                               stroke="currentColor"
                             >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M14 5l7 7m0 0l-7-7m7-7H3" />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="1.5"
+                                d="M5 12h14M13 5l7 7-7 7"
+                              />
                             </svg>
                           </Link>
                         </div>

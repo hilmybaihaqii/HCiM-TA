@@ -35,6 +35,7 @@ export default function Navbar() {
     { name: 'Home', href: '/', id: '01' },
     { name: 'Standards', href: '/standards', id: '02' },
     { name: 'Articles', href: '/articles', id: '03' },
+    { name: 'About Us', href: '/aboutus', id: '04' },
   ];
 
   const curtainVariants: Variants = {

@@ -18,10 +18,11 @@ export default function StandardsHero() {
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 24 },
+    hidden: { opacity: 0, y: 24, filter: 'blur(4px)' },
     show: { 
       opacity: 1, 
       y: 0, 
+      filter: 'blur(0px)',
       transition: { duration: 0.9, ease: luxEase } 
     },
   };
@@ -39,32 +40,27 @@ export default function StandardsHero() {
           className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-end pb-12 md:pb-16 border-b border-foreground/10"
         >
           <motion.div variants={itemVariants} className="lg:col-span-7">
-            <div className="flex items-center gap-3 text-xs font-mono text-muted mb-4">
-              <span className="text-accent font-medium">03</span>
-              <span className="text-foreground/20">/</span>
-              <span>Regulatory compliance & foundation</span>
-            </div>
-            
-            <h1 className="text-4xl sm:text-6xl md:text-7xl font-medium tracking-tight text-foreground leading-[1.02]">
+            {/* Judul tegas tanpa huruf miring (non-italic) */}
+            <h1 className="text-4xl sm:text-6xl md:text-7xl font-medium tracking-tight text-foreground leading-[1.05]">
               Standards & <br className="hidden sm:block" />
-              <span className="italic font-normal text-muted">regulatory basis.</span>
+              regulatory basis.
             </h1>
           </motion.div>
 
           <motion.div variants={itemVariants} className="lg:col-span-5">
-            <p className="text-sm md:text-base text-muted leading-relaxed font-light mb-6">
+            <p className="text-sm md:text-base text-muted leading-relaxed font-light mb-2">
               Our targets are not arbitrary. Every predictive cardiotoxicity workflow traces directly to recognized international, national, industrial, and scientific frameworks.
             </p>
           </motion.div>
         </motion.div>
 
-        {/* --- EDITORIAL METRICS LEDGER (BORDERLESS RULES, ROUNDED-NONE) --- */}
+        {/* --- EDITORIAL METRICS LEDGER (DENGAN ROUNDED-MD YANG RAPI) --- */}
         <motion.div
           variants={containerVariants}
           initial="hidden"
           whileInView="show"
           viewport={{ once: true }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 pt-10"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 pt-12"
         >
           {[
             { level: 'International', code: 'ICH S7B / E14', label: 'In-Silico Clinical Benchmark' },
@@ -75,16 +71,21 @@ export default function StandardsHero() {
             <motion.div
               key={stat.code}
               variants={itemVariants}
-              className="group flex flex-col justify-between border-l border-foreground/15 pl-6 py-1"
+              // Menggunakan border tipis dengan sudut rounded-md sesuai permintaan
+              className="group flex flex-col justify-between p-6 bg-foreground/1.5 border border-foreground/10 rounded-md hover:border-foreground/30 transition-all duration-300"
             >
-              <span className="text-xs font-mono text-muted mb-8">
-                0{idx + 1} — {stat.level}
-              </span>
+              <div className="flex items-center justify-between text-xs font-mono text-muted mb-12">
+                <span>0{idx + 1}</span>
+                <span className="uppercase tracking-widest text-[10px] px-2 py-0.5 bg-foreground/5 rounded-sm">
+                  {stat.level}
+                </span>
+              </div>
+
               <div>
-                <h3 className="text-base md:text-lg font-medium text-foreground tracking-tight group-hover:text-accent transition-colors duration-300">
+                <h3 className="text-lg md:text-xl font-medium text-foreground tracking-tight group-hover:text-accent transition-colors duration-300 mb-2">
                   {stat.code}
                 </h3>
-                <p className="text-xs text-muted font-light mt-1.5 leading-relaxed">
+                <p className="text-xs text-muted font-light leading-relaxed">
                   {stat.label}
                 </p>
               </div>
