@@ -12,108 +12,80 @@ export default function ArticleHero() {
   const featuredArticle: ArticleItem =
     ARTICLES_DATA.find((a) => a.featured) || ARTICLES_DATA[0];
 
-  const reveal = {
-    initial: { opacity: 0, y: 24 },
-    whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true, amount: 0.3 },
-  };
-
   return (
-    <section className="relative w-full pt-36 md:pt-44 pb-16 md:pb-28 bg-background overflow-hidden border-b border-foreground/10 font-sans">
+    <section className="relative w-full pt-32 md:pt-40 pb-16 md:pb-28 bg-background font-sans">
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         
-        {/* ==================== TOP EDITORIAL HEADER ==================== */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-foreground/10 pb-8 mb-12 md:mb-16 gap-6">
+        {/* ==================== 1. HEADER ==================== */}
+        <div className="mb-12 md:mb-16 border-b border-foreground/10 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <motion.div
-            {...reveal}
-            transition={{ duration: 0.9, ease: luxEase }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: luxEase }}
           >
-            {/* Label tanpa All Caps yang berlebihan */}
-            <div className="flex items-center gap-2.5 text-xs font-mono text-muted mb-3">
-              <span className="text-accent">02</span>
-              <span>/</span>
-              <span>Research & essays</span>
-            </div>
-            
-            <h1 className="text-4xl sm:text-6xl md:text-7xl font-medium tracking-tight text-foreground leading-[1.02]">
-              The Cardivex <br className="hidden sm:block" />
-              <span className="italic font-normal text-muted">Journal.</span>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-medium tracking-tight text-foreground mb-4">
+              Blog & articles
             </h1>
+            <p className="text-base text-muted max-w-xl font-light leading-relaxed">
+              Discover our latest strategies, technical insights, and updates on in-silico pharmacovigilance.
+            </p>
           </motion.div>
-
-          <motion.p
-            {...reveal}
-            transition={{ duration: 0.9, delay: 0.1, ease: luxEase }}
-            className="text-sm md:text-base text-muted max-w-sm leading-relaxed font-light"
-          >
-            Perspectives on computational cardiology, machine learning pipelines, and animal-free bio-simulations.
-          </motion.p>
         </div>
 
-        {/* ==================== FEATURED CARD (EDITORIAL SHOWCASE) ==================== */}
+        {/* ==================== 2. FEATURED CARD (PERFECT 50:50 ALIGNMENT) ==================== */}
         <motion.div
           initial={{ opacity: 0, y: 28 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 1.1, ease: luxEase }}
-          className="group relative grid grid-cols-1 lg:grid-cols-12 border border-foreground/15 rounded-sm overflow-hidden bg-foreground/1.5 hover:border-foreground/30 transition-colors duration-500"
+          // items-center di sini adalah kunci agar teks dan gambar sejajar secara vertikal (tengah-tengah)
+          className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center"
         >
-          {/* IMAGE SIDE */}
+          {/* SISI GAMBAR: 50% Lebar, Rounded-2xl presisi */}
           <Link
             href={`/articles/${featuredArticle.slug}`}
-            className="lg:col-span-7 relative aspect-16/10 lg:aspect-auto overflow-hidden bg-foreground/5 block"
+            className="relative w-full aspect-4/3 rounded-md overflow-hidden bg-foreground/5 block group"
           >
             <Image
               src={featuredArticle.image}
               alt={featuredArticle.title}
               fill
               priority
-              sizes="(max-width: 1024px) 100vw, 60vw"
-              className="object-cover transition-transform duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 filter grayscale-15 group-hover:grayscale-0"
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
             />
-            
-            {/* Badge berkelas di atas foto */}
-            <div className="absolute top-4 left-4 md:top-6 md:left-6 px-3.5 py-1.5 bg-background/90 backdrop-blur-md text-xs font-mono text-foreground border border-foreground/10 rounded-full">
-              Featured publication
-            </div>
           </Link>
 
-          {/* CONTENT SIDE */}
-          <div className="lg:col-span-5 p-6 sm:p-10 lg:p-12 flex flex-col justify-between">
-            <div>
-              {/* Meta Kategori & Durasi Baca */}
-              <div className="flex items-center gap-2.5 text-xs font-mono text-accent mb-4">
-                <span className="font-medium">{featuredArticle.category}</span>
-                <span className="text-muted/40">•</span>
-                <span className="text-muted">{featuredArticle.readTime}</span>
-              </div>
-
-              {/* Judul Artikel Featured */}
-              <Link href={`/articles/${featuredArticle.slug}`}>
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-medium tracking-tight text-foreground leading-snug hover:text-accent transition-colors duration-300 mb-5 block">
-                  {featuredArticle.title}
-                </h2>
-              </Link>
-
-              {/* Ringkasan Paragraf */}
-              <p className="text-sm md:text-base text-muted font-light leading-relaxed mb-8">
-                {featuredArticle.excerpt}
-              </p>
+          {/* SISI KONTEN: 50% Lebar */}
+          <div className="flex flex-col items-start w-full">
+            
+            {/* Badge Kategori: Persis seperti referensi (Latar abu-abu, teks uppercase kecil) */}
+            <div className="px-3 py-1 bg-foreground/5 text-foreground/80 text-[11px] font-semibold rounded-md mb-6 uppercase tracking-wider">
+              {featuredArticle.category || 'PHARMACOVIGILANCE'}
             </div>
 
-            {/* ACTION CTA (BAGIAN BAWAH KARTU) */}
-            <div className="pt-6 border-t border-foreground/10 flex items-center justify-between">
-              <span className="text-xs font-mono text-muted">
-                {featuredArticle.date}
+            {/* Judul Besar: Leading-tight agar jarak antar baris teks besar tidak terlalu renggang */}
+            <Link href={`/articles/${featuredArticle.slug}`}>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-foreground leading-[1.15] hover:text-accent transition-colors duration-300 mb-6">
+                {featuredArticle.title}
+              </h2>
+            </Link>
+
+            {/* Ringkasan: Menggunakan teks abu-abu terang (muted) dengan ketebalan tipis (font-light) */}
+            <p className="text-base lg:text-lg text-muted/90 font-light leading-relaxed mb-8 max-w-[95%]">
+              {featuredArticle.excerpt}
+            </p>
+
+            {/* Tombol Solid + Ikon Teks Arrow */}
+            <Link
+              href={`/articles/${featuredArticle.slug}`}
+              className="inline-flex items-center gap-2.5 px-6 py-3.5 bg-[#2A2A2A] text-[#F9F9F9] dark:bg-zinc-100 dark:text-zinc-900 rounded-md text-sm font-medium hover:opacity-90 transition-all duration-300 group/btn"
+            >
+              Read more 
+              <span className="text-lg leading-none transition-transform duration-300 group-hover/btn:translate-x-1.5 font-normal">
+                &rarr;
               </span>
-
-              <Link
-                href={`/articles/${featuredArticle.slug}`}
-                className="group/btn relative inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-foreground/20 text-xs font-mono text-foreground hover:bg-foreground hover:text-surface-white hover:border-foreground transition-all duration-300"
-              >
-                <span>Read article</span>
-              </Link>
-            </div>
+            </Link>
           </div>
         </motion.div>
 
