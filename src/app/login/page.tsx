@@ -101,21 +101,31 @@ function LoginForm() {
       });
       router.push('/lab');
       router.refresh();
-    } catch (error) {
+    }  catch (error) {
       setIsLoading(false);
-      const e = error as { status?: number };
+      
+      // Tambahkan tipe untuk menangkap 'message' atau respons dari API kamu
+      const e = error as { status?: number; message?: string; data?: { message?: string } };
+      
+      // Ambil pesan error dari backend jika ada (sesuaikan dengan struktur respons backend-mu)
+      const backendMessage = (e.data?.message || e.message || "").toLowerCase();
 
-      if (e.status === 403) {
+      // Cek apakah pesan dari backend mengindikasikan akun dinonaktifkan
+      if (backendMessage.includes("deactivated") || backendMessage.includes("inactive") || e.status === 423) {
+        setErrorMsg("Please contact the admin to activate your account.");
+      } 
+      else if (e.status === 403) {
+        // Jika 403 adalah khusus untuk email belum diverifikasi
         setErrorMsg("Please verify your email first.");
-      } else if (e.status === 401) {
-        // Deliberately generic: since the backend returns the same signal for
-        // "email not found" and "wrong password" (and can't currently tell us
-        // about deactivated accounts either), we don't reveal which part was
-        // wrong — this avoids letting anyone probe for valid emails.
+      } 
+      else if (e.status === 401) {
+        // Tetap pertahankan pesan generic untuk salah email/password demi keamanan
         setErrorMsg("Incorrect email or password.");
-      } else {
+      } 
+      else {
         setErrorMsg("Something went wrong. Please try again.");
       }
+      
       triggerShake();
     }
   };
