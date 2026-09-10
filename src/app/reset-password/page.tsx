@@ -3,9 +3,9 @@
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { api } from '@/lib/api';
-import { AlertCircle } from 'lucide-react';
+import { CheckCircle2, KeyRound, Loader2 } from 'lucide-react';
 
 // ============================================================================
 // KOMPONEN FORM RESET
@@ -16,6 +16,7 @@ function ResetPasswordForm() {
 
   // Menangkap token rahasia dari URL[cite: 1, 2]
   const token = searchParams.get('token');
+  const hasToken = !!token;
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -23,33 +24,42 @@ function ResetPasswordForm() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  // Langsung tampilkan error jika pengguna nyasar ke halaman ini tanpa token
-  const [errorMsg, setErrorMsg] = useState<string | null>(
-    !token ? "Invalid or missing reset token. Please request a new password reset link." : null
-  );
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ newPassword?: string; confirmPassword?: string }>({});
+  const [focusedField, setFocusedField] = useState<'newPassword' | 'confirmPassword' | null>(null);
 
-  const passwordsMismatch = confirmPassword.length > 0 && newPassword !== confirmPassword;
+  const shakeControls = useAnimation();
+  const triggerShake = () => {
+    shakeControls.start({
+      x: [0, -10, 10, -8, 8, -5, 5, -2, 2, 0],
+      transition: { duration: 0.5, ease: 'easeInOut' }
+    });
+  };
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!token) {
-      setErrorMsg("Missing reset token. Please use the link sent to your email.");
       return;
     }
 
-    if (newPassword !== confirmPassword) {
-      setErrorMsg("Passwords do not match. Please try again.");
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      setErrorMsg("Password must be at least 8 characters long.");
-      return;
-    }
-
-    setIsLoading(true);
     setErrorMsg(null);
+
+    const nextFieldErrors: { newPassword?: string; confirmPassword?: string } = {};
+    if (!newPassword) nextFieldErrors.newPassword = "Enter your new password.";
+    else if (newPassword.length < 8) nextFieldErrors.newPassword = "Password must be at least 8 characters.";
+
+    if (!confirmPassword) nextFieldErrors.confirmPassword = "Confirm your new password.";
+    else if (newPassword && confirmPassword !== newPassword) nextFieldErrors.confirmPassword = "Passwords do not match.";
+
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setFieldErrors(nextFieldErrors);
+      triggerShake();
+      return;
+    }
+
+    setFieldErrors({});
+    setIsLoading(true);
     setSuccessMsg(null);
 
     try {
@@ -76,15 +86,12 @@ function ResetPasswordForm() {
       } else {
         setErrorMsg("An unexpected error occurred. Please try again.");
       }
+      triggerShake();
     }
   };
 
   return (
-    <div className="w-full lg:w-1/2 h-full bg-primary relative flex flex-col items-center justify-center p-6 md:p-12 overflow-y-auto">
-
-      <Link href="/" className="lg:hidden absolute top-6 left-6 z-40 text-lg font-bold tracking-tight text-white hover:opacity-70 transition-opacity">
-        cardivex<span className="text-accent">.</span>
-      </Link>
+    <div className="w-full lg:w-1/2 h-full bg-[#0A0A0A] relative flex flex-col items-center justify-center p-6 md:p-12 overflow-y-auto">
 
       <AnimatePresence>
         <motion.div
@@ -103,107 +110,177 @@ function ResetPasswordForm() {
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         className="w-full max-w-sm flex flex-col py-10"
       >
-        <div className="mb-10 text-center">
-          <h1 className="text-3xl font-medium tracking-tight text-white mb-3">Set New Password</h1>
-          <p className="text-xs text-white/50 leading-relaxed">
-            Please enter and confirm your new cryptographic key.
-          </p>
-        </div>
-
-        {/* Banner Notifikasi (Sukses / Error) */}
         <AnimatePresence mode="wait">
-          {successMsg && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mb-6 overflow-hidden">
-              <div role="status" aria-live="polite" className="p-4 bg-teal/10 border border-teal/30 rounded-sm text-teal text-xs text-center font-medium shadow-sm leading-relaxed">
-                {successMsg}
-              </div>
-            </motion.div>
-          )}
-          {errorMsg && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mb-6 overflow-hidden">
-              <div role="alert" aria-live="polite" className="flex items-center gap-2 p-3 bg-accent/10 border border-accent/30 rounded-sm text-accent text-xs text-center font-medium shadow-sm leading-relaxed">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{errorMsg}</span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
-        <form onSubmit={handlePasswordReset} className="flex flex-col gap-6 w-full">
-
-          {/* Kolom Sandi Baru */}
-          <div className="relative group flex flex-col">
-            <label htmlFor="reset-new-password" className="text-[10px] font-mono uppercase tracking-widest text-white/40 mb-1 block group-focus-within:text-accent transition-colors">
-              New Password
-            </label>
-            <div className="relative flex items-center">
-              <input
-                id="reset-new-password"
-                name="new-password"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="new-password"
-                autoFocus={!!token}
-                minLength={8}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                disabled={isLoading || successMsg !== null || !token}
-                required
-                className="w-full bg-transparent border-b border-white/20 py-2 pr-10 text-sm text-white focus:outline-none focus:border-accent transition-colors disabled:opacity-50"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                aria-pressed={showPassword}
-                className="absolute right-0 text-[10px] font-mono text-white/30 hover:text-accent transition-colors p-2 outline-none focus-visible:text-accent"
-                disabled={!token}
+          {!hasToken && (
+            <motion.div key="invalid-token" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.97 }} className="flex flex-col items-center text-center py-10">
+              <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-6 relative">
+                <KeyRound className="w-8 h-8 text-red-500 relative z-10" />
+              </div>
+              <h2 className="text-2xl font-medium text-white mb-2 tracking-tight">
+                Invalid Reset Link
+              </h2>
+              <p className="text-sm text-white/50 mb-8 leading-relaxed px-2">
+                This password reset link is invalid or missing its token. Please request a new one to continue.
+              </p>
+              <Link
+                href="/forgot-password"
+                className="w-full py-4 bg-white text-black text-xs font-bold uppercase tracking-[0.2em] rounded-sm hover:bg-white/90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center"
               >
-                {showPassword ? "HIDE" : "SHOW"}
-              </button>
-            </div>
-            <p className="text-[9px] font-mono text-white/30 mt-2">Minimum 8 characters.</p>
-          </div>
+                Request New Link
+              </Link>
+            </motion.div>
+          )}
 
-          {/* Kolom Konfirmasi Sandi */}
-          <div className="relative group flex flex-col">
-            <label htmlFor="reset-confirm-password" className="text-[10px] font-mono uppercase tracking-widest text-white/40 mb-1 block group-focus-within:text-accent transition-colors">
-              Confirm Password
-            </label>
-            <input
-              id="reset-confirm-password"
-              name="confirm-password"
-              type={showPassword ? 'text' : 'password'}
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              disabled={isLoading || successMsg !== null || !token}
-              required
-              aria-invalid={passwordsMismatch}
-              className={`w-full bg-transparent border-b py-2 text-sm text-white focus:outline-none transition-colors disabled:opacity-50 ${passwordsMismatch ? 'border-accent/60 focus:border-accent' : 'border-white/20 focus:border-accent'}`}
-            />
-            {passwordsMismatch && (
-              <p className="text-[9px] font-mono text-accent/90 mt-2">Passwords do not match.</p>
-            )}
-          </div>
+          {hasToken && successMsg && (
+            <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.97 }} className="flex flex-col items-center text-center py-10">
+              <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mb-6 relative">
+                <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 2, repeat: Infinity }} className="absolute inset-0 bg-emerald-500/20 rounded-full" />
+                <CheckCircle2 className="w-8 h-8 text-emerald-500 relative z-10" />
+              </div>
+              <h2 className="text-2xl font-medium text-white mb-2 tracking-tight">
+                Password Updated
+              </h2>
+              <p className="text-sm text-white/50 mb-8 leading-relaxed px-4">
+                Your cryptographic key has been successfully reset.
+              </p>
+              <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-5 py-3 rounded-full">
+                <Loader2 className="w-4 h-4 text-[#E63946] animate-spin" />
+                <span className="text-xs font-mono text-white/70">
+                  Redirecting to login...
+                </span>
+              </div>
+            </motion.div>
+          )}
 
-          <div className="mt-4">
-            <button
-              type="submit"
-              disabled={isLoading || successMsg !== null || !token || passwordsMismatch}
-              className="w-full py-4 bg-accent text-white text-xs font-bold uppercase tracking-[0.2em] rounded-sm hover:bg-accent-dark hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-70 disabled:hover:scale-100 flex items-center justify-center gap-3"
-            >
-              {isLoading ? (
-                <>
-                  <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Updating
-                </>
-              ) : (
-                'Reset Password'
-              )}
-            </button>
-          </div>
+          {hasToken && !successMsg && (
+            <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <div className="mb-10 text-center">
+                <h1 className="text-3xl font-medium tracking-tight text-white mb-3">Set New Password</h1>
+                <p className="text-xs text-white/50 leading-relaxed">
+                  Please enter and confirm your new cryptographic key.
+                </p>
+              </div>
 
-        </form>
+              <motion.div animate={shakeControls}>
+                <form onSubmit={handlePasswordReset} noValidate className="flex flex-col gap-6 w-full">
+
+                  {/* Kolom Sandi Baru */}
+                  <div className="relative group flex flex-col">
+                    <label className="text-[10px] font-mono uppercase tracking-widest text-white/40 mb-1 block group-focus-within:text-white transition-colors">
+                      New Password
+                    </label>
+                    <div className="relative flex items-center">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={newPassword}
+                        onChange={(e) => {
+                          setNewPassword(e.target.value);
+                          if (fieldErrors.newPassword) setFieldErrors((prev) => ({ ...prev, newPassword: undefined }));
+                          if (errorMsg) setErrorMsg(null);
+                        }}
+                        onFocus={() => setFocusedField('newPassword')}
+                        onBlur={() => setFocusedField(null)}
+                        disabled={isLoading}
+                        className="w-full bg-transparent border-b border-white/20 py-2 pr-10 text-sm text-white focus:outline-none focus:border-white transition-colors disabled:opacity-50"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-0 text-[10px] font-mono text-white/30 hover:text-white transition-colors p-2"
+                      >
+                        {showPassword ? "HIDE" : "SHOW"}
+                      </button>
+                    </div>
+                    <span className="relative block h-px w-full bg-transparent overflow-hidden">
+                      <motion.span
+                        className="absolute inset-y-0 left-1/2 -translate-x-1/2 h-px bg-white"
+                        initial={false}
+                        animate={{ width: focusedField === 'newPassword' ? '100%' : '0%' }}
+                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                      />
+                    </span>
+                    <AnimatePresence mode="wait">
+                      {fieldErrors.newPassword ? (
+                        <motion.p
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                          transition={{ duration: 0.25 }}
+                          className="text-xs text-red-500 mt-2"
+                        >
+                          {fieldErrors.newPassword}
+                        </motion.p>
+                      ) : (
+                        <p className="text-[9px] font-mono text-white/30 mt-2">Minimum 8 characters.</p>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Kolom Konfirmasi Sandi */}
+                  <div className="relative group flex flex-col">
+                    <label className="text-[10px] font-mono uppercase tracking-widest text-white/40 mb-1 block group-focus-within:text-white transition-colors">
+                      Confirm Password
+                    </label>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => {
+                        setConfirmPassword(e.target.value);
+                        if (fieldErrors.confirmPassword) setFieldErrors((prev) => ({ ...prev, confirmPassword: undefined }));
+                        if (errorMsg) setErrorMsg(null);
+                      }}
+                      onFocus={() => setFocusedField('confirmPassword')}
+                      onBlur={() => setFocusedField(null)}
+                      disabled={isLoading}
+                      className="w-full bg-transparent border-b border-white/20 py-2 text-sm text-white focus:outline-none focus:border-white transition-colors disabled:opacity-50"
+                    />
+                    <span className="relative block h-px w-full bg-transparent overflow-hidden">
+                      <motion.span
+                        className="absolute inset-y-0 left-1/2 -translate-x-1/2 h-px bg-white"
+                        initial={false}
+                        animate={{ width: focusedField === 'confirmPassword' ? '100%' : '0%' }}
+                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                      />
+                    </span>
+                    <AnimatePresence mode="wait">
+                      {(fieldErrors.confirmPassword || errorMsg) && (
+                        <motion.p
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                          transition={{ duration: 0.25 }}
+                          className="text-xs text-red-500 mt-2"
+                        >
+                          {fieldErrors.confirmPassword || errorMsg}
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  <div className="mt-4">
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full py-4 bg-white text-black text-xs font-bold uppercase tracking-[0.2em] rounded-sm hover:bg-white/90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-70 disabled:hover:scale-100 flex items-center justify-center gap-3"
+                    >
+                      {isLoading ? (
+                        <>
+                          <div className="w-3 h-3 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                          Updating
+                        </>
+                      ) : (
+                        'Reset Password'
+                      )}
+                    </button>
+                  </div>
+
+                </form>
+              </motion.div>
+            </motion.div>
+          )}
+
+        </AnimatePresence>
       </motion.div>
     </div>
   );
@@ -217,22 +294,16 @@ export default function ResetPasswordPage() {
     <main className="fixed inset-0 z-50 w-full h-screen flex bg-background font-sans overflow-hidden">
 
       {/* PANEL KIRI (Branding & Ambient Animation) */}
-      <div className="hidden lg:flex flex-col justify-between w-1/2 h-full bg-background p-12 relative overflow-hidden">
+      <div className="hidden lg:flex flex-col justify-between w-1/2 h-full bg-[#E8E6E1] p-12 relative overflow-hidden">
 
-        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-          <motion.div
-            animate={{ scale: [1, 1.1, 1], x: [0, 20, 0], y: [0, -30, 0] }} transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute -top-40 -left-40 w-96 h-96 bg-accent/20 rounded-full blur-3xl"
-          />
-          <motion.div
-            animate={{ scale: [1, 1.1, 1], x: [0, -30, 0], y: [0, 40, 0] }} transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute bottom-20 -right-20 w-80 h-80 bg-teal/20 rounded-full blur-3xl"
-          />
-          <motion.div
-            animate={{ scale: [1, 1.15, 1], x: [0, 15, 0], y: [0, 20, 0] }} transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-            className="absolute top-1/3 right-1/4 w-64 h-64 bg-amber/15 rounded-full blur-3xl"
-          />
-        </div>
+        <motion.div
+          animate={{ scale: [1, 1.1, 1], x: [0, 20, 0], y: [0, -30, 0] }} transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -top-40 -left-40 w-96 h-96 bg-foreground/5 rounded-full blur-3xl pointer-events-none"
+        />
+        <motion.div
+          animate={{ scale: [1, 1.1, 1], x: [0, -30, 0], y: [0, 40, 0] }} transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          className="absolute bottom-20 -right-20 w-80 h-80 bg-foreground/5 rounded-full blur-3xl pointer-events-none"
+        />
 
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1 }}>
           <Link href="/" className="relative z-10 text-2xl font-bold tracking-tight text-foreground hover:opacity-70 transition-opacity">

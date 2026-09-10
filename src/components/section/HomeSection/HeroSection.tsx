@@ -2,19 +2,15 @@
 
 import React from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useSplash } from "../../SplashProvider";
 
-// ssr:false → tidak dicoba di-render di server (menghindari WebGL API
-// yang gak ada di Node), dan module three/fiber/drei baru di-load
-// begitu chunk ini benar-benar diminta oleh browser.
 const Heart3D = dynamic(() => import("../../ui/Heart3D"), {
   ssr: false,
   loading: () => <Heart3DPlaceholder />,
 });
 
-// Placeholder elegan selagi chunk 3D belum dimount — cuma denyut lembut,
-// biar area kosongnya gak kelihatan "hilang" tiba-tiba.
 function Heart3DPlaceholder() {
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -25,9 +21,12 @@ function Heart3DPlaceholder() {
 
 export default function HeroSection() {
   const { splashStarted } = useSplash();
+  const router = useRouter();
 
   return (
     <section className="relative w-full h-svh bg-background font-sans overflow-hidden flex items-center justify-center">
+      
+      {/* ================= BACKGROUND TEXT (Z-0) ================= */}
       <div className="absolute top-[40%] md:top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none select-none z-0 w-full">
         <motion.h1
           initial={{ opacity: 0, scale: 0.95 }}
@@ -47,14 +46,22 @@ export default function HeroSection() {
         </motion.h1>
       </div>
 
-      {/* Heart3D baru dimount setelah splash mulai berjalan, supaya
-          WebGL init tidak bentrok dengan frame pertama GSAP splash. */}
+      {/* ================= 3D MODEL (Z-10) ================= */}
       <div className="absolute top-24 bottom-[38vh] left-0 right-0 md:inset-0 z-10 cursor-grab active:cursor-grabbing pointer-events-auto flex items-center justify-center">
         {splashStarted ? <Heart3D /> : <Heart3DPlaceholder />}
       </div>
 
-      {/* === SISA JSX SAMA PERSIS, TIDAK DIUBAH === */}
+      {/* ================= SCROLL INTERCEPTOR (Z-15) ================= */}
+      {/* Layer ini menutupi 3D, memblokir interaksi di sisi kiri/kanan, tapi bolong di tengah (max-w-7xl) */}
+      <div className="absolute inset-0 z-[15] flex pointer-events-none">
+        <div className="flex-1 h-full pointer-events-auto touch-pan-y" />
+        <div className="w-full max-w-7xl h-full pointer-events-none" />
+        <div className="flex-1 h-full pointer-events-auto touch-pan-y" />
+      </div>
+
+      {/* ================= UI OVERLAY (Z-20) ================= */}
       <div className="absolute inset-0 z-20 flex flex-col justify-between pointer-events-none pt-28 pb-8 md:pt-36 md:pb-12">
+        
         <div className="w-full max-w-7xl mx-auto px-6 md:px-12 flex justify-between items-start">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -141,10 +148,15 @@ export default function HeroSection() {
             transition={{ duration: 1, delay: 0.9 }}
             className="flex flex-col sm:flex-row w-full lg:w-auto gap-2 md:gap-3 pointer-events-auto shrink-0"
           >
-            <button className="w-full sm:w-auto px-6 py-3.5 md:px-8 md:py-4 text-[10px] md:text-xs font-normal uppercase tracking-widest bg-surface-white/60 backdrop-blur-md border border-foreground/10 text-foreground hover:bg-accent hover:border-accent hover:text-surface-white transition-all duration-300 rounded-full">
+            <a
+              href="#architecture"
+              className="w-full sm:w-auto px-6 py-3.5 md:px-8 md:py-4 text-[10px] md:text-xs font-normal uppercase tracking-widest bg-surface-white/60 backdrop-blur-md border border-foreground/10 text-foreground hover:bg-foreground hover:text-surface-white transition-all duration-300 rounded-full text-center block sm:inline-block"
+            >
               Architecture
-            </button>
-            <button className="group flex items-center justify-center gap-3 w-full sm:w-auto px-6 py-3.5 md:px-8 md:py-4 bg-accent text-surface-white text-[10px] md:text-xs font-normal uppercase tracking-widest transition-all duration-300 rounded-full shadow-lg hover:bg-accent-dark hover:shadow-accent/30 hover:scale-[1.02]">
+            </a>
+            <button 
+            onClick={() => router.push('/login')}
+            className="group flex items-center justify-center gap-3 w-full sm:w-auto px-6 py-3.5 md:px-8 md:py-4 bg-foreground text-surface-white text-[10px] md:text-xs font-normal uppercase tracking-widest transition-all duration-300 rounded-full shadow-lg hover:shadow-foreground/20 hover:scale-[1.02]">
               Run Prediction
               <svg
                 className="w-3.5 h-3.5 md:w-4 md:h-4 transform transition-transform duration-300 group-hover:translate-x-1"

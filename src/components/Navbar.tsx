@@ -32,10 +32,10 @@ export default function Navbar() {
   }, [isMenuOpen]);
 
   const navLinks = [
-    { name: 'Platform Overview', href: '#about', id: '01' },
-    { name: 'The Paradox', href: '#problem', id: '02' },
-    { name: 'ML Architecture', href: '#architecture', id: '03' },
-    { name: 'Research Data', href: '#research', id: '04' },
+    { name: 'Home', href: '/', id: '01' },
+    { name: 'Standards', href: '/standards', id: '02' },
+    { name: 'Articles', href: '/articles', id: '03' },
+    { name: 'About Us', href: '/aboutus', id: '04' },
   ];
 
   const curtainVariants: Variants = {
@@ -114,19 +114,7 @@ export default function Navbar() {
           >
             <div className="relative z-10 flex flex-col max-w-7xl mx-auto w-full px-6 md:px-12 pt-28 pb-10 min-h-svh">
               
-              <div className="flex flex-col w-full max-w-5xl my-auto">
-                <motion.div 
-                  initial={{ opacity: 0 }} 
-                  animate={{ opacity: 1 }} 
-                  transition={{ delay: 0.2 }}
-                  className="flex items-center gap-3 mb-8 md:mb-10"
-                >
-                  <div className="w-1.5 h-1.5 rounded-full bg-accent" />
-                  <span className="text-[10px] md:text-xs font-mono uppercase tracking-[0.2em] text-muted font-medium">
-                    Index
-                  </span>
-                </motion.div>
-
+              <div className="flex flex-col w-full max-w-7xl my-auto">
                 <div className="w-full flex flex-col gap-1 md:gap-2">
                   {navLinks.map((link, i) => (
                     <motion.div
