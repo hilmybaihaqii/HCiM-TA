@@ -10,6 +10,7 @@ export interface TeamMember {
   email: string;
   bio?: string;
   image: string;
+  imagePosition?: string;
   linkedin: string;
 }
 
@@ -24,7 +25,8 @@ export const TEAM_DATA: TeamMember[] = [
     location: 'Bandung, Indonesia',
     email: 'hilmybaihaqi08@gmail.com',
     bio: 'Translating complex in-silico computational data into a seamless, intuitive, and highly editorial digital experience.',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=800&auto=format&fit=crop',
+    image: '/pictures/team/Hilmy Baihaqi.jpeg',
+    imagePosition: 'center top',
     linkedin: '#',
   },
   {
@@ -36,7 +38,8 @@ export const TEAM_DATA: TeamMember[] = [
     location: 'Bandung, Indonesia',
     email: 'csribawono@gmail.com',
     bio: 'Focusing on the methodological rigor and architectural integration of predictive cardiotoxicity models.',
-    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=800&auto=format&fit=crop',
+    image: '/pictures/team/Citra Kusumadewi.jpg',
+    imagePosition: 'center top',
     linkedin: '#',
   },
   {
@@ -48,7 +51,7 @@ export const TEAM_DATA: TeamMember[] = [
     location: 'Bandung, Indonesia',
     email: 'mitch.affandi22@gmail.com',
     bio: 'Ensuring robust operational deployment and maintaining the backbone infrastructure for high-capacity simulations.',
-    image: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=800&auto=format&fit=crop',
+    image: '/pictures/team/Mitchel M. Affandi.jpeg',
     linkedin: '#',
   },
 
@@ -61,7 +64,7 @@ export const TEAM_DATA: TeamMember[] = [
     institution: 'Telecommunication Eng., Telkom University',
     location: 'Bandung, Indonesia',
     email: 'yunendah@telkomuniversity.ac.id',
-    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=800&auto=format&fit=crop', // Ganti dengan foto asli
+    image: '/pictures/team/Yunendah Nur Fuadah.png',
     linkedin: '#',
   },
   {
@@ -72,7 +75,7 @@ export const TEAM_DATA: TeamMember[] = [
     institution: 'Robotics and AI Eng., Universitas Airlangga',
     location: 'Surabaya, Indonesia',
     email: 'ali.ikhsanul.q@ftmm.unair.ac.id',
-    image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=800&auto=format&fit=crop', // Ganti dengan foto asli
+    image: '/pictures/team/Ali Ikhsanul Qauli.png',
     linkedin: '#',
   },
   {
@@ -83,7 +86,7 @@ export const TEAM_DATA: TeamMember[] = [
     institution: 'Kumoh National Institute of Technology',
     location: 'Gumi, Republic of Korea',
     email: 'adnanpramudito@kumoh.ac.kr',
-    image: 'https://images.unsplash.com/photo-1517070208541-6d8fec9b8e62?q=80&w=800&auto=format&fit=crop', // Ganti dengan foto asli
+    image: '/pictures/team/Muhammad-Adnan-Pramudito.png',
     linkedin: '#',
   },
   {
@@ -94,7 +97,8 @@ export const TEAM_DATA: TeamMember[] = [
     institution: 'Medical IT Convergence Eng., Kumoh National Institute of Technology',
     location: 'Gumi, Republic of Korea',
     email: 'kmlim@kumoh.ac.kr',
-    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=800&auto=format&fit=crop', // Ganti dengan foto asli
+    image: '/pictures/team/Prof-Kii-Moo-Lim.png',
+    imagePosition: 'center top',
     linkedin: '#',
   },
 ];
