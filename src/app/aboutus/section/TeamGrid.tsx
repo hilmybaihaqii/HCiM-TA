@@ -59,7 +59,7 @@ export default function TeamGrid() {
             </article>
           ))}
         </div>
-      </div>
+;      </div>
     </section>
   );
 }
