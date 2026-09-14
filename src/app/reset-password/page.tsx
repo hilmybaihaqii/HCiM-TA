@@ -98,7 +98,7 @@ function ResetPasswordForm() {
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }}
           className="absolute top-8 right-8 z-50"
         >
-          <Link href="/login" className="text-white/50 hover:text-white transition-colors duration-300 p-2 block">
+          <Link href="/login" aria-label="Back to sign in" className="text-white/50 hover:text-accent transition-colors duration-300 p-2 block outline-none focus-visible:ring-2 focus-visible:ring-accent/60 rounded-full">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -307,7 +307,7 @@ export default function ResetPasswordPage() {
 
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1 }}>
           <Link href="/" className="relative z-10 text-2xl font-bold tracking-tight text-foreground hover:opacity-70 transition-opacity">
-            cardivex<span className="text-[#E63946]">.</span>
+            cardivex<span className="text-accent">.</span>
           </Link>
         </motion.div>
 
@@ -321,15 +321,15 @@ export default function ResetPasswordPage() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 0.6 }} className="relative z-10 flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-foreground/50">
-          <span>Key Generation</span>
+          <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />Key Generation</span>
           <span>End-to-End Encrypted</span>
         </motion.div>
       </div>
 
       {/* PANEL KANAN (Form Reset Password) - Wajib Suspense */}
       <Suspense fallback={
-        <div className="w-full lg:w-1/2 h-full bg-[#0A0A0A] flex items-center justify-center">
-          <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+        <div className="w-full lg:w-1/2 h-full bg-primary flex items-center justify-center">
+          <div className="w-6 h-6 border-2 border-white/20 border-t-accent rounded-full animate-spin" />
         </div>
       }>
         <ResetPasswordForm />

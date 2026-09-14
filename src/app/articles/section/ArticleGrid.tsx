@@ -1,107 +1,61 @@
-'use client';
-
-import React from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { ArrowUpRight } from 'lucide-react';
 import { ARTICLES_DATA } from '@/data/articlesData';
 
-const luxEase = [0.16, 1, 0.3, 1] as const;
+const publicationLinkStyle = 'rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent';
 
 export default function ArticleGrid() {
-  const gridArticles = ARTICLES_DATA.filter((a) => !a.featured);
+  const publications = ARTICLES_DATA.filter((article) => !article.featured);
 
   return (
-    <section className="relative w-full py-16 md:py-24 bg-background font-sans">
+    <section id="publication-library" className="scroll-mt-28 pb-16 md:pb-24" aria-labelledby="library-title">
       <div className="max-w-7xl mx-auto px-6 md:px-12">
-        
-        {/* ==================== 1. SECTION HEADER ==================== */}
-        {/* Header yang lebih bersih dan ramah layaknya platform modern */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-foreground/10 pb-6 mb-12 gap-6">
+        <div className="flex flex-wrap items-end justify-between gap-5 border-b border-foreground/15 pb-6 mb-8">
           <div>
-            <h3 className="text-2xl md:text-3xl font-medium tracking-tight text-foreground mb-2">
-              Latest insights and trends
-            </h3>
-            <p className="text-sm md:text-base text-muted font-light max-w-lg">
-              Explore our comprehensive archive of research, computational strategies, and technical dispatches.
-            </p>
+            <p className="text-[10px] font-mono uppercase tracking-[0.16em] text-accent mb-3">01 / The collection</p>
+            <h2 id="library-title" className="text-3xl md:text-4xl font-medium tracking-tight">More research. <span className="font-serif italic font-normal">Broader perspectives.</span></h2>
           </div>
-          <div className="px-4 py-2 bg-foreground/5 rounded-md">
-            <span className="text-sm font-medium text-foreground/80">
-              {gridArticles.length} Articles
-            </span>
-          </div>
+          <span className="text-xs font-mono text-muted">{String(publications.length).padStart(2, '0')} further readings</span>
         </div>
 
-        {/* ==================== 2. ARTICLES GRID ==================== */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-16 gap-x-8 md:gap-x-12">
-          {gridArticles.map((article, index) => (
-            <motion.article
-              key={article.id}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.8, delay: index * 0.1, ease: luxEase }}
-              className="group flex flex-col justify-between h-full"
-            >
-              <Link href={`/articles/${article.slug}`} className="flex flex-col grow">
-                
-                {/* THUMBNAIL (Rounded-2xl, Full Color, Smooth Zoom) */}
-                <div className="block relative w-full aspect-4/3 overflow-hidden rounded-md bg-foreground/5 mb-6">
-                  <Image
-                    src={article.image}
-                    alt={article.title}
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
-                  />
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+          {publications.map((article, index) => {
+            const publicationUrl = `https://doi.org/${article.doi}`;
+            const wide = publications.length % 2 === 1 && index === publications.length - 1;
 
-                {/* META DATA (Badge Kategori & Waktu Baca) */}
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="px-2.5 py-1 bg-foreground/5 text-foreground/80 text-[10px] font-semibold rounded-md uppercase tracking-wider">
-                    {article.category}
+            return (
+              <article
+                id={`publication-${article.id}`}
+                key={article.id}
+                className={`group relative flex flex-col min-w-0 rounded-md border border-foreground/10 bg-surface-white/40 p-6 sm:p-8 hover:border-accent/40 hover:bg-surface-white/70 transition-colors scroll-mt-28 ${wide ? 'md:col-span-2' : ''}`}
+                aria-labelledby={`publication-title-${article.id}`}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+                  <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-accent">{article.category}</span>
+                  <span className="font-serif text-2xl text-foreground/60">{article.year}</span>
+                </div>
+                <div className={wide ? 'md:grid md:grid-cols-2 md:gap-10' : ''}>
+                  <div>
+                    <h3 id={`publication-title-${article.id}`} className="text-xl sm:text-2xl font-medium tracking-tight leading-snug mb-4">
+                      <a href={publicationUrl} target="_blank" rel="noopener noreferrer" className={`${publicationLinkStyle} hover:text-accent transition-colors`}>
+                        {article.title}<span className="sr-only"> (opens in a new tab)</span>
+                      </a>
+                    </h3>
+                    <p className="text-sm leading-relaxed text-muted mb-3"><span className="sr-only">Authors: </span>{article.authors.join(', ')}</p>
+                    <p className="text-sm italic leading-relaxed mb-4"><span className="sr-only">Journal: </span>{article.journal}</p>
+                    {article.publicationNote && <p className="text-xs text-muted mb-4">{article.publicationNote}</p>}
                   </div>
-                  <span className="text-muted/40">•</span>
-                  <span className="text-xs text-muted font-medium">
-                    {article.readTime}
-                  </span>
+                  <p className="text-sm text-muted leading-relaxed mb-7">{article.excerpt}</p>
                 </div>
-
-                {/* TITLE (Tegas & Proporsional) */}
-                <h4 className="text-xl md:text-2xl font-medium tracking-tight text-foreground leading-tight group-hover:text-accent transition-colors duration-300 mb-3">
-                  {article.title}
-                </h4>
-
-                {/* EXCERPT (Terbaca Jelas & Terbatas 3 Baris) */}
-                <p className="text-sm text-muted/90 font-light leading-relaxed line-clamp-3 mb-6">
-                  {article.excerpt}
-                </p>
-                
-              </Link>
-
-              {/* ACTION & DATE (Bagian Bawah Kartu) */}
-              <div className="pt-5 border-t border-foreground/10 flex items-center justify-between mt-auto">
-                <span className="text-xs text-muted/80 font-medium">
-                  {article.date}
-                </span>
-                
-                {/* Teks Link dengan Panah Interaktif */}
-                <Link
-                  href={`/articles/${article.slug}`}
-                  className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-accent transition-colors duration-300 group/link"
-                >
-                  Read more 
-                  <span className="text-lg leading-none font-normal transition-transform duration-300 group-hover/link:translate-x-1.5">
-                    &rarr;
-                  </span>
-                </Link>
-              </div>
-
-            </motion.article>
-          ))}
+                <div className="mt-auto flex flex-wrap items-center justify-between gap-x-5 gap-y-2 border-t border-foreground/10 pt-4">
+                  <p className="text-[11px] text-muted break-all">DOI: {article.doi}</p>
+                  <a href={publicationUrl} target="_blank" rel="noopener noreferrer" aria-label={`View Publication: ${article.title} (opens in a new tab)`} className={`${publicationLinkStyle} inline-flex min-h-11 items-center gap-2 text-sm font-medium hover:text-accent transition-colors`}>
+                    View Publication <ArrowUpRight className="size-4 motion-safe:transition-transform motion-safe:group-hover:translate-x-0.5 motion-safe:group-hover:-translate-y-0.5" aria-hidden="true" />
+                  </a>
+                </div>
+              </article>
+            );
+          })}
         </div>
-
       </div>
     </section>
   );

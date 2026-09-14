@@ -1,102 +1,102 @@
-'use client';
-
-import React from 'react';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
 import { TEAM_DATA } from '@/data/teamData';
 
-const luxEase = [0.16, 1, 0.3, 1] as const;
-
 export default function AboutHero() {
-  const images = TEAM_DATA.slice(0, 7).map((member) => member.image);
-
-  const glassBackgroundImage = 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=800&auto=format&fit=crop';
+  const researchers = TEAM_DATA.filter((member) => member.category === 'core');
+  const advisors = TEAM_DATA.filter((member) => member.category === 'advisor');
 
   return (
-    <section className="relative w-full pt-36 md:pt-44 bg-background overflow-hidden font-sans">
-      
-      {/* ==================== 1. CENTERED TEXT HEADER ==================== */}
-      <div className="max-w-7xl mx-auto px-6 text-center relative z-20 mb-12 md:mb-16">
-        <motion.h1 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: luxEase }}
-          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-medium tracking-tight text-foreground mb-6"
-        >
-          About Us
-        </motion.h1>
-        <motion.p 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.1, ease: luxEase }}
-          className="text-base sm:text-lg md:text-xl text-muted font-light leading-relaxed max-w-7xl mx-auto"
-        >
-          A multidisciplinary research group sitting at the intersection of electrophysiology, machine learning, and digital interface design to engineer the future of cardiac safety.
-        </motion.p>
-      </div>
+    <section aria-labelledby="about-title" className="mx-auto max-w-7xl px-6 pb-14 pt-32 md:px-12 md:pb-20 md:pt-40">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-10 flex flex-wrap items-center justify-between gap-3 border-b border-foreground/15 pb-4 font-mono text-[10px] uppercase tracking-[0.16em] text-muted md:mb-14">
+          <p className="flex items-center gap-3"><span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />01 / About us</p>
+          <p>People, ideas &amp; cardiac science</p>
+        </div>
 
-      {/* ==================== 2. TIGHT INTERLOCKING COLLAGE ==================== */}
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 z-10 pb-24 md:pb-32">
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.2, ease: luxEase }}
-          className="flex justify-center items-center gap-3 sm:gap-4 md:gap-6 lg:gap-8 relative z-10"
-        >
-          
-          {/* KOLOM 1: TALL (Brand Element) di atas, SHORT (Team) di bawah */}
-          <div className="flex flex-col gap-3 sm:gap-4 md:gap-6">
-            
-            {/* SLOT 1 (KIRI ATAS): Dark Frosted Glass Brand Element */}
-            <div className="group relative w-20 h-30 sm:w-32.5 sm:h-47.5 md:w-45 md:h-65 lg:w-55 lg:h-80 rounded-full overflow-hidden shrink-0 shadow-sm border border-foreground/10">
-              <Image src={glassBackgroundImage} alt="Lab Background" fill className="object-cover" />
-              
-              <div className="absolute inset-0 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center p-4 sm:p-6 text-center transition-colors duration-500 group-hover:bg-black/40">
-                <span className="text-[10px] sm:text-sm md:text-xl font-medium tracking-tight text-white leading-tight">
-                  Cardivex<br />Research
+        <div className="grid items-center gap-12 lg:grid-cols-[1fr_1fr] lg:gap-16">
+          <div>
+            <h1 id="about-title" className="max-w-xl text-[44px] font-medium leading-[1.04] tracking-[-0.055em] sm:text-6xl lg:text-[70px] xl:text-[80px]">
+              The people<br />
+              behind<br />
+              <span className="font-serif font-normal italic tracking-[-0.055em] text-accent">Cardivex.</span>
+            </h1>
+            <p className="mt-7 max-w-md text-base leading-relaxed text-muted sm:text-lg">
+              A student research project bringing together cardiac modelling, machine learning, and thoughtful digital design.
+            </p>
+            <a
+              href="#team"
+              className="mt-8 inline-flex min-h-12 items-center gap-8 border-b border-foreground pb-2 text-sm font-medium transition-colors hover:border-accent hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+            >
+              Meet the team <span aria-hidden="true" className="text-xl">↓</span>
+            </a>
+          </div>
+
+          <figure className="relative mx-auto w-full max-w-xl">
+            <div className="relative rounded-sm border border-foreground/15 bg-[#EFE9E6] px-4 pb-5 pt-5 sm:px-7 sm:pb-7 sm:pt-6">
+              <div className="mb-6 flex items-center justify-between gap-3 font-mono text-[9px] uppercase tracking-[0.12em] text-muted sm:text-[10px]">
+                <span>Cardivex / Research team</span>
+                <span className="flex items-center gap-1.5" aria-hidden="true">
+                  <span className="h-1 w-1 rounded-full bg-accent" />
+                  <span className="h-1 w-1 rounded-full bg-accent/50" />
+                  <span className="h-1 w-1 rounded-full bg-accent/25" />
                 </span>
               </div>
-            </div>
+              <div className="grid grid-cols-3 items-start gap-2.5 sm:gap-4">
+                {researchers.map((member, index) => (
+                  <div key={member.id} className={index === 1 ? 'pb-8' : 'pt-8'}>
+                    <div className="relative aspect-[3/4] overflow-hidden rounded-sm bg-background">
+                      <Image
+                        src={member.image}
+                        alt={member.name}
+                        fill
+                        sizes="(max-width: 639px) 28vw, (max-width: 1023px) 150px, 160px"
+                        style={{ objectPosition: member.imagePosition ?? 'center' }}
+                        className="object-cover"
+                        preload={index === 1}
+                      />
+                    </div>
+                    <p className="mt-2 text-center font-mono text-[9px] uppercase tracking-[0.1em] text-foreground sm:text-[10px]">
+                      {member.name.split(' ')[0]}
+                    </p>
+                  </div>
+                ))}
+              </div>
 
-            {/* SLOT 2 */}
-            <div className="relative w-20 h-20 sm:w-32.5 sm:h-32.5 md:w-45 md:h-45 lg:w-55 lg:h-55 rounded-full overflow-hidden shrink-0 shadow-sm">
-              <Image src={images[0]} alt="Team Member" fill className="object-cover" />
+              <div className="mt-4 border-t border-foreground/15 pt-5">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex gap-2 sm:gap-3">
+                    {advisors.map((member) => (
+                      <div key={member.id} className="relative h-11 w-11 overflow-hidden rounded-full border-2 border-background bg-background sm:h-14 sm:w-14">
+                        <Image
+                          src={member.image}
+                          alt={member.name}
+                          fill
+                          sizes="56px"
+                          style={{ objectPosition: member.imagePosition ?? 'center' }}
+                          className="object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs leading-relaxed text-muted">
+                    Guided by<br /><span className="font-medium text-foreground">our advisors.</span>
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
+            <figcaption className="mt-4 flex flex-wrap justify-between gap-2 font-mono text-[9px] uppercase tracking-[0.12em] text-muted sm:text-[10px]">
+              <span>{researchers.length} students · {advisors.length} supervisors &amp; advisors</span>
+              <span>A shared curiosity.</span>
+            </figcaption>
+          </figure>
+        </div>
 
-          {/* KOLOM 2: SHORT di atas, TALL di bawah */}
-          <div className="flex flex-col gap-3 sm:gap-4 md:gap-6">
-            <div className="relative w-20 h-20 sm:w-32.5 sm:h-32.5 md:w-45 md:h-45 lg:w-55 lg:h-55 rounded-full overflow-hidden shrink-0 shadow-sm">
-              <Image src={images[1]} alt="Team Member" fill className="object-cover" />
-            </div>
-            <div className="relative w-20 h-30 sm:w-32.5 sm:h-47.5 md:w-45 md:h-65 lg:w-55 lg:h-80 rounded-full overflow-hidden shrink-0 shadow-sm">
-              <Image src={images[2]} alt="Team Member" fill className="object-cover" />
-            </div>
-          </div>
-
-          {/* KOLOM 3: TALL di atas, SHORT di bawah */}
-          <div className="flex flex-col gap-3 sm:gap-4 md:gap-6">
-            <div className="relative w-20 h-30 sm:w-32.5 sm:h-47.5 md:w-45 md:h-65 lg:w-55 lg:h-80 rounded-full overflow-hidden shrink-0 shadow-sm">
-              <Image src={images[3]} alt="Team Member" fill className="object-cover" />
-            </div>
-            <div className="relative w-20 h-20 sm:w-32.5 sm:h-32.5 md:w-45 md:h-45 lg:w-55 lg:h-55 rounded-full overflow-hidden shrink-0 shadow-sm">
-              <Image src={images[4]} alt="Team Member" fill className="object-cover" />
-            </div>
-          </div>
-
-          {/* KOLOM 4: SHORT di atas, TALL di bawah */}
-          <div className="flex flex-col gap-3 sm:gap-4 md:gap-6">
-            <div className="relative w-20 h-20 sm:w-32.5 sm:h-32.5 md:w-45 md:h-45 lg:w-55 lg:h-55 rounded-full overflow-hidden shrink-0 shadow-sm">
-              <Image src={images[5]} alt="Team Member" fill className="object-cover" />
-            </div>
-            <div className="relative w-20 h-30 sm:w-32.5 sm:h-47.5 md:w-45 md:h-65 lg:w-55 lg:h-80 rounded-full overflow-hidden shrink-0 shadow-sm">
-              <Image src={images[6]} alt="Team Member" fill className="object-cover" />
-            </div>
-          </div>
-
-        </motion.div>
+        <div className="mt-12 flex flex-wrap gap-x-8 gap-y-3 border-t border-foreground/15 pt-5 font-mono text-[10px] uppercase tracking-[0.1em] text-muted md:mt-16">
+          {['Cardiac electrophysiology', 'Machine learning', 'In-silico research'].map((area) => (
+            <span key={area} className="flex items-center gap-3"><span className="text-accent" aria-hidden="true">+</span>{area}</span>
+          ))}
+        </div>
       </div>
-      
     </section>
   );
 }

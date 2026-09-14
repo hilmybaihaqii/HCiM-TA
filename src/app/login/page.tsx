@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { api } from '@/lib/api';
-import { CheckCircle2, Loader2, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Loader2, X } from 'lucide-react';
 
 // ============================================================================
 // KOMPONEN FORM & REDIRECT UTAMA
@@ -143,7 +143,8 @@ function LoginForm() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute top-8 right-8 z-50">
             <button
               onClick={() => router.push('/')}
-              className="text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all duration-300 p-2 block outline-none"
+              aria-label="Close and return to homepage"
+              className="text-white/50 hover:text-accent hover:bg-white/10 rounded-full transition-all duration-300 p-2 block outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
             >
               <X className="w-6 h-6" />
             </button>
@@ -347,7 +348,7 @@ export default function LoginPage() {
 
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1 }}>
           <Link href="/" className="relative z-10 text-2xl font-bold tracking-tight text-foreground hover:opacity-70 transition-opacity">
-            cardivex<span className="text-[#E63946]">.</span>
+            cardivex<span className="text-accent">.</span>
           </Link>
         </motion.div>
 
@@ -361,12 +362,12 @@ export default function LoginPage() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 0.6 }} className="relative z-10 flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-foreground/50">
-          <span>Security Protocol</span>
+          <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />Security Protocol</span>
           <span>Encrypted Session</span>
         </motion.div>
       </div>
 
-      <Suspense fallback={<div className="w-full lg:w-1/2 h-full bg-[#0A0A0A] flex items-center justify-center"><div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" /></div>}>
+      <Suspense fallback={<div className="w-full lg:w-1/2 h-full bg-primary flex items-center justify-center"><div className="w-6 h-6 border-2 border-white/20 border-t-accent rounded-full animate-spin" /></div>}>
         <LoginForm />
       </Suspense>
     </main>

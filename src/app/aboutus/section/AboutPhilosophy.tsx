@@ -1,73 +1,28 @@
-'use client';
-
-import React from 'react';
-import { motion } from 'framer-motion';
-
-const luxEase = [0.16, 1, 0.3, 1] as const;
+import ResearchGraphic from '@/components/research/ResearchGraphic';
 
 export default function AboutPhilosophy() {
   return (
-    <section className="relative w-full bg-background pt-24 pb-12 md:pt-32 md:pb-16 font-sans overflow-hidden">
-      <div className="max-w-7xl mx-auto px-6 md:px-12 text-center flex flex-col items-center">
-        
-        {/* Garis Pemicu (Muncul mekar dari tengah) */}
-        <motion.div 
-          initial={{ opacity: 0, scaleX: 0 }}
-          whileInView={{ opacity: 1, scaleX: 1 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8, ease: luxEase }}
-          className="w-16 h-px bg-foreground/10 mb-12 md:mb-16 origin-center" 
-        />
-
-        {/* Teks Utama yang Terpecah dari 3 Arah */}
-        <h2 className="text-3xl md:text-5xl lg:text-6xl font-extralight tracking-tight text-foreground leading-tight max-w-5xl mb-8">
-          
-          {/* Bagian 1: Turun dari ATAS */}
-          <motion.span
-            initial={{ opacity: 0, y: -40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.8, delay: 0.1, ease: luxEase }}
-            className="inline-block mr-2 lg:mr-3"
-          >
-            Driving the convergence of
-          </motion.span>
-          
-          {/* Bagian 2: Menabrak dari KIRI */}
-          <motion.span
-            initial={{ opacity: 0, x: -50 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.8, delay: 0.3, ease: luxEase }}
-            className="font-normal text-accent inline-block mr-2 lg:mr-3"
-          >
-            computational rigor
-          </motion.span>
-          
-          {/* Bagian 3: Menabrak dari KANAN */}
-          <motion.span
-            initial={{ opacity: 0, x: 50 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.8, delay: 0.3, ease: luxEase }}
-            className="inline-block"
-          >
-            and cardiac safety.
-          </motion.span>
-
-        </h2>
-
-        {/* Paragraf Sub-teks: Naik dari BAWAH */}
-        <motion.p 
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8, delay: 0.5, ease: luxEase }}
-          className="text-base md:text-lg text-muted font-light leading-relaxed max-w-2xl"
-        >
-          We are united by a singular focus: to engineer reliable, predictive in-silico models that redefine pharmacovigilance and accelerate safe therapeutic discovery.
-        </motion.p>
-        
+    <section id="research-focus" aria-labelledby="research-question-title" className="mx-auto max-w-7xl scroll-mt-28 px-6 pb-8 md:px-12 md:pb-12">
+      <div className="relative mx-auto max-w-7xl overflow-hidden rounded-sm border border-accent/20 bg-[#F0E6E3] px-7 py-10 sm:px-10 md:px-12 md:py-14">
+        <ResearchGraphic className="pointer-events-none absolute -right-20 -top-10 h-[430px] w-[430px] text-accent opacity-[0.13]" />
+        <div className="relative grid gap-8 md:grid-cols-[0.7fr_1.3fr] md:gap-14">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-accent-dark">02 / Our research question</p>
+            <div aria-hidden="true" className="mt-7 flex h-16 items-center gap-1.5 text-accent/60">
+              {[12, 17, 12, 26, 48, 19, 12, 35, 58, 25, 12, 18, 12].map((height, index) => (
+                <span key={index} className="w-[3px] rounded-full bg-current" style={{ height }} />
+              ))}
+            </div>
+          </div>
+          <div>
+            <h2 id="research-question-title" className="max-w-2xl text-2xl font-medium leading-[1.25] tracking-tight sm:text-3xl lg:text-[36px]">
+              How can computational models help us understand the heart&apos;s response to a drug?
+            </h2>
+            <p className="mt-5 max-w-xl text-sm leading-relaxed text-foreground/75 sm:text-base">
+              This question connects our work. Through Cardivex, we explore how simulated cardiac signals and machine learning can support the study of drug-induced cardiotoxicity, drawing on the published research of our supervisors and advisors.
+            </p>
+          </div>
+        </div>
       </div>
     </section>
   );

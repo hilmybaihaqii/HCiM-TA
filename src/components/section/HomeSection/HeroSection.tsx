@@ -69,7 +69,7 @@ export default function HeroSection() {
             transition={{ duration: 1, delay: 0.5 }}
             className="flex flex-col gap-1.5 md:gap-2"
           >
-            <div className="flex items-center gap-2 md:gap-3">
+            <div className="flex items-center gap-2 md:gap-3 bg-secondary/15 border border-secondary/30 px-3 py-1.5 rounded-full">
               <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-accent animate-pulse" />
               <div className="text-[9px] md:text-xs font-mono uppercase tracking-[0.2em] text-foreground font-medium">
                 O&apos;Hara-Rudy Cell Data
@@ -98,8 +98,9 @@ export default function HeroSection() {
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1, delay: 0.8 }}
-            className="w-full lg:max-w-md bg-surface-white/60 backdrop-blur-2xl border border-foreground/5 shadow-[0_20px_80px_rgba(0,0,0,0.04)] p-5 md:p-6 lg:p-8 rounded-3xl pointer-events-auto relative overflow-hidden group"
+            className="w-full lg:max-w-md bg-surface-white/25 backdrop-blur-2xl backdrop-saturate-150 border border-white/40 shadow-[0_20px_80px_rgba(0,0,0,0.06)] p-5 md:p-6 lg:p-8 rounded-3xl pointer-events-auto relative overflow-hidden group"
           >
+            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/70 to-transparent" />
             <h2 className="text-lg md:text-xl font-medium text-foreground mb-2 md:mb-3 tracking-tight">
               Rescue Viable Therapeutics.
             </h2>

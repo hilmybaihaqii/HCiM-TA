@@ -1,91 +1,115 @@
-// src/data/articlesData.ts
-
 export interface ArticleItem {
   id: string;
   slug: string;
-  number: string;
   title: string;
-  excerpt: string;
-  content: string[];
+  authors: string[];
+  /** Citation year; an earlier online publication date is shown separately. */
+  year: number;
+  journal: string;
+  doi: string;
   category: string;
-  readTime: string;
-  date: string;
-  image: string;
+  excerpt: string;
+  publicationNote?: string;
   featured?: boolean;
 }
 
+// Publication metadata and short summaries checked against the publisher pages.
+// DOI links resolve to the original publications.
 export const ARTICLES_DATA: ArticleItem[] = [
   {
     id: '1',
-    slug: 'in-silico-cardiotoxicity-prediction-frameworks',
-    number: '01',
-    title: 'Beyond the Petri Dish: How Machine Learning Predicts Drug-Induced Cardiotoxicity',
-    excerpt:
-      'Exploring how cellular electrophysiology simulations combined with stacking ensemble classifiers are rendering early-stage animal testing obsolete while uncovering hidden QT prolongation risks.',
-    content: [
-      'For decades, evaluating the cardiac safety of novel pharmaceuticals relied heavily on animal testing and late-stage clinical trials. However, drug-induced cardiotoxicity—specifically fatal arrhythmias like Torsade de Pointes (TdP)—remains one of the primary reasons drugs are withdrawn from the market.',
-      'By combining in-silico electrophysiological heart cell simulations with Stacking Ensemble machine learning architectures, modern computational toxicology can now read subtle cellular biomarkers long before a physical compound is ever synthesized.',
-      'Our approach examines eleven crucial intracellular metrics, from calcium handling dynamics (CaTD90) to net electrical charge transfer (qNet). The result is a highly precise, animal-free early warning system that flags arrhythmia risks with unprecedented accuracy.',
-      'Unlike traditional simple classifiers, ensemble architectures leverage the variance reduction of Random Forests alongside the gradient optimization of XGBoost. When tested against unseen compounds, this multi-layered approach demonstrates superior sensitivity without overfitting to common drug profiles.'
+    slug: 'tdp-risk-inter-individual-variability',
+    title: 'Machine learning approach to evaluate TdP risk of drugs using cardiac electrophysiological model including inter-individual variability',
+    authors: [
+      'Yunendah Nur Fuadah',
+      'Ali Ikhsanul Qauli',
+      'Aroli Marcellinus',
+      'Muhammad Adnan Pramudito',
+      'Ki Moo Lim',
     ],
-    category: 'Pharmacovigilance',
-    readTime: '6 MIN READ',
-    date: 'JULY 2026',
-    image: 'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?q=80&w=1200&auto=format&fit=crop',
-    featured: true,
+    year: 2023,
+    journal: 'Frontiers in Physiology',
+    doi: '10.3389/fphys.2023.1266084',
+    category: 'In silico cardiac safety',
+    excerpt: 'Combines biomarkers from a virtual population of cardiac cell models with machine learning to evaluate drug-induced TdP risk while accounting for differences between individuals.',
   },
   {
     id: '2',
-    slug: 'understanding-torsade-de-pointes-biomarkers',
-    number: '02',
-    title: 'The Anatomy of Torsade de Pointes: Eleven Biomarkers You Cannot Ignore',
-    excerpt:
-      'Why electrical charge (qNet) and action potential duration (APD90) remain the gold standard metrics when evaluating lethal ventricular arrhythmia.',
-    content: [
-      'When an ion channel in a cardiomyocyte is blocked by a chemical compound, the electrical reset time of the heart cell is prolonged. This delay appears on an ECG as QT prolongation, a known precursor to Torsade de Pointes.',
-      'While APD90 (Action Potential Duration at 90% repolarization) has traditionally served as the primary metric for risk, recent consensus in computational pharmacovigilance highlights qNet—the net integrated membrane current—as a far superior differentiator.',
-      'Understanding the interplay between potassium channel blockades and intracellular calcium accumulation allows researchers to separate benign QT prolongation from truly lethal pro-arrhythmic risks.'
-    ],
-    category: 'Electrophysiology',
-    readTime: '4 MIN READ',
-    date: 'JUNE 2026',
-    image: 'https://images.unsplash.com/photo-1576086213369-97a306d36557?q=80&w=800&auto=format&fit=crop',
-    featured: false,
+    slug: 'atrial-fibrillation-heart-failure-classification',
+    title: 'Optimal Classification of Atrial Fibrillation and Congestive Heart Failure Using Machine Learning',
+    authors: ['Yunendah Nur Fuadah', 'Ki Moo Lim'],
+    year: 2022,
+    journal: 'Frontiers in Physiology',
+    doi: '10.3389/fphys.2021.761013',
+    category: 'ECG classification',
+    excerpt: 'Investigates ECG features and optimized machine learning classifiers to distinguish atrial fibrillation, congestive heart failure, and normal sinus rhythm.',
   },
   {
     id: '3',
-    slug: 'algorithmic-precision-in-drug-discovery',
-    number: '03',
-    title: 'Algorithmic Precision: Designing Reliable AI Models for Cardiac Safety',
-    excerpt:
-      'A technical deep dive into balancing imbalanced biomedical datasets using ADASYN and validation techniques across novel chemical compounds.',
-    content: [
-      'One of the greatest engineering hurdles in biochemical machine learning is dataset imbalance. High-risk, highly toxic compounds occur far less frequently in historical pharmacological databases than safe compounds.',
-      'To prevent predictive models from biasing toward safety, we implement ADASYN (Adaptive Synthetic Sampling Approach). Unlike simple oversampling, ADASYN dynamically generates synthetic data along the decision boundaries of the most complex, hard-to-classify chemical structures.',
-      'When paired with a Stacking Ensemble classifier—combining the predictive strengths of Gradient Boosting, Random Forests, and Deep Neural Networks—the pipeline achieves remarkable sensitivity across unseen drug validations.'
+    slug: 'heart-sound-classification-grid-search',
+    title: 'An Optimal Approach for Heart Sound Classification Using Grid Search in Hyperparameter Optimization of Machine Learning',
+    authors: [
+      'Yunendah Nur Fuadah',
+      'Muhammad Adnan Pramudito',
+      'Ki Moo Lim',
     ],
-    category: 'Machine Learning',
-    readTime: '8 MIN READ',
-    date: 'MAY 2026',
-    image: 'https://images.unsplash.com/photo-1507413245164-6160d8298b31?q=80&w=800&auto=format&fit=crop',
-    featured: false,
+    year: 2023,
+    journal: 'Bioengineering',
+    doi: '10.3390/bioengineering10010045',
+    category: 'Heart sound classification',
+    publicationNote: '2023 volume · Published online 29 Dec 2022',
+    excerpt: 'Uses heart-sound features and grid search to tune machine learning classifiers for detecting normal and abnormal recordings from the PhysioNet Challenge 2016 and 2022 datasets.',
   },
   {
     id: '4',
-    slug: 'ciwidey-optical-backbone-case-study',
-    number: '04',
-    title: 'The Architecture of Precision: Low-Latency Infrastructure for Cloud Bio-Simulations',
-    excerpt:
-      'How robust optical backbones and dense wavelength networking ensure real-time cellular simulation processing across remote medical laboratories.',
-    content: [
-      'Executing millions of differential equations to simulate ion channel kinetics requires massive computational bandwidth and near-zero network latency.',
-      'In our latest infrastructure design study, we explore how DWDM (Dense Wavelength Division Multiplexing) optical backbones can interconnect remote bio-simulation clusters with research institutions across high-latency topologies.',
-      'By optimizing optical signal-to-noise ratios and minimizing fiber dispersion, distributed medical teams can interact with real-time in-silico cardiotoxicity models without experiencing rendering bottleneck or data degradation.'
+    slug: 'stacking-ensemble-in-silico-cardiac-toxicity',
+    title: 'A stacking ensemble machine learning model for evaluating cardiac toxicity of drugs based on in silico biomarkers',
+    authors: [
+      'Yunendah Nur Fuadah',
+      'Ali Ikhsanul Qauli',
+      'Muhammad Adnan Pramudito',
+      'Aroli Marcellinus',
+      'Ulfa Latifa Hanum',
+      'Ki Moo Lim',
     ],
-    category: 'Infrastructure',
-    readTime: '5 MIN READ',
-    date: 'APRIL 2026',
-    image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=800&auto=format&fit=crop',
-    featured: false,
+    year: 2024,
+    journal: 'CPT: Pharmacometrics & Systems Pharmacology',
+    doi: '10.1002/psp4.13229',
+    featured: true,
+    category: 'Stacking ensemble',
+    excerpt: 'Evaluates drug-induced TdP risk using stacking ensembles and multiple simulated cardiac biomarkers, incorporating hERG dynamics and investigating variability between individuals.',
+  },
+  {
+    id: '5',
+    slug: 'stacking-ensemble-hipsc-cm-mea-cardiac-safety',
+    title: 'Stacking Ensemble Machine Learning for Cardiac Safety Assessment Using hiPSC-CM MEA Data',
+    authors: [
+      'Muhammad Adnan Pramudito',
+      'Yunendah Nur Fuadah',
+      'Yoo Seok Kim',
+      'Ki Moo Lim',
+    ],
+    year: 2026,
+    journal: 'Annals of Biomedical Engineering',
+    doi: '10.1007/s10439-026-03978-1',
+    category: 'hiPSC-CM assessment',
+    excerpt: 'Combines machine learning models to assess TdP risk using two electrophysiological measurements derived from hiPSC-CM microelectrode array data, with evaluation on unseen CiPA reference compounds.',
+  },
+  {
+    id: '6',
+    slug: 'explainable-ai-in-silico-cardiac-biomarkers',
+    title: 'Explainable artificial intelligence (XAI) to find optimal in-silico biomarkers for cardiac drug toxicity evaluation',
+    authors: [
+      'Muhammad Adnan Pramudito',
+      'Yunendah Nur Fuadah',
+      'Ali Ikhsanul Qauli',
+      'Aroli Marcellinus',
+      'Ki Moo Lim',
+    ],
+    year: 2024,
+    journal: 'Scientific Reports',
+    doi: '10.1038/s41598-024-71169-w',
+    category: 'Explainable AI',
+    excerpt: 'Applies SHAP explainability to compare the contributions of simulated cardiac biomarkers across machine learning models and investigate biomarker selection for drug-induced TdP risk prediction.',
   },
 ];

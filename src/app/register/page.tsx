@@ -4,12 +4,14 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { api } from '@/lib/api';
+import { AlertCircle } from 'lucide-react';
 
 export default function RegisterPage() {
   // State Form (Sesuai kebutuhan payload backend)[cite: 1, 2]
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   // State UI & Feedback
@@ -46,6 +48,13 @@ export default function RegisterPage() {
     setFieldErrors({});
     setIsLoading(true);
     setSuccessMsg(null);
+
+    if (password !== confirmPassword) {
+      setErrorMsg("Passwords do not match. Please try again.");
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
       // Mengirimkan data registrasi ke backend[cite: 1, 2]
@@ -99,7 +108,7 @@ export default function RegisterPage() {
 
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1 }}>
           <Link href="/" className="relative z-10 text-2xl font-bold tracking-tight text-foreground hover:opacity-70 transition-opacity">
-            cardivex<span className="text-[#E63946]">.</span>
+            cardivex<span className="text-accent">.</span>
           </Link>
         </motion.div>
 
@@ -113,7 +122,7 @@ export default function RegisterPage() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 0.6 }} className="relative z-10 flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-foreground/50">
-          <span>Registration</span>
+          <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-teal animate-pulse" />Registration</span>
           <span>Verified Access</span>
         </motion.div>
       </div>
@@ -129,7 +138,7 @@ export default function RegisterPage() {
             transition={{ duration: 0.5 }}
             className="absolute top-8 right-8 z-50"
           >
-            <Link href="/" className="text-white/50 hover:text-white transition-colors duration-300 p-2 block">
+            <Link href="/" aria-label="Close and return to homepage" className="text-white/50 hover:text-accent transition-colors duration-300 p-2 block outline-none focus-visible:ring-2 focus-visible:ring-accent/60 rounded-full">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -150,7 +159,7 @@ export default function RegisterPage() {
           <AnimatePresence mode="wait">
             {successMsg && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mb-6 overflow-hidden">
-                <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-sm text-emerald-500 text-xs text-center font-medium shadow-sm leading-relaxed">
+                <div role="status" aria-live="polite" className="p-4 bg-teal/10 border border-teal/30 rounded-sm text-teal text-xs text-center font-medium shadow-sm leading-relaxed">
                   {successMsg}
                 </div>
               </motion.div>
@@ -161,7 +170,7 @@ export default function RegisterPage() {
           <form onSubmit={handleRegister} noValidate className="flex flex-col gap-6 w-full">
 
             <div className="relative group">
-              <label className="text-[10px] font-mono uppercase tracking-widest text-white/40 mb-1 block group-focus-within:text-white transition-colors">
+              <label htmlFor="register-name" className="text-[10px] font-mono uppercase tracking-widest text-white/40 mb-1 block group-focus-within:text-accent transition-colors">
                 Full Name
               </label>
               <input
@@ -200,7 +209,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="relative group">
-              <label className="text-[10px] font-mono uppercase tracking-widest text-white/40 mb-1 block group-focus-within:text-white transition-colors">
+              <label htmlFor="register-email" className="text-[10px] font-mono uppercase tracking-widest text-white/40 mb-1 block group-focus-within:text-accent transition-colors">
                 Email Address
               </label>
               <input
@@ -239,7 +248,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="relative group flex flex-col">
-              <label className="text-[10px] font-mono uppercase tracking-widest text-white/40 mb-1 block group-focus-within:text-white transition-colors">
+              <label htmlFor="register-password" className="text-[10px] font-mono uppercase tracking-widest text-white/40 mb-1 block group-focus-within:text-accent transition-colors">
                 Password
               </label>
               <div className="relative flex items-center">
@@ -298,7 +307,7 @@ export default function RegisterPage() {
               >
                 {isLoading ? (
                   <>
-                    <div className="w-3 h-3 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                    <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     Processing
                   </>
                 ) : (
@@ -313,7 +322,7 @@ export default function RegisterPage() {
           <div className="mt-8 text-center">
             <p className="text-xs text-white/50">
               Already have an account?{' '}
-              <Link href="/login" className="text-white hover:underline transition-all font-medium">
+              <Link href="/login" className="text-accent hover:underline transition-all font-medium">
                 Sign in
               </Link>
             </p>

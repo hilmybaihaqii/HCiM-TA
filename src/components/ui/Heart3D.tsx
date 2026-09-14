@@ -50,7 +50,7 @@ export default function Heart3D() {
             enablePan={false}
             autoRotate={true}
             autoRotateSpeed={1}
-            dampingFactor={0.05}
+            enableDamping={false}
           />
           <Model isMobile={isMobile} />
           <Environment preset="city" />

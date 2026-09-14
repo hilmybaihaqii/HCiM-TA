@@ -214,7 +214,7 @@ export default function Footer() {
           <Link href="#" className="text-[11px] font-mono uppercase tracking-widest text-muted hover:text-foreground transition-colors duration-300">
             Privacy
           </Link>
-          <Link href="#" className="text-[11px] font-mono uppercase tracking-widest text-muted hover:text-foreground transition-colors duration-300">
+          <Link href="#" className="text-[11px] font-mono uppercase tracking-widest text-muted hover:text-accent transition-colors duration-300">
             Cookies
           </Link>
         </div>

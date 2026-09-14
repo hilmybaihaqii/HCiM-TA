@@ -7,15 +7,20 @@ import { useSplash } from "./SplashProvider";
 
 gsap.ticker.lagSmoothing(0);
 
-const Chars = React.memo(({ text }: { text: string }) => (
-  <>
-    {text.split("").map((c, i) => (
-      <span key={i} className="char inline-block">
-        {c === " " ? "\u00A0" : c}
-      </span>
-    ))}
-  </>
-));
+const Chars = React.memo(
+  ({ text, accentLastChar = false }: { text: string; accentLastChar?: boolean }) => (
+    <>
+      {text.split("").map((c, i) => {
+        const isAccent = accentLastChar && i === text.length - 1;
+        return (
+          <span key={i} className={`char inline-block ${isAccent ? "text-accent" : ""}`}>
+            {c === " " ? "\u00A0" : c}
+          </span>
+        );
+      })}
+    </>
+  ),
+);
 Chars.displayName = "Chars";
 
 export default function SplashScreen() {
@@ -107,7 +112,7 @@ export default function SplashScreen() {
       /* =========================================
        PHASE 0: AESTHETIC GRID & MINIMAL LINES
        ========================================= */
-      tl.to(".bg-grid", { opacity: 1, duration: 2.5, ease: "power2.inOut" }, 0);
+      tl.to(".bg-grid, .splash-glow", { opacity: 1, duration: 2.5, ease: "power2.inOut" }, 0);
 
       tl.fromTo(
         ".line-accent",
@@ -252,7 +257,7 @@ export default function SplashScreen() {
         ease: "expo.inOut",
       });
 
-      tl.to(".line-accent, .bg-grid", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, "<");
+      tl.to(".line-accent, .bg-grid, .splash-glow", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, "<");
 
       tl.to(
         overlayRef.current,
@@ -276,6 +281,13 @@ export default function SplashScreen() {
         className="fixed inset-0 z-9999 flex flex-col items-center justify-center w-screen h-screen overflow-hidden bg-[#FAFAFA] text-black font-sans"
         style={{ clipPath: "inset(0% 0% 0% 0%)", willChange: "clip-path" }}
       >
+        {/* Ambient color blobs — warna senada dengan landing page (crimson/teal/amber) */}
+        <div className="splash-glow absolute inset-0 z-0 opacity-0 pointer-events-none overflow-hidden">
+          <div className="blob-drift absolute -top-[12%] -left-[10%] w-[42vw] h-[42vw] max-w-130 max-h-130 rounded-full bg-accent/20 blur-[100px] animate-[blob-drift-1_9s_ease-in-out_infinite]" />
+          <div className="blob-drift absolute -bottom-[15%] -right-[8%] w-[38vw] h-[38vw] max-w-120 max-h-120 rounded-full bg-teal/20 blur-[100px] animate-[blob-drift-2_11s_ease-in-out_-3s_infinite]" />
+          <div className="blob-drift absolute top-[38%] right-[12%] w-[24vw] h-[24vw] max-w-80 max-h-80 rounded-full bg-amber/18 blur-[90px] animate-[blob-drift-3_7s_ease-in-out_-2s_infinite]" />
+        </div>
+
         <div
           className="bg-grid absolute inset-0 z-0 opacity-0 pointer-events-none"
           style={{
@@ -285,8 +297,8 @@ export default function SplashScreen() {
           }}
         />
 
-        <div className="line-accent absolute left-6 md:left-12 top-8 md:top-12 h-px w-20 sm:w-28 md:w-36 bg-black origin-left z-0" />
-        <div className="line-accent absolute right-6 md:right-12 bottom-8 md:bottom-12 h-px w-20 sm:w-28 md:w-36 bg-black origin-right z-0" />
+        <div className="line-accent absolute left-6 md:left-12 top-8 md:top-12 h-px w-20 sm:w-28 md:w-36 bg-accent origin-left z-0" />
+        <div className="line-accent absolute right-6 md:right-12 bottom-8 md:bottom-12 h-px w-20 sm:w-28 md:w-36 bg-teal origin-right z-0" />
 
         <div
           ref={greetingWrapRef}
@@ -306,13 +318,13 @@ export default function SplashScreen() {
               className="relative h-[1.2em] overflow-hidden flex items-center"
               style={{ contain: "layout style paint" }}
             >
-              <span className="audiens-word absolute left-0 text-neutral-800 whitespace-nowrap leading-none pb-2 pt-1">
+              <span className="audiens-word absolute left-0 text-accent whitespace-nowrap leading-none pb-2 pt-1">
                 Doctors.
               </span>
-              <span className="audiens-word absolute left-0 text-neutral-800 whitespace-nowrap leading-none pb-2 pt-1">
+              <span className="audiens-word absolute left-0 text-teal whitespace-nowrap leading-none pb-2 pt-1">
                 Researchers.
               </span>
-              <span className="audiens-word absolute left-0 text-neutral-800 whitespace-nowrap leading-none pb-2 pt-1">
+              <span className="audiens-word absolute left-0 text-amber whitespace-nowrap leading-none pb-2 pt-1">
                 Scientists.
               </span>
             </div>
@@ -327,7 +339,7 @@ export default function SplashScreen() {
             {"Welcome to.".split("").map((c, i) => (
               <span
                 key={i}
-                className="welcome-char block text-sm sm:text-base font-mono uppercase tracking-[0.3em] text-neutral-500 font-medium pb-1"
+                className="welcome-char block text-sm sm:text-base font-mono uppercase tracking-[0.3em] text-muted font-medium pb-1"
               >
                 {c === " " ? "\u00A0" : c}
               </span>
@@ -339,12 +351,13 @@ export default function SplashScreen() {
           ref={visualWrapRef}
           className="invisible absolute z-10 w-44 h-24 md:w-72 md:h-36 flex items-center justify-center"
         >
-          <svg viewBox="0 0 100 50" className="w-full h-full overflow-visible">
+          <div className="absolute w-32 h-32 md:w-48 md:h-48 rounded-full bg-accent/15 blur-[50px]" />
+          <svg viewBox="0 0 100 50" className="relative w-full h-full overflow-visible">
             <path
               className="sci-ecg"
               d="M 5 25 L 25 25 L 32 25 L 36 15 L 42 45 L 50 5 L 56 35 L 62 25 L 75 25 L 95 25"
               fill="none"
-              stroke="#E63946"
+              stroke="var(--accent-red)"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -357,19 +370,20 @@ export default function SplashScreen() {
           className="absolute z-30 flex flex-col items-center justify-center w-full px-4 md:px-8 text-center invisible"
         >
           <div className="micro-label overflow-hidden mb-4 md:mb-6">
-            <span className="block font-mono text-[10px] sm:text-xs uppercase tracking-[0.25em] text-neutral-500">
+            <span className="flex items-center justify-center gap-2 font-mono text-[10px] sm:text-xs uppercase tracking-[0.25em] text-muted">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
               Ensemble Architecture
             </span>
           </div>
 
           <div className="overflow-hidden pb-1 md:pb-2">
-            <h1 className="main-line-1 block text-[11vw] sm:text-7xl md:text-8xl lg:text-9xl font-bold tracking-tighter text-black leading-none whitespace-nowrap">
-              <Chars text="Cardiotoxicity." />
+            <h1 className="main-line-1 block text-[11vw] sm:text-7xl md:text-8xl lg:text-9xl font-bold tracking-tighter text-foreground leading-none whitespace-nowrap">
+              <Chars text="Cardiotoxicity." accentLastChar />
             </h1>
           </div>
 
           <div className="overflow-hidden pt-2 pb-2 mt-2">
-            <h1 className="main-line-2 block text-[4.5vw] sm:text-3xl md:text-4xl lg:text-5xl font-medium tracking-tight text-neutral-700 whitespace-nowrap">
+            <h1 className="main-line-2 block text-[4.5vw] sm:text-3xl md:text-4xl lg:text-5xl font-medium tracking-tight text-muted whitespace-nowrap">
               <Chars text="Prediction for animal-free testing." />
             </h1>
           </div>

@@ -35,7 +35,7 @@ export default function LogsPage() {
   };
 
   return (
-    <div className="w-full flex flex-col bg-background text-foreground pt-28 pb-20 min-h-screen">
+    <div className="w-full flex flex-col text-foreground pt-28 pb-20 min-h-screen">
       <div className="w-full max-w-7xl mx-auto px-6 md:px-12">
         {/* Header & Dashboard Stats */}
         <div className="mb-12 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
