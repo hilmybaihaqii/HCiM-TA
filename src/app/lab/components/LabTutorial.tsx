@@ -100,7 +100,7 @@ export default function LabTutorial() {
       target: 'body', 
       placement: 'center',
       title: 'Welcome! 👋',
-      content: 'Welcome to the Cardiotox Digital Lab. This guided tour will introduce you to the core functionalities of our AI engine for predicting drug-induced cardiotoxicity.',
+      content: 'Welcome to the Cardivex Digital Lab. This guided tour will introduce you to the core functionalities of our AI engine for predicting drug-induced cardiotoxicity.',
     },
     {
       target: '#tour-navbar-menu',

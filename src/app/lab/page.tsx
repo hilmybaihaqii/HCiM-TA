@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { api } from '@/lib/api'; 
 import EngineVisualizer from './components/EngineVisualizer';
 import LabForm from './components/LabForm';
-import LabResults from './components/LabResults';
+import LabResults, { parsePredictResponse, PredictionOutput } from './components/LabResults';
 import ProcessingLoader from './components/ProcessingLoader';
 import TutorialGuide from './components/LabTutorial'; 
 
@@ -21,6 +21,7 @@ type SimulationResult = {
   success: boolean; 
   tier?: string; 
   shapData?: SHAPData; 
+  prediction?: PredictionOutput | null;
   error?: string; 
 };
 
@@ -29,7 +30,7 @@ type SimulationResult = {
 // ============================================================================
 function LabSkeleton() {
   return (
-    <div className="w-full flex flex-col min-h-100 bg-background overflow-x-hidden">
+    <div className="w-full flex flex-col min-h-100 overflow-x-hidden">
       <div className="w-full pt-20 md:pt-28 relative z-10 flex flex-col items-center">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12">
           <div className="w-full bg-surface-white/40 border border-foreground/4 rounded-4xl p-5 md:p-10 flex flex-col">
@@ -147,6 +148,8 @@ export default function DigitalLabPage() {
       
       const tierLabel = predictData.data[0].label;
       const shapResult = explainData.data[0];
+      // Parse response /api/predict yang lebih lengkap (confidences + conformal prediction)
+      const parsedPrediction = parsePredictResponse(predictData.data);
 
       setResult({
         success: true,
@@ -155,17 +158,28 @@ export default function DigitalLabPage() {
           predicted_class: tierLabel, 
           base_value: shapResult.base_value,
           contributions: shapResult.contributions
-        }
+        },
+        prediction: parsedPrediction,
       });
       setActiveStage('completed');
 
     } catch (err: unknown) {
-      console.error("AI Node Error Detail:", err);
-      
+      // Error asli & {status,data} dari api.ts sengaja di-flatten manual di sini,
+      // karena Error native (message/stack non-enumerable) tampil sebagai "{}" kosong
+      // kalau di-log langsung lewat Next.js dev overlay.
+      console.error("AI Node Error Detail:", {
+        name: err instanceof Error ? err.name : undefined,
+        message: err instanceof Error ? err.message : undefined,
+        ...(typeof err === 'object' && err !== null ? err : { raw: err }),
+      });
+
       const apiErr = err as Record<string, unknown>;
-      
+
       if (apiErr?.status === 401) {
         setError('Session expired. Please reload the page to authenticate.');
+      } else if (err instanceof TypeError) {
+        // fetch() gagal total di level jaringan (backend unreachable / cold-start / offline)
+        setError('Could not reach the AI engine. Please check your connection and try again.');
       } else {
         const backendMessage = apiErr?.message || apiErr?.error || (err instanceof Error ? err.message : 'Unknown Server Error');
         setError(`AI Engine Failed: ${backendMessage}`);
@@ -199,7 +213,7 @@ export default function DigitalLabPage() {
             initial={{ opacity: 0, filter: 'blur(4px)' }} 
             animate={{ opacity: 1, filter: 'blur(0px)' }} 
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} 
-            className="w-full flex flex-col min-h-100 bg-background text-foreground overflow-x-hidden"
+            className="w-full flex flex-col min-h-100 text-foreground overflow-x-hidden"
           >
             <TutorialGuide />
             <EngineVisualizer activeStage={activeStage} />
@@ -250,7 +264,7 @@ export default function DigitalLabPage() {
                     animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                     transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    <LabResults tier={result.tier} shap={result.shapData} onReset={handleReset} />
+                    <LabResults tier={result.tier} shap={result.shapData} prediction={result.prediction} onReset={handleReset} />
                   </motion.div>
                 )}
               </AnimatePresence>
