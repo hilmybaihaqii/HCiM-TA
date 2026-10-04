@@ -110,7 +110,7 @@ export default function LabForm({ onSubmit }: { onSubmit: (data: number[]) => vo
                   
                   <div className="relative flex items-center">
                     <input
-                      type="number" step="any" required placeholder="0.000"
+                      type="number" step="any" required placeholder="1.000"
                       value={values[idx]}
                       onChange={(e) => handleManualInput(idx, e.target.value)}
                       className="w-full bg-transparent border-none p-0 text-lg font-mono text-foreground font-medium placeholder:text-foreground/10 focus:outline-none focus:ring-0 transition-colors"
