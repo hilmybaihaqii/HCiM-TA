@@ -25,6 +25,7 @@ export type PredictionOutput = {
     qHat: number;
     recommendedAction: string;
     setSize: number;
+    warning?: string;
   };
 };
 
@@ -40,20 +41,24 @@ export function parsePredictResponse(raw: unknown[]): PredictionOutput | null {
       q_hat: number;
       recommended_action: string;
       set_size: number;
+      warning?: string;
     };
 
     return {
       confidences: confPart.confidences || [],
-      predictedLabel: confPart.label || 'unknown',
+      predictedLabel: (confPart.label || 'unknown').toLowerCase(),
       conformal: {
         alpha: conformalPart.alpha,
         calibrationNote: conformalPart.calibration_note?.replace(/\s+/g, ' ').trim() || '',
         isAmbiguous: conformalPart.is_ambiguous,
         outOfDistribution: conformalPart.out_of_distribution,
-        predictionSet: conformalPart.prediction_set || [],
+        predictionSet: Array.isArray(conformalPart.prediction_set)
+          ? conformalPart.prediction_set.map((s) => s.toLowerCase())
+          : [],
         qHat: conformalPart.q_hat,
-        recommendedAction: conformalPart.recommended_action || confPart.label,
-        setSize: conformalPart.set_size ?? conformalPart.prediction_set?.length ?? 1,
+        recommendedAction: (conformalPart.recommended_action || confPart.label || 'high').toLowerCase(),
+        setSize: conformalPart.set_size ?? (Array.isArray(conformalPart.prediction_set) ? conformalPart.prediction_set.length : 0),
+        warning: conformalPart.warning?.trim() || undefined,
       },
     };
   } catch {
@@ -131,7 +136,8 @@ export default function LabResults({
 }) {
   const sortedContributions = [...shap.contributions].sort((a, b) => Math.abs(b.shap) - Math.abs(a.shap));
   const maxShap = Math.max(...sortedContributions.map(c => Math.abs(c.shap)));
-  const palette = tierPalette(tier);
+  const verdictPalette = tierPalette(tier);
+  const actionPalette = tierPalette(prediction?.conformal.recommendedAction || tier);
   const [showDetails, setShowDetails] = useState(false);
 
   const sortedConfidences = prediction ? [...prediction.confidences].sort((a, b) => b.confidence - a.confidence) : [];
@@ -164,7 +170,7 @@ export default function LabResults({
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
             <div>
               <span className="text-xs font-mono uppercase tracking-wider text-muted">Diagnostic verdict</span>
-              <h1 className={`mt-3 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif italic tracking-tight ${palette.text}`}>
+              <h1 className={`mt-3 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif italic tracking-tight ${verdictPalette.text}`}>
                 {tier.toLowerCase()} risk
               </h1>
             </div>
@@ -238,7 +244,7 @@ export default function LabResults({
             >
               <span className="text-xs font-mono uppercase tracking-wider text-muted">Recommended action</span>
 
-              <blockquote className={`border-l-2 ${palette.rule} pl-5 md:pl-6`}>
+              <blockquote className={`border-l-2 ${actionPalette.rule} pl-5 md:pl-6`}>
                 <p className="text-base sm:text-lg md:text-xl font-serif italic text-foreground leading-snug max-w-2xl">
                   {actionSuggestion(prediction.conformal.recommendedAction)}
                 </p>
@@ -250,10 +256,13 @@ export default function LabResults({
                   {prediction.conformal.predictionSet.map((label, i) => (
                     <span key={label}>
                       {i > 0 && (i === prediction.conformal.predictionSet.length - 1 ? ' and ' : ', ')}
-                      <span className={`font-medium ${tierPalette(label).text}`}>{label}</span>
+                      <span className={`font-medium ${tierPalette(label).text}`}>{label.toLowerCase()}</span>
                     </span>
                   ))}{' '}
                   equally plausible for this input.
+                  {prediction.conformal.isAmbiguous && (
+                    <> The more severe tier is recommended because the model cannot rule it out.</>
+                  )}
                 </p>
               )}
 
@@ -266,7 +275,7 @@ export default function LabResults({
                   )}
                   {prediction.conformal.outOfDistribution && (
                     <p className="text-sm text-indigo-700 leading-relaxed">
-                      <span className="font-medium">Note —</span> this input falls outside the training distribution, so confidence may be less reliable here.
+                      <span className="font-medium">Note —</span> The model abstains: no risk tier reached the conformal threshold, so all three tiers remain possible. The most conservative action (High) is recommended.
                     </p>
                   )}
                 </div>
@@ -295,6 +304,11 @@ export default function LabResults({
                         <span>q_hat <span className="text-foreground">{prediction.conformal.qHat}</span></span>
                         <span>set size <span className="text-foreground">{prediction.conformal.setSize}</span></span>
                       </div>
+                      {prediction.conformal.warning && (
+                        <p className="text-rose-600 font-mono text-xs bg-rose-500/10 p-2.5 rounded-lg border border-rose-500/20 leading-relaxed max-w-2xl">
+                          <span className="font-semibold uppercase tracking-wider">Warning:</span> {prediction.conformal.warning}
+                        </p>
+                      )}
                       <p className="text-muted leading-relaxed max-w-2xl">
                         {prediction.conformal.calibrationNote}
                       </p>

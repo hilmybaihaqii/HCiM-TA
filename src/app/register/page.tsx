@@ -4,14 +4,12 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { api } from '@/lib/api';
-import { AlertCircle } from 'lucide-react';
 
 export default function RegisterPage() {
   // State Form (Sesuai kebutuhan payload backend)[cite: 1, 2]
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   // State UI & Feedback
@@ -49,13 +47,6 @@ export default function RegisterPage() {
     setIsLoading(true);
     setSuccessMsg(null);
 
-    if (password !== confirmPassword) {
-      setErrorMsg("Passwords do not match. Please try again.");
-      return;
-    }
-
-    setIsLoading(true);
-
     try {
       // Mengirimkan data registrasi ke backend[cite: 1, 2]
       await api("/auth/register", {
@@ -69,7 +60,6 @@ export default function RegisterPage() {
 
       // Jika sukses (201), tampilkan instruksi verifikasi[cite: 1, 2]
       setSuccessMsg("Account created successfully! Please check your email to verify your account before logging in.");
-      setIsLoading(false);
 
       // Kosongkan form setelah berhasil
       setDisplayName('');
@@ -77,8 +67,6 @@ export default function RegisterPage() {
       setPassword('');
 
     } catch (error) {
-      setIsLoading(false);
-
       const e = error as { status?: number };
 
       // Menangani error spesifik (409) jika email sudah terpakai[cite: 1, 2]
@@ -88,6 +76,8 @@ export default function RegisterPage() {
         setErrorMsg("Registration failed. Please check your inputs and try again.");
       }
       triggerShake();
+    } finally {
+      setIsLoading(false);
     }
   };
 
