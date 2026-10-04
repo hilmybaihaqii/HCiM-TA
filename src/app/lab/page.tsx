@@ -146,7 +146,7 @@ export default function DigitalLabPage() {
       const explainData = await fetchWithRetry("/api/explain", payload);
       await new Promise(r => setTimeout(r, 600)); 
       
-      const tierLabel = predictData.data[0].label;
+      const tierLabel = String(predictData.data[0].label || 'unknown').toLowerCase();
       const shapResult = explainData.data[0];
       // Parse response /api/predict yang lebih lengkap (confidences + conformal prediction)
       const parsedPrediction = parsePredictResponse(predictData.data);
@@ -174,14 +174,39 @@ export default function DigitalLabPage() {
       });
 
       const apiErr = err as Record<string, unknown>;
+      const status = typeof apiErr?.status === 'number' ? apiErr.status : undefined;
+      const errData = apiErr?.data as Record<string, unknown> | null;
 
-      if (apiErr?.status === 401) {
+      let detailMsg: string | undefined;
+      if (errData) {
+        if (typeof errData.detail === 'string') {
+          detailMsg = errData.detail;
+        } else if (Array.isArray(errData.detail) && errData.detail.length > 0) {
+          const firstErr = errData.detail[0] as Record<string, unknown> | string;
+          detailMsg = typeof firstErr === 'string' ? firstErr : (typeof firstErr?.msg === 'string' ? firstErr.msg : JSON.stringify(firstErr));
+        } else if (typeof errData.message === 'string') {
+          detailMsg = errData.message;
+        } else if (typeof errData.error === 'string') {
+          detailMsg = errData.error;
+        }
+      }
+      if (!detailMsg && typeof apiErr?.message === 'string') {
+        detailMsg = apiErr.message;
+      }
+
+      if (status === 401) {
         setError('Session expired. Please reload the page to authenticate.');
+      } else if (status === 422) {
+        setError(detailMsg ? `Invalid input: ${detailMsg}` : 'Invalid input');
+      } else if (status === 429) {
+        setError('Too many requests. Please wait a few seconds and try again.');
+      } else if (status === 502 || status === 503 || status === 504) {
+        setError('The AI engine is waking up. Please try again in about a minute.');
       } else if (err instanceof TypeError) {
         // fetch() gagal total di level jaringan (backend unreachable / cold-start / offline)
         setError('Could not reach the AI engine. Please check your connection and try again.');
       } else {
-        const backendMessage = apiErr?.message || apiErr?.error || (err instanceof Error ? err.message : 'Unknown Server Error');
+        const backendMessage = detailMsg || apiErr?.error || (err instanceof Error ? err.message : 'Unknown Server Error');
         setError(`AI Engine Failed: ${backendMessage}`);
       }
       setActiveStage('idle');
