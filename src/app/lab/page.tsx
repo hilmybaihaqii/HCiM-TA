@@ -115,7 +115,7 @@ export default function DigitalLabPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  const fetchWithRetry = async (endpoint: string, payload: { data: number[] }, retries = 3) => {
+  const fetchWithRetry = async (endpoint: string, payload: { data: number[]; prediction_id?: string }, retries = 3) => {
     for (let i = 0; i < retries; i++) {
       try {
         return await api(endpoint, {
@@ -143,7 +143,17 @@ export default function DigitalLabPage() {
       const predictData = await fetchWithRetry("/api/predict", payload);
       setActiveStage('consensus');
       
-      const explainData = await fetchWithRetry("/api/explain", payload);
+      const predictionId =
+        typeof predictData?.prediction_id === 'string' && predictData.prediction_id.trim() !== ''
+          ? predictData.prediction_id.trim()
+          : undefined;
+
+      const explainPayload: { data: number[]; prediction_id?: string } = {
+        data: inputs,
+        ...(predictionId ? { prediction_id: predictionId } : {}),
+      };
+
+      const explainData = await fetchWithRetry("/api/explain", explainPayload);
       await new Promise(r => setTimeout(r, 600)); 
       
       const tierLabel = String(predictData.data[0].label || 'unknown').toLowerCase();
