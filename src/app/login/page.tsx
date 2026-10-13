@@ -41,6 +41,20 @@ function LoginForm() {
     });
   };
 
+  // Check URL params for errors or deactivation redirects
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    const statusParam = searchParams.get('status');
+
+    if (errorParam === 'invalid' || statusParam === 'deactivated') {
+      window.history.replaceState(null, '', '/login');
+      setErrorMsg("Incorrect email or password.");
+      setTimeout(() => {
+        triggerShake();
+      }, 50);
+    }
+  }, [searchParams]);
+
   // Verifying Effect
   useEffect(() => {
     if (authStatus === 'verifying') {
@@ -50,7 +64,12 @@ function LoginForm() {
           setAuthStatus('success');
         })
         .catch(() => {
+          api('/auth/logout', { method: 'POST' }).catch(() => {});
           setAuthStatus('idle');
+          setErrorMsg("Incorrect email or password.");
+          setTimeout(() => {
+            triggerShake();
+          }, 50);
         });
     }
   }, [authStatus]);
@@ -99,27 +118,22 @@ function LoginForm() {
         method: "POST",
         body: { email, password }
       });
+      // Verifikasi sesi langsung sebelum pindah ke /lab agar tidak tembus ke dalam
+      await api("/auth/me");
       router.push('/lab');
       router.refresh();
     }  catch (error) {
       setIsLoading(false);
+      api('/auth/logout', { method: 'POST' }).catch(() => {});
       
-      // Tambahkan tipe untuk menangkap 'message' atau respons dari API kamu
       const e = error as { status?: number; message?: string; data?: { message?: string } };
-      
-      // Ambil pesan error dari backend jika ada (sesuaikan dengan struktur respons backend-mu)
-      const backendMessage = (e.data?.message || e.message || "").toLowerCase();
 
-      // Cek apakah pesan dari backend mengindikasikan akun dinonaktifkan
-      if (backendMessage.includes("deactivated") || backendMessage.includes("inactive") || e.status === 423) {
-        setErrorMsg("Please contact the admin to activate your account.");
-      } 
-      else if (e.status === 403) {
+      if (e.status === 403) {
         // Jika 403 adalah khusus untuk email belum diverifikasi
         setErrorMsg("Please verify your email first.");
       } 
       else if (e.status === 401) {
-        // Tetap pertahankan pesan generic untuk salah email/password demi keamanan
+        // Pesan aman standar untuk kredensial tidak valid atau akun nonaktif
         setErrorMsg("Incorrect email or password.");
       } 
       else {
