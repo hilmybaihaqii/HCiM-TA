@@ -56,7 +56,7 @@ export default function LabNavbar() {
     } finally {
       setShowLogoutModal(false);
       setIsLoggingOut(false);
-      router.replace('/login');
+      window.location.href = '/login';
     }
   };
 
