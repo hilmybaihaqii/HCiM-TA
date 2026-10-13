@@ -14,12 +14,11 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Capture initial URL state (will survive the history.replaceState)
-  const [initialIsVerified] = useState(searchParams.get('verified') === '1');
-  const [initialIsGoogleSuccess] = useState(searchParams.get('login') === 'success');
+  const isVerified = searchParams.get('verified') === '1';
+  const isGoogleSuccess = searchParams.get('login') === 'success';
 
   const [authStatus, setAuthStatus] = useState<'idle' | 'verifying' | 'success'>(
-    (initialIsVerified || initialIsGoogleSuccess) ? 'verifying' : 'idle'
+    (isVerified || isGoogleSuccess) ? 'verifying' : 'idle'
   );
 
   const [email, setEmail] = useState('');
@@ -41,6 +40,15 @@ function LoginForm() {
     });
   };
 
+  // Sync authStatus when searchParams changes (e.g. entering login page fresh vs oauth callback)
+  useEffect(() => {
+    if (isVerified || isGoogleSuccess) {
+      setAuthStatus('verifying');
+    } else {
+      setAuthStatus('idle');
+    }
+  }, [isVerified, isGoogleSuccess]);
+
   // Check URL params for errors or deactivation redirects
   useEffect(() => {
     const errorParam = searchParams.get('error');
@@ -51,14 +59,14 @@ function LoginForm() {
       setTimeout(() => {
         triggerShake();
       }, 50);
-      router.replace('/login');
+      window.history.replaceState(null, '', '/login');
     }
-  }, [searchParams, router]);
+  }, [searchParams]);
 
   // Verifying Effect
   useEffect(() => {
     if (authStatus === 'verifying') {
-      router.replace('/login');
+      window.history.replaceState(null, '', '/login');
       api("/auth/me")
         .then(() => {
           setAuthStatus('success');
@@ -66,13 +74,9 @@ function LoginForm() {
         .catch(() => {
           api('/auth/logout', { method: 'POST' }).catch(() => {});
           setAuthStatus('idle');
-          setErrorMsg("This account is inactive. Please contact an admin.");
-          setTimeout(() => {
-            triggerShake();
-          }, 50);
         });
     }
-  }, [authStatus, router]);
+  }, [authStatus]);
 
   // Countdown Effect
   useEffect(() => {
@@ -211,10 +215,10 @@ function LoginForm() {
               </div>
 
               <h2 className="text-2xl font-medium text-white mb-2 tracking-tight">
-                {initialIsVerified ? 'Verification Complete' : 'Authentication Success'}
+                {isVerified ? 'Verification Complete' : 'Authentication Success'}
               </h2>
               <p className="text-sm text-white/50 mb-8 leading-relaxed px-4">
-                {initialIsVerified ? 'Your identity has been successfully verified. Establishing secure connection...' : 'Google OAuth linked successfully. Establishing secure connection...'}
+                {isVerified ? 'Your identity has been successfully verified. Establishing secure connection...' : 'Google OAuth linked successfully. Establishing secure connection...'}
               </p>
 
               <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-5 py-3 rounded-full">
