@@ -49,22 +49,25 @@ function LoginForm() {
     }
   }, [isVerified, isGoogleSuccess]);
 
-  // Check URL params for errors or deactivation redirects
+  // Check URL params for errors or deactivation redirects on mount
   useEffect(() => {
-    const errorParam = searchParams.get('error');
-    const statusParam = searchParams.get('status');
+    if (typeof window === 'undefined') return;
+
+    const currentUrlParams = new URLSearchParams(window.location.search);
+    const errorParam = currentUrlParams.get('error');
+    const statusParam = currentUrlParams.get('status');
 
     if (errorParam === 'invalid' || statusParam === 'deactivated') {
       setErrorMsg("This account is inactive. Please contact an admin.");
       setTimeout(() => {
         triggerShake();
       }, 50);
-      router.replace('/login', { scroll: false });
+      // Immediately clean browser URL so subsequent visits or reloads do not retain error params
+      window.history.replaceState(null, '', window.location.pathname);
+    } else {
+      setErrorMsg(null);
     }
-  }, [searchParams, router]);
 
-  // Reset errors when component unmounts or leaves page
-  useEffect(() => {
     return () => {
       setErrorMsg(null);
       setFieldErrors({});
@@ -188,7 +191,7 @@ function LoginForm() {
               onClick={() => {
                 setErrorMsg(null);
                 setFieldErrors({});
-                router.push('/');
+                window.location.href = '/';
               }}
               aria-label="Close and return to homepage"
               className="text-white/50 hover:text-accent hover:bg-white/10 rounded-full transition-all duration-300 p-2 block outline-none focus-visible:ring-2 focus-visible:ring-accent/60"

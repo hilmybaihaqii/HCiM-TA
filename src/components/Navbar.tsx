@@ -78,6 +78,7 @@ export default function Navbar() {
           <div className="flex items-center gap-5 md:gap-8">
             <Link
               href="/login"
+              prefetch={false}
               className="relative z-50 px-5 py-2 text-xs font-medium tracking-[0.15em] border border-accent bg-accent text-surface-white hover:bg-accent-dark hover:border-accent-dark transition-all duration-300 rounded-full hidden sm:block"
             >
               Get Started
@@ -164,6 +165,7 @@ export default function Navbar() {
                 </span>
                 <Link
                   href="/login"
+                  prefetch={false}
                   onClick={() => setIsMenuOpen(false)}
                   className="flex sm:hidden items-center justify-center w-full py-3.5 text-[10px] font-medium uppercase tracking-widest text-surface-white bg-accent rounded-full"
                 >
