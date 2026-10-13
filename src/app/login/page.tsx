@@ -59,9 +59,17 @@ function LoginForm() {
       setTimeout(() => {
         triggerShake();
       }, 50);
-      window.history.replaceState(null, '', '/login');
+      router.replace('/login', { scroll: false });
     }
-  }, [searchParams]);
+  }, [searchParams, router]);
+
+  // Reset errors when component unmounts or leaves page
+  useEffect(() => {
+    return () => {
+      setErrorMsg(null);
+      setFieldErrors({});
+    };
+  }, []);
 
   // Verifying Effect
   useEffect(() => {
@@ -177,7 +185,11 @@ function LoginForm() {
         <AnimatePresence>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute top-8 right-8 z-50">
             <button
-              onClick={() => router.push('/')}
+              onClick={() => {
+                setErrorMsg(null);
+                setFieldErrors({});
+                router.push('/');
+              }}
               aria-label="Close and return to homepage"
               className="text-white/50 hover:text-accent hover:bg-white/10 rounded-full transition-all duration-300 p-2 block outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
             >
