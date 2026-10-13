@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useRef, useEffect } from "react";
-import { usePathname } from "next/navigation";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { useSplash } from "./SplashProvider";
@@ -25,7 +24,6 @@ const Chars = React.memo(
 Chars.displayName = "Chars";
 
 export default function SplashScreen() {
-  const pathname = usePathname();
   const { pageReady, splashDone, setSplashDone, setSplashStarted } = useSplash();
 
   const minTimeElapsedRef = useRef(false);
@@ -274,7 +272,7 @@ export default function SplashScreen() {
     { scope: containerRef },
   );
 
-  if (pathname !== '/' || splashDone) return null;
+  if (splashDone) return null;
 
   return (
     <div ref={containerRef}>
