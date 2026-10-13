@@ -27,7 +27,7 @@ export default function SessionGuard({ children }: { children: React.ReactNode }
         const authError = error as { status?: number };
 
         if (authError.status === 401 || authError.status === 403) {
-          router.replace('/login?error=invalid');
+          router.replace('/login');
           return;
         }
 

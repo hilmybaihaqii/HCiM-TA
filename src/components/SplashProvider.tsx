@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 
 interface SplashContextType {
   pageReady: boolean;
@@ -14,15 +15,33 @@ interface SplashContextType {
 const SplashContext = createContext<SplashContextType | undefined>(undefined);
 
 export function SplashProvider({ children }: { children: React.ReactNode }) {
-  const [pageReady, setPageReady] = useState(false);
-  const [splashDone, setSplashDone] = useState(false);
-  const [splashStarted, setSplashStarted] = useState(false);
+  const pathname = usePathname();
+  const isHomePage = pathname === '/';
 
-  // 1. Cek sessionStorage saat komponen dimount
+  const [pageReady, setPageReady] = useState(() => !isHomePage);
+  const [splashDone, setSplashDone] = useState(() => {
+    if (!isHomePage) return true;
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('hasSeenSplash') === 'true';
+    }
+    return false;
+  });
+  const [splashStarted, setSplashStarted] = useState(() => !isHomePage);
+
   useEffect(() => {
+    if (!isHomePage) {
+      setSplashDone(true);
+      setPageReady(true);
+      setSplashStarted(true);
+      return;
+    }
+
     const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
     if (hasSeenSplash === 'true') {
-      setSplashDone(true); // Jika sudah pernah lihat, langsung tandai selesai
+      setSplashDone(true);
+      setPageReady(true);
+      setSplashStarted(true);
+      return;
     }
 
     const handleLoad = () => setPageReady(true);
@@ -40,7 +59,7 @@ export function SplashProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener('load', handleLoad);
       clearTimeout(fallbackTimeout);
     };
-  }, []);
+  }, [isHomePage]);
 
   // 2. Buat custom fungsi untuk setSplashDone agar otomatis simpan ke sessionStorage
   const handleSetSplashDone = (v: boolean) => {
