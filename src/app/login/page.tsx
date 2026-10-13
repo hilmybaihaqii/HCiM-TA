@@ -47,18 +47,18 @@ function LoginForm() {
     const statusParam = searchParams.get('status');
 
     if (errorParam === 'invalid' || statusParam === 'deactivated') {
-      window.history.replaceState(null, '', '/login');
-      setErrorMsg("Incorrect email or password.");
+      setErrorMsg("This account is inactive. Please contact an admin.");
       setTimeout(() => {
         triggerShake();
       }, 50);
+      router.replace('/login');
     }
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   // Verifying Effect
   useEffect(() => {
     if (authStatus === 'verifying') {
-      window.history.replaceState(null, '', '/login');
+      router.replace('/login');
       api("/auth/me")
         .then(() => {
           setAuthStatus('success');
@@ -66,13 +66,13 @@ function LoginForm() {
         .catch(() => {
           api('/auth/logout', { method: 'POST' }).catch(() => {});
           setAuthStatus('idle');
-          setErrorMsg("Incorrect email or password.");
+          setErrorMsg("This account is inactive. Please contact an admin.");
           setTimeout(() => {
             triggerShake();
           }, 50);
         });
     }
-  }, [authStatus]);
+  }, [authStatus, router]);
 
   // Countdown Effect
   useEffect(() => {
@@ -126,14 +126,31 @@ function LoginForm() {
       setIsLoading(false);
       api('/auth/logout', { method: 'POST' }).catch(() => {});
       
-      const e = error as { status?: number; message?: string; data?: { message?: string } };
+      const e = error as { 
+        status?: number; 
+        message?: string; 
+        data?: { detail?: string | Array<{ msg?: string }>; message?: string; error?: string } 
+      };
 
-      if (e.status === 403) {
+      let backendMessage = "";
+      if (typeof e.data?.detail === "string") {
+        backendMessage = e.data.detail;
+      } else if (typeof e.data?.message === "string") {
+        backendMessage = e.data.message;
+      } else if (typeof e.message === "string") {
+        backendMessage = e.message;
+      }
+      backendMessage = backendMessage.toLowerCase();
+
+      if (backendMessage.includes("deactivated") || backendMessage.includes("inactive") || e.status === 423) {
+        setErrorMsg("This account is inactive. Please contact an admin.");
+      }
+      else if (e.status === 403) {
         // Jika 403 adalah khusus untuk email belum diverifikasi
         setErrorMsg("Please verify your email first.");
       } 
       else if (e.status === 401) {
-        // Pesan aman standar untuk kredensial tidak valid atau akun nonaktif
+        // Pesan standar untuk salah email/password
         setErrorMsg("Incorrect email or password.");
       } 
       else {
