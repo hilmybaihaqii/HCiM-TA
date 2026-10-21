@@ -38,6 +38,20 @@
   --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
 }
 
+/* === Skala radius area /lab ===
+   Pakai nama, bukan angka, supaya semua kotak konsisten:
+   rounded-sheet   panel / lembar utama
+   rounded-card    kartu di dalam panel, dropdown, tooltip
+   rounded-control tombol & input
+   rounded-chip    elemen mikro (tag kecil, latar hover)
+   rounded-full    hanya navbar, avatar, titik, bar progres */
+@theme {
+  --radius-sheet: 1.5rem;
+  --radius-card: 1rem;
+  --radius-control: 0.75rem;
+  --radius-chip: 0.375rem;
+}
+
 /* Tambahkan ini untuk mengaktifkan smooth scroll secara global */
 html {
   scroll-behavior: smooth;

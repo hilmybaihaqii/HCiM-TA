@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
-import { Loader2, KeyRound, UserX, AlertCircle } from 'lucide-react';
+import { KeyRound, UserX, AlertCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 
@@ -60,7 +60,7 @@ function OtpInput({ value, onChange, length = 6 }: { value: string; onChange: (v
           onChange={(e) => handleChange(i, e.target.value)}
           onKeyDown={(e) => handleKeyDown(i, e)}
           onPaste={handlePaste}
-          className="w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-mono font-medium bg-background/50 border border-foreground/10 rounded-xl focus:outline-none focus:border-foreground/40 focus:bg-background transition-colors"
+          className="w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-mono font-medium bg-background/50 border border-foreground/10 rounded-control focus:outline-none focus:border-foreground/40 focus:bg-background transition-colors"
         />
       ))}
     </div>
@@ -127,7 +127,7 @@ export default function DangerZone() {
   };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-surface-white/60 border border-foreground/10 rounded-3xl p-6 sm:p-8 max-w-4xl">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-surface-white/60 border border-foreground/10 rounded-sheet p-6 sm:p-8 max-w-4xl">
       <h2 className="text-xl font-medium tracking-tight text-foreground mb-2">Deactivate Account</h2>
       <p className="text-xs text-muted leading-relaxed mb-6">
         This hides your account and data until an admin restores it. Email verification is required.
@@ -141,7 +141,7 @@ export default function DangerZone() {
             exit={{ opacity: 0, y: -10, height: 0 }}
             className="overflow-hidden"
           >
-            <div className={`p-4 mb-6 text-xs rounded-xl border ${feedback.type === 'error' ? 'bg-rose-500/10 text-rose-500 border-rose-500/30' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'}`}>
+            <div className={`p-4 mb-6 text-xs rounded-card border ${feedback.type === 'error' ? 'bg-rose-500/10 text-rose-500 border-rose-500/30' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'}`}>
               {feedback.message}
             </div>
           </motion.div>
@@ -159,10 +159,9 @@ export default function DangerZone() {
           >
             <button
               onClick={handleRequestCode} disabled={isSending}
-              className="px-8 py-3 bg-foreground text-surface-white text-[11px] font-bold uppercase tracking-widest rounded-xl hover:bg-foreground/90 transition-all disabled:opacity-70 flex items-center gap-2"
+              className="px-8 py-3 bg-foreground text-surface-white text-[11px] font-bold uppercase tracking-widest rounded-control hover:bg-foreground/90 transition-all disabled:opacity-70 flex items-center gap-2"
             >
-              {isSending && <Loader2 className="w-4 h-4 animate-spin" />}
-              {isSending ? 'Sending...' : 'Request Code'}
+              {isSending ? 'Sending…' : 'Request code'}
             </button>
           </motion.div>
         ) : (
@@ -174,7 +173,7 @@ export default function DangerZone() {
             onSubmit={handleDeactivate}
             className="flex flex-col items-center gap-6 max-w-md mx-auto text-center"
           >
-            <div className="w-12 h-12 rounded-2xl bg-foreground/5 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-control bg-foreground/5 flex items-center justify-center">
               <KeyRound className="w-5 h-5 text-foreground" />
             </div>
             <div className="flex flex-col gap-1">
@@ -207,9 +206,9 @@ export default function DangerZone() {
             <div className="flex flex-col gap-3 w-full">
               <button
                 type="submit" disabled={isDeactivating}
-                className="w-full py-4 bg-foreground text-surface-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-foreground/90 transition-all disabled:opacity-70 flex justify-center items-center gap-2"
+                className="w-full py-4 bg-foreground text-surface-white text-xs font-bold uppercase tracking-widest rounded-control hover:bg-foreground/90 transition-all disabled:opacity-70 flex justify-center items-center gap-2"
               >
-                {isDeactivating ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                {isDeactivating ? 'Deactivating…' : (
                   <>
                     <UserX className="w-3.5 h-3.5" />
                     Deactivate Account

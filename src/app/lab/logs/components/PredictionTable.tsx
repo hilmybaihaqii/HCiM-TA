@@ -3,8 +3,8 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { api } from "@/lib/api";
 import AdminTable from "../../admin/components/AdminTable";
-import { Search, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { DetailsPanel, DetailsToggle, TierLabel } from "./RowDetails";
 
 const PAGE_SIZE = 50;
 
@@ -91,84 +91,57 @@ export default function PredictionsTable() {
     return isNaN(parsed.getTime()) ? "Invalid Date" : parsed.toLocaleString();
   };
 
-  const getTierStyle = (tier: string) => {
-    const t = tier.toUpperCase();
-    if (t.includes("HIGH")) return "text-rose-600 bg-rose-500/10";
-    if (t.includes("LOW")) return "text-emerald-600 bg-emerald-500/10";
-    if (t.includes("INTERMEDIATE")) return "text-amber-600 bg-amber-500/10";
-    return "text-muted bg-foreground/5";
-  };
-
   const columns = [
     {
       header: "Date & Time",
-      className: "w-48",
+      className: "w-48 align-top",
       accessor: (log: PredictionLog) => (
         <span className="text-xs text-muted">{formatDate(log.created_at)}</span>
       ),
     },
     {
       header: "Input Parameters",
+      className: "align-top",
       accessor: (log: PredictionLog) => {
         const isExpanded = expandedId === log.id;
         const hasInput = Array.isArray(log.input) && log.input.length > 0;
 
         return (
-          <div className="relative">
-            <button
-              onClick={() =>
-                hasInput && setExpandedId(isExpanded ? null : log.id)
-              }
+          <div>
+            <DetailsToggle
+              open={isExpanded}
               disabled={!hasInput}
-              className={`flex items-center gap-2 text-xs text-foreground transition-colors ${hasInput ? "hover:text-accent" : "opacity-50"}`}
-            >
-              View Data{" "}
-              {hasInput && (
-                <ChevronDown
-                  className={`w-3 h-3 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                />
-              )}
-            </button>
-            <AnimatePresence>
-              {isExpanded && hasInput && (
-                <motion.div
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  className="absolute top-full left-0 mt-2 z-20 w-72 p-4 rounded-lg bg-surface-white border border-foreground/10 shadow-lg grid grid-cols-2 gap-x-4 gap-y-2"
-                >
-                  {log.input.map((val, idx) => (
-                    <div key={idx} className="flex justify-between text-[11px]">
-                      <span className="text-muted/70">
-                        {FEATURE_NAMES[idx] ?? `F${idx}`}
-                      </span>
-                      <span className="font-medium">{val}</span>
-                    </div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+              onClick={() => hasInput && setExpandedId(isExpanded ? null : log.id)}
+            />
+            <DetailsPanel open={isExpanded && hasInput}>
+              <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-1.5">
+                {log.input.map((val, idx) => (
+                  <div key={idx} className="flex items-baseline justify-between gap-3 text-[11px]">
+                    <dt className="text-muted">{FEATURE_NAMES[idx] ?? `F${idx}`}</dt>
+                    <dd className="font-mono text-foreground tabular-nums">
+                      {typeof val === "number" ? Number(val.toFixed(4)) : String(val)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </DetailsPanel>
           </div>
         );
       },
     },
     {
       header: "Processing Time",
-      className: "w-32",
+      className: "w-32 align-top",
       accessor: (log: PredictionLog) => (
         <span className="text-xs text-muted">{log.latency_ms ?? "—"} ms</span>
       ),
     },
     {
       header: "Result",
-      className: "text-right",
+      className: "text-right align-top",
       accessor: (log: PredictionLog) => (
         <div className="flex justify-end">
-          <span
-            className={`px-3 py-1 text-[11px] rounded-full font-medium ${getTierStyle(log.predicted_tier || "")}`}
-          >
-            {log.predicted_tier || "Unknown"}
-          </span>
+          <TierLabel tier={log.predicted_tier} />
         </div>
       ),
     },
@@ -188,7 +161,7 @@ export default function PredictionsTable() {
               setSearchQuery(e.target.value);
               setPage(0);
             }}
-            className="w-full bg-surface-white/60 border border-foreground/10 text-xs rounded-full pl-9 pr-4 py-2 focus:outline-none focus:border-foreground/30 transition-all"
+            className="w-full bg-surface-white/60 border border-foreground/10 text-xs rounded-control pl-9 pr-4 py-2 focus:outline-none focus:border-foreground/30 transition-all"
           />
         </div>
       </div>
@@ -212,14 +185,14 @@ export default function PredictionsTable() {
           <button
             onClick={() => page > 0 && setPage((p) => p - 1)}
             disabled={page === 0 || isLoading}
-            className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-full border border-foreground/10 disabled:opacity-30 hover:bg-foreground/5"
+            className="flex items-center gap-1 px-2 py-1.5 text-xs text-muted hover:text-foreground disabled:opacity-30 disabled:hover:text-muted transition-colors"
           >
             <ChevronLeft className="w-3.5 h-3.5" /> Prev
           </button>
           <button
             onClick={() => page < totalPages - 1 && setPage((p) => p + 1)}
             disabled={page >= totalPages - 1 || isLoading}
-            className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-full border border-foreground/10 disabled:opacity-30 hover:bg-foreground/5"
+            className="flex items-center gap-1 px-2 py-1.5 text-xs text-muted hover:text-foreground disabled:opacity-30 disabled:hover:text-muted transition-colors"
           >
             Next <ChevronRight className="w-3.5 h-3.5" />
           </button>

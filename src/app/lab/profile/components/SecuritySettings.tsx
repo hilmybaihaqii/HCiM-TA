@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
-import { Loader2, Eye, EyeOff, CheckCircle2, Mail, KeyRound, Lock, Check, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle2, Mail, KeyRound, Lock, Check, AlertCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 
@@ -107,7 +107,7 @@ function OtpInput({ value, onChange, length = 6 }: { value: string; onChange: (v
           onChange={(e) => handleChange(i, e.target.value)}
           onKeyDown={(e) => handleKeyDown(i, e)}
           onPaste={handlePaste}
-          className="w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-mono font-medium bg-background/50 border border-foreground/10 rounded-xl focus:outline-none focus:border-foreground/40 focus:bg-background transition-colors"
+          className="w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-mono font-medium bg-background/50 border border-foreground/10 rounded-control focus:outline-none focus:border-foreground/40 focus:bg-background transition-colors"
         />
       ))}
     </div>
@@ -152,7 +152,7 @@ function PasswordField({
           required
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className={`w-full bg-background/50 border text-sm rounded-xl px-4 py-3 pr-11 focus:outline-none transition-colors ${
+          className={`w-full bg-background/50 border text-sm rounded-control px-4 py-3 pr-11 focus:outline-none transition-colors ${
             error
               ? 'border-rose-500/50 focus:border-rose-500'
               : 'border-foreground/10 focus:border-foreground/30 focus:bg-background'
@@ -302,7 +302,7 @@ export default function SecuritySettings({ initialStep }: { initialStep: 'reques
   };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-surface-white/60 border border-foreground/10 rounded-3xl p-6 sm:p-8 max-w-4xl">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-surface-white/60 border border-foreground/10 rounded-sheet p-6 sm:p-8 max-w-4xl">
       <h2 className="text-xl font-medium tracking-tight mb-6">Change Password</h2>
 
       <StepIndicator current={step} />
@@ -315,7 +315,7 @@ export default function SecuritySettings({ initialStep }: { initialStep: 'reques
             exit={{ opacity: 0, y: -10, height: 0 }}
             className="overflow-hidden"
           >
-            <div className={`p-4 mb-6 text-xs rounded-xl border ${feedback.type === 'error' ? 'bg-rose-500/10 text-rose-500 border-rose-500/30' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'}`}>
+            <div className={`p-4 mb-6 text-xs rounded-card border ${feedback.type === 'error' ? 'bg-rose-500/10 text-rose-500 border-rose-500/30' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'}`}>
               {feedback.message}
             </div>
           </motion.div>
@@ -336,10 +336,9 @@ export default function SecuritySettings({ initialStep }: { initialStep: 'reques
             </p>
             <button
               onClick={handleRequestEmail} disabled={isSending}
-              className="px-8 py-3 bg-foreground text-surface-white text-[11px] font-bold uppercase tracking-widest rounded-xl hover:bg-foreground/90 transition-all disabled:opacity-70 flex items-center gap-2"
+              className="px-8 py-3 bg-foreground text-surface-white text-[11px] font-bold uppercase tracking-widest rounded-control hover:bg-foreground/90 transition-all disabled:opacity-70 flex items-center gap-2"
             >
-              {isSending && <Loader2 className="w-4 h-4 animate-spin" />}
-              {isSending ? 'Sending...' : 'Request Code'}
+              {isSending ? 'Sending…' : 'Request code'}
             </button>
           </motion.div>
         )}
@@ -353,7 +352,7 @@ export default function SecuritySettings({ initialStep }: { initialStep: 'reques
             onSubmit={handleContinueToForm}
             className="flex flex-col items-center gap-6 max-w-md mx-auto text-center"
           >
-            <div className="w-12 h-12 rounded-2xl bg-foreground/5 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-control bg-foreground/5 flex items-center justify-center">
               <KeyRound className="w-5 h-5 text-foreground" />
             </div>
             <div className="flex flex-col gap-1">
@@ -368,7 +367,7 @@ export default function SecuritySettings({ initialStep }: { initialStep: 'reques
             <div className="flex flex-col gap-3 w-full">
               <button
                 type="submit"
-                className="w-full py-4 bg-foreground text-surface-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-foreground/90 transition-all flex justify-center items-center gap-2"
+                className="w-full py-4 bg-foreground text-surface-white text-xs font-bold uppercase tracking-widest rounded-control hover:bg-foreground/90 transition-all flex justify-center items-center gap-2"
               >
                 Continue
               </button>
@@ -395,7 +394,7 @@ export default function SecuritySettings({ initialStep }: { initialStep: 'reques
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-foreground/5 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-control bg-foreground/5 flex items-center justify-center shrink-0">
                   <Lock className="w-4 h-4 text-foreground" />
                 </div>
                 <span className="text-[10px] font-mono text-muted">
@@ -435,9 +434,9 @@ export default function SecuritySettings({ initialStep }: { initialStep: 'reques
 
             <button
               type="submit" disabled={isChanging}
-              className="mt-2 w-full py-4 bg-foreground text-surface-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-foreground/90 transition-all disabled:opacity-70 flex justify-center items-center gap-2"
+              className="mt-2 w-full py-4 bg-foreground text-surface-white text-xs font-bold uppercase tracking-widest rounded-control hover:bg-foreground/90 transition-all disabled:opacity-70 flex justify-center items-center gap-2"
             >
-              {isChanging ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Update Password'}
+              {isChanging ? 'Updating…' : 'Update password'}
             </button>
           </motion.form>
         )}

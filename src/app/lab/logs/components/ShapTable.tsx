@@ -3,8 +3,8 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { api } from '@/lib/api';
 import AdminTable from '../../admin/components/AdminTable';
-import { Search, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { DetailsPanel, DetailsToggle, TierLabel } from './RowDetails';
 
 const PAGE_SIZE = 50;
 
@@ -78,21 +78,21 @@ export default function ShapTable() {
   const columns = [
     {
       header: "Date & Time",
-      className: "w-48",
+      className: "w-48 align-top",
       accessor: (log: ShapLog) => (
         <span className="text-xs text-muted">{formatDate(log.created_at)}</span>
       )
     },
     {
       header: "Predicted Class",
-      className: "w-40",
+      className: "w-40 align-top",
       accessor: (log: ShapLog) => (
-        <span className="text-xs font-medium">{log.predicted_class || 'Unknown'}</span>
+        <TierLabel tier={log.predicted_class} />
       )
     },
     {
       header: "Key Factors",
-      className: "text-right",
+      className: "text-right align-top",
       accessor: (log: ShapLog) => {
         const isExpanded = expandedId === log.id;
         const contributions = log.contributions || [];
@@ -103,48 +103,44 @@ export default function ShapTable() {
         const topFeature = sorted[0];
 
         return (
-          <div className="relative flex justify-end">
-            <button
-              onClick={() => hasContributions && setExpandedId(isExpanded ? null : log.id)}
-              disabled={!hasContributions}
-              className={`flex items-center gap-2 text-xs transition-colors ${hasContributions ? 'hover:text-accent' : 'opacity-50'}`}
-            >
-              {topFeature ? `Main factor: ${topFeature.feature || topFeature.biomarker}` : 'No data'}
-              {hasContributions && <ChevronDown className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />}
-            </button>
-
-            <AnimatePresence>
-              {isExpanded && hasContributions && (
-                <motion.div
-                  initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
-                  className="absolute top-full right-0 mt-2 z-20 w-80 p-4 rounded-lg bg-surface-white border border-foreground/10 shadow-lg text-left"
-                >
-                  <p className="text-[11px] text-muted mb-3 border-b border-foreground/10 pb-2">
-                    Base Model Value: {log.base_value?.toFixed(4) ?? '—'}
-                  </p>
-                  <div className="flex flex-col gap-3 max-h-60 overflow-y-auto">
-                    {sorted.map((c, idx) => {
-                      const shapVal = c.shap || 0;
-                      const isPositive = shapVal >= 0;
-                      const barPct = (Math.abs(shapVal) / maxAbsShap) * 100;
-                      return (
-                        <div key={idx} className="flex flex-col gap-1">
-                          <div className="flex justify-between text-[11px]">
-                            <span className="font-medium">{c.feature || c.biomarker}</span>
-                            <span className={isPositive ? 'text-rose-600' : 'text-emerald-600'}>
-                              {isPositive ? '+' : ''}{shapVal.toFixed(4)}
-                            </span>
-                          </div>
-                          <div className="h-1.5 w-full rounded-full bg-foreground/5 overflow-hidden">
-                            <div className={`h-full rounded-full ${isPositive ? 'bg-rose-500' : 'bg-emerald-500'}`} style={{ width: `${barPct}%` }} />
-                          </div>
+          <div className="flex flex-col items-end">
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted">
+                {topFeature ? <>Main factor <span className="text-foreground font-medium">{topFeature.feature || topFeature.biomarker}</span></> : 'No data'}
+              </span>
+              <DetailsToggle
+                open={isExpanded}
+                disabled={!hasContributions}
+                onClick={() => hasContributions && setExpandedId(isExpanded ? null : log.id)}
+              />
+            </div>
+            <div className="w-full max-w-md">
+              <DetailsPanel open={isExpanded && hasContributions}>
+                <p className="text-[11px] text-muted mb-3 pb-2 border-b border-foreground/8">
+                  Base value <span className="font-mono text-foreground">{log.base_value?.toFixed(4) ?? '—'}</span>
+                </p>
+                <div className="flex flex-col gap-2.5 max-h-64 overflow-y-auto pr-1">
+                  {sorted.map((c, idx) => {
+                    const shapVal = c.shap || 0;
+                    const isPositive = shapVal >= 0;
+                    const barPct = (Math.abs(shapVal) / maxAbsShap) * 100;
+                    return (
+                      <div key={idx} className="flex flex-col gap-1">
+                        <div className="flex justify-between text-[11px]">
+                          <span className="font-medium text-foreground">{c.feature || c.biomarker}</span>
+                          <span className={`font-mono tabular-nums ${isPositive ? 'text-rose-600' : 'text-blue-600'}`}>
+                            {isPositive ? '+' : ''}{shapVal.toFixed(4)}
+                          </span>
                         </div>
-                      );
-                    })}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                        <div className="h-1 w-full rounded-full bg-foreground/5 overflow-hidden">
+                          <div className={`h-full rounded-full ${isPositive ? 'bg-rose-500' : 'bg-blue-500'}`} style={{ width: `${barPct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </DetailsPanel>
+            </div>
           </div>
         );
       }
@@ -162,7 +158,7 @@ export default function ShapTable() {
             placeholder="Search records..."
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
-            className="w-full bg-surface-white/60 border border-foreground/10 text-xs rounded-full pl-9 pr-4 py-2 focus:outline-none focus:border-foreground/30 transition-all"
+            className="w-full bg-surface-white/60 border border-foreground/10 text-xs rounded-control pl-9 pr-4 py-2 focus:outline-none focus:border-foreground/30 transition-all"
           />
         </div>
       </div>
@@ -181,14 +177,14 @@ export default function ShapTable() {
           <button
             onClick={() => page > 0 && setPage(p => p - 1)}
             disabled={page === 0 || isLoading}
-            className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-full border border-foreground/10 disabled:opacity-30 hover:bg-foreground/5"
+            className="flex items-center gap-1 px-2 py-1.5 text-xs text-muted hover:text-foreground disabled:opacity-30 disabled:hover:text-muted transition-colors"
           >
             <ChevronLeft className="w-3.5 h-3.5" /> Prev
           </button>
           <button
             onClick={() => page < totalPages - 1 && setPage(p => p + 1)}
             disabled={page >= totalPages - 1 || isLoading}
-            className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-full border border-foreground/10 disabled:opacity-30 hover:bg-foreground/5"
+            className="flex items-center gap-1 px-2 py-1.5 text-xs text-muted hover:text-foreground disabled:opacity-30 disabled:hover:text-muted transition-colors"
           >
             Next <ChevronRight className="w-3.5 h-3.5" />
           </button>

@@ -78,12 +78,12 @@ const tierPalette = (label: string) => {
 const actionSuggestion = (label: string): string => {
   const l = label.toLowerCase();
   if (l.includes('high')) {
-    return 'The cardiac ion-channel response indicates elevated arrhythmic risk — flag this compound and avoid advancing it without further cardiac safety review.';
+    return 'This drug looks likely to cause arrhythmia. Flag it, and do not move it forward without a full cardiac safety review.';
   }
   if (l.includes('intermediate')) {
-    return 'The ion-channel response is inconclusive — consider additional assays or expert review before making a safety decision.';
+    return 'The result is not clear-cut. Run more assays or ask an expert before you decide on safety.';
   }
-  return 'The cardiac ion-channel response indicates low arrhythmic risk — reasonable to proceed, subject to standard safety review.';
+  return 'This drug looks unlikely to cause arrhythmia. It is reasonable to continue with the standard safety review.';
 };
 
 /* =========================================================
@@ -128,11 +128,14 @@ export default function LabResults({
   shap,
   prediction,
   onReset,
+  hideReset = false,
 }: {
   tier: string;
   shap: SHAPData;
   prediction?: PredictionOutput | null;
   onReset: () => void;
+  /** Opsional: sembunyikan tombol Recalibrate (dipakai Full Pipeline yang punya tombolnya sendiri). Default: tampil. */
+  hideReset?: boolean;
 }) {
   const sortedContributions = [...shap.contributions].sort((a, b) => Math.abs(b.shap) - Math.abs(a.shap));
   const maxShap = Math.max(...sortedContributions.map(c => Math.abs(c.shap)));
@@ -160,7 +163,7 @@ export default function LabResults({
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}
       className="w-full mb-20"
     >
-      <div className="w-full bg-surface-white/70 backdrop-blur-md border border-foreground/10 rounded-3xl overflow-hidden shadow-sm">
+      <div className="w-full bg-surface-white/70 backdrop-blur-md border border-foreground/10 rounded-sheet overflow-hidden shadow-sm">
 
         {/* ================= HERO: VERDICT (editorial, lega) ================= */}
         <motion.div
@@ -169,24 +172,24 @@ export default function LabResults({
         >
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
             <div>
-              <span className="text-xs font-mono uppercase tracking-wider text-muted">Diagnostic verdict</span>
-              <h1 className={`mt-3 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif italic tracking-tight ${verdictPalette.text}`}>
+              <span className="text-xs font-mono uppercase tracking-wider text-muted">Result</span>
+              <h1 className={`mt-3 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-medium tracking-tight capitalize ${verdictPalette.text}`}>
                 {tier.toLowerCase()} risk
               </h1>
             </div>
 
-            <button
+            {!hideReset && <button
               onClick={onReset}
               className="group relative flex items-center gap-2.5 text-sm font-medium text-muted hover:text-foreground transition-colors duration-300 shrink-0 pb-0.5"
             >
-              Recalibrate
+              New prediction
               <RefreshCcw className="w-4 h-4 transition-transform duration-500 group-hover:rotate-180" />
               <span className="absolute left-0 -bottom-0.5 h-px w-0 bg-foreground transition-all duration-300 group-hover:w-full" />
-            </button>
+            </button>}
           </div>
 
           <p className="mt-6 text-base text-muted max-w-lg leading-relaxed">
-            Derived from the cardiac ion-channel biomarker profile of this compound, screened for Torsades de Pointes (TdP) arrhythmic potential.
+            Predicted risk of Torsades de Pointes (TdP), a dangerous heart rhythm, based on the 11 biomarkers.
           </p>
         </motion.div>
 
@@ -199,7 +202,7 @@ export default function LabResults({
               initial="hidden" whileInView="show" viewport={{ once: true, margin: '-10%' }} variants={sectionFade}
               className="px-6 sm:px-10 md:px-16 py-8 md:py-10"
             >
-              <span className="text-xs font-mono uppercase tracking-wider text-muted">Model confidence</span>
+              <span className="text-xs font-mono uppercase tracking-wider text-muted">How sure the model is</span>
 
               <div className="mt-5 flex w-full h-1.5 rounded-full overflow-hidden bg-foreground/6">
                 {sortedConfidences.map((c, i) => {
@@ -242,26 +245,26 @@ export default function LabResults({
               initial="hidden" whileInView="show" viewport={{ once: true, margin: '-10%' }} variants={sectionFade}
               className="px-6 sm:px-10 md:px-16 py-8 md:py-10 flex flex-col gap-5"
             >
-              <span className="text-xs font-mono uppercase tracking-wider text-muted">Recommended action</span>
+              <span className="text-xs font-mono uppercase tracking-wider text-muted">What to do next</span>
 
               <blockquote className={`border-l-2 ${actionPalette.rule} pl-5 md:pl-6`}>
-                <p className="text-base sm:text-lg md:text-xl font-serif italic text-foreground leading-snug max-w-2xl">
+                <p className="text-base sm:text-lg md:text-xl font-medium text-foreground leading-snug max-w-2xl">
                   {actionSuggestion(prediction.conformal.recommendedAction)}
                 </p>
               </blockquote>
 
               {prediction.conformal.predictionSet.length > 1 && (
                 <p className="text-sm text-muted leading-relaxed">
-                  Statistically, the model considers{' '}
+                  The model cannot rule out{' '}
                   {prediction.conformal.predictionSet.map((label, i) => (
                     <span key={label}>
                       {i > 0 && (i === prediction.conformal.predictionSet.length - 1 ? ' and ' : ', ')}
                       <span className={`font-medium ${tierPalette(label).text}`}>{label.toLowerCase()}</span>
                     </span>
                   ))}{' '}
-                  equally plausible for this input.
+                  for this input.
                   {prediction.conformal.isAmbiguous && (
-                    <> The more severe tier is recommended because the model cannot rule it out.</>
+                    <> The advice above follows the more serious one, to be safe.</>
                   )}
                 </p>
               )}
@@ -270,12 +273,12 @@ export default function LabResults({
                 <div className="flex flex-col gap-1.5">
                   {prediction.conformal.isAmbiguous && (
                     <p className="text-sm text-amber-700 leading-relaxed">
-                      <span className="font-medium">Note —</span> this result is ambiguous; treat the recommendation above as provisional pending further review.
+                      This result is borderline. Treat the advice above as provisional.
                     </p>
                   )}
                   {prediction.conformal.outOfDistribution && (
                     <p className="text-sm text-indigo-700 leading-relaxed">
-                      <span className="font-medium">Note —</span> The model abstains: no risk tier reached the conformal threshold, so all three tiers remain possible. The most conservative action (High) is recommended.
+                      These values are unlike the data the model learned from, so it will not pick a tier. Treat the drug as high risk until you know more.
                     </p>
                   )}
                 </div>
@@ -285,7 +288,7 @@ export default function LabResults({
                 onClick={() => setShowDetails(v => !v)}
                 className="flex items-center gap-1.5 text-sm text-muted hover:text-foreground transition-colors w-max mt-1"
               >
-                Technical details
+                Details
                 <ChevronDown className={`w-4 h-4 transition-transform ${showDetails ? 'rotate-180' : ''}`} />
               </button>
 
@@ -305,7 +308,7 @@ export default function LabResults({
                         <span>set size <span className="text-foreground">{prediction.conformal.setSize}</span></span>
                       </div>
                       {prediction.conformal.warning && (
-                        <p className="text-rose-600 font-mono text-xs bg-rose-500/10 p-2.5 rounded-lg border border-rose-500/20 leading-relaxed max-w-2xl">
+                        <p className="text-rose-600 font-mono text-xs bg-rose-500/10 p-2.5 rounded-card border border-rose-500/20 leading-relaxed max-w-2xl">
                           <span className="font-semibold uppercase tracking-wider">Warning:</span> {prediction.conformal.warning}
                         </p>
                       )}
@@ -329,9 +332,9 @@ export default function LabResults({
         >
           <div className="mb-8 flex items-baseline justify-between flex-wrap gap-2">
             <div>
-              <span className="text-xs font-mono uppercase tracking-wider text-muted">What drove this result</span>
+              <span className="text-xs font-mono uppercase tracking-wider text-muted">Why this result</span>
               <p className="mt-2 text-base text-foreground max-w-lg">
-                How each biomarker pushed the prediction toward or away from risk.
+                How much each biomarker pushed the risk up or down.
               </p>
             </div>
             <span className="text-xs font-mono text-muted/50">
@@ -394,8 +397,8 @@ export default function LabResults({
           </motion.div>
 
           <div className="mt-8 pt-5 border-t border-foreground/8 flex items-center justify-between text-sm text-muted">
-            <span className="text-blue-600">Defends against risk</span>
-            <span className="text-rose-600">Drives toxicity risk</span>
+            <span className="text-blue-600">Lowers the risk</span>
+            <span className="text-rose-600">Raises the risk</span>
           </div>
         </motion.div>
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Beaker, TerminalSquare, Database, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 // Asumsikan data ini diimpor dari src/data/compounds.ts
 import { BIOMARKERS, COMPOUND_LIBRARY } from '@/data/compounds';
 
@@ -60,7 +60,7 @@ export default function LabForm({ onSubmit }: { onSubmit: (data: number[]) => vo
       className="w-full mb-16"
     >
       {/* ID TOUR DITAMBAHKAN DI SINI */}
-      <div id="tour-lab-form" className="bg-surface-white/80 backdrop-blur-3xl border border-foreground/4 shadow-[0_24px_60px_rgba(0,0,0,0.02)] rounded-4xl p-5 md:p-8 relative overflow-hidden">
+      <div id="tour-lab-form" className="bg-surface-white/80 backdrop-blur-3xl border border-foreground/4 shadow-[0_24px_60px_rgba(0,0,0,0.02)] rounded-sheet p-5 md:p-8 relative overflow-hidden">
         
         {/* Dekorasi Garis Kaca HUD */}
         <div className="absolute top-0 left-10 w-px h-4 bg-foreground/10" />
@@ -72,14 +72,14 @@ export default function LabForm({ onSubmit }: { onSubmit: (data: number[]) => vo
         <div className="pb-6 border-b border-foreground/4 mb-8 relative z-10">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted font-medium">
-              Data Ingestion
+              Biomarkers
             </span>
           </div>
           <h3 className="text-xl md:text-2xl font-medium text-foreground tracking-tight mb-2">
-            Electrophysiology Vector Matrix
+            Your 11 biomarker ratios
           </h3>
           <p className="text-[11px] md:text-xs text-muted max-w-2xl leading-relaxed">
-            Please input the raw electrophysiological parameters below, or load a predefined compound from the clinical database to evaluate its TdP risk.
+            Enter each value as a ratio to the drug-free cell, or fill them all from a known drug below.
           </p>
         </div>
 
@@ -94,7 +94,7 @@ export default function LabForm({ onSubmit }: { onSubmit: (data: number[]) => vo
               return (
                 <div 
                   key={marker.id} 
-                  className={`relative flex flex-col justify-between bg-foreground/1 border p-4 rounded-2xl transition-all duration-300 group
+                  className={`relative flex flex-col justify-between bg-foreground/1 border p-4 rounded-card transition-all duration-300 group
                     ${hasValue ? 'border-foreground/8 bg-surface-white/50' : 'border-foreground/4 hover:bg-surface-white/80'}
                     focus-within:bg-surface-white focus-within:border-accent/40 focus-within:ring-4 focus-within:ring-accent/5 focus-within:shadow-[0_8px_20px_rgba(0,0,0,0.02)]
                   `}
@@ -103,7 +103,7 @@ export default function LabForm({ onSubmit }: { onSubmit: (data: number[]) => vo
                     <label className="text-[11px] font-mono font-bold tracking-widest text-muted group-focus-within:text-accent transition-colors uppercase cursor-text">
                       {marker.name}
                     </label>
-                    <span className="text-[9px] font-mono text-muted/50 bg-foreground/2 px-1.5 py-0.5 rounded-md border border-foreground/4">
+                    <span className="text-[9px] font-mono text-muted/50 bg-foreground/2 px-1.5 py-0.5 rounded-chip border border-foreground/4">
                       {marker.unit}
                     </span>
                   </div>
@@ -115,15 +115,7 @@ export default function LabForm({ onSubmit }: { onSubmit: (data: number[]) => vo
                       onChange={(e) => handleManualInput(idx, e.target.value)}
                       className="w-full bg-transparent border-none p-0 text-lg font-mono text-foreground font-medium placeholder:text-foreground/10 focus:outline-none focus:ring-0 transition-colors"
                     />
-                    
-                    <AnimatePresence>
-                      {hasValue && (
-                        <motion.div 
-                          initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }}
-                          className="absolute right-0 w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]" 
-                        />
-                      )}
-                    </AnimatePresence>
+
                   </div>
 
                   <div className="mt-4 pt-3 border-t border-foreground/4 flex items-center justify-between">
@@ -146,19 +138,18 @@ export default function LabForm({ onSubmit }: { onSubmit: (data: number[]) => vo
               <div>
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-foreground">
-                    Quick Injector
+                    Start from a known drug
                   </span>
                 </div>
                 <p className="text-[10px] md:text-[11px] text-muted leading-relaxed">
-                  Select a known pharmacological compound to auto-fill the matrix.
+                  Fills in all 11 values from the CiPA reference data.
                 </p>
               </div>
 
               {/* Data Source Footnote Label */}
-              <div className="flex items-center gap-1.5 bg-foreground/3 border border-foreground/5 px-3 py-1.5 rounded-full shrink-0 shadow-sm">
-                <Database className="w-3 h-3 text-muted/70" />
-                <span className="text-[9px] font-mono uppercase tracking-widest text-muted/80">
-                  SRC: CiPA In-Silico Dataset V1.0
+              <div className="flex items-center gap-1.5 bg-foreground/3 border border-foreground/5 px-3 py-1.5 rounded-control shrink-0">
+                <span className="text-[10px] text-muted">
+                  Source: CiPA in-silico data
                 </span>
               </div>
             </div>
@@ -182,7 +173,7 @@ export default function LabForm({ onSubmit }: { onSubmit: (data: number[]) => vo
                         key={drug.id}
                         type="button"
                         onClick={() => injectPreset(drug.id, drug.values)}
-                        className={`group relative flex items-stretch h-12 w-full rounded-full transition-all duration-300 overflow-hidden outline-none text-left
+                        className={`group relative flex items-stretch h-12 w-full rounded-control transition-all duration-300 overflow-hidden outline-none text-left
                           ${isSelected 
                             ? 'bg-surface-white border-transparent ring-1 ring-accent/60 shadow-[0_6px_16px_-4px_rgba(0,0,0,0.1)] scale-[1.02]' 
                             : 'bg-surface-white/60 border border-foreground/10 hover:border-foreground/20 hover:shadow-md hover:-translate-y-0.5 backdrop-blur-sm'
@@ -240,7 +231,7 @@ export default function LabForm({ onSubmit }: { onSubmit: (data: number[]) => vo
                   type="button"
                   disabled={page === 0}
                   onClick={() => setPage((prev) => Math.max(0, prev - 1))}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all border outline-none
+                  className={`w-8 h-8 rounded-control flex items-center justify-center transition-all border outline-none
                     ${page === 0 
                       ? 'border-foreground/5 text-muted/20 cursor-not-allowed' 
                       : 'border-foreground/10 text-muted hover:text-accent hover:bg-accent/10 active:scale-90'
@@ -256,7 +247,7 @@ export default function LabForm({ onSubmit }: { onSubmit: (data: number[]) => vo
                       key={idx}
                       type="button"
                       onClick={() => setPage(idx)}
-                      className={`w-7 h-7 rounded-full text-[11px] font-mono font-medium transition-all duration-300 flex items-center justify-center outline-none
+                      className={`w-7 h-7 rounded-control text-[11px] font-mono font-medium transition-all duration-300 flex items-center justify-center outline-none
                         ${page === idx
                           ? 'bg-accent text-surface-white shadow-sm scale-105'
                           : 'bg-foreground/5 text-muted hover:bg-accent/10 hover:text-accent'
@@ -273,7 +264,7 @@ export default function LabForm({ onSubmit }: { onSubmit: (data: number[]) => vo
                   type="button"
                   disabled={page === totalPages - 1}
                   onClick={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all border outline-none
+                  className={`w-8 h-8 rounded-control flex items-center justify-center transition-all border outline-none
                     ${page === totalPages - 1 
                       ? 'border-foreground/5 text-muted/20 cursor-not-allowed' 
                       : 'border-foreground/10 text-muted hover:text-accent hover:bg-accent/10 active:scale-90'
@@ -290,13 +281,10 @@ export default function LabForm({ onSubmit }: { onSubmit: (data: number[]) => vo
               ========================================================= */}
           <div className="mt-10 pt-6 border-t border-foreground/4 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-foreground/2 border border-foreground/5 flex items-center justify-center">
-                <TerminalSquare className="w-3.5 h-3.5 text-muted" />
-              </div>
               <div className="flex flex-col">
-                <span className="text-[10px] font-mono text-muted uppercase tracking-widest">System Check</span>
-                <span className={`text-[11px] font-medium ${isReady ? 'text-emerald-500' : 'text-muted'}`}>
-                  {filledCount}/11 Parameters Loaded
+                <span className="text-[10px] font-mono text-muted uppercase tracking-widest">Filled in</span>
+                <span className={`text-sm font-medium ${isReady ? 'text-foreground' : 'text-muted'}`}>
+                  {filledCount} of 11 values
                 </span>
               </div>
             </div>
@@ -306,15 +294,15 @@ export default function LabForm({ onSubmit }: { onSubmit: (data: number[]) => vo
               id="tour-start-button"
               type="submit"
               disabled={!isReady}
-              className={`group flex items-center justify-center gap-3 w-full sm:w-auto px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.15em] transition-all duration-300 rounded-full shadow-lg 
+              className={`group flex items-center justify-center gap-3 w-full sm:w-auto px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.15em] transition-all duration-300 rounded-control shadow-lg 
                 ${isReady
                   ? 'bg-accent text-surface-white hover:bg-accent-dark hover:shadow-accent/25 hover:scale-[1.02] active:scale-95 cursor-pointer'
                   : 'bg-foreground/10 text-muted/50 shadow-none cursor-not-allowed'
                 }
               `}
             >
-              Run Pipeline
-              <Beaker className="w-3.5 h-3.5 transform transition-transform duration-300 group-hover:rotate-12" />
+              Predict risk
+              <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
             </button>
           </div>
         </form>
