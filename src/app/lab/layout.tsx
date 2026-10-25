@@ -2,10 +2,11 @@ import React from 'react';
 import LabNavbar from './components/LabNavbar';
 import LabFooter from './components/LabFooter';
 import SessionGuard from '@/components/SessionGuard';
+import { LabShellSkeleton } from './components/Skeletons';
 
 export default function LabLayout({ children }: { children: React.ReactNode }) {
   return (
-    <SessionGuard>
+    <SessionGuard fallback={<LabShellSkeleton />}>
     <div className="relative min-h-screen flex flex-col bg-background text-foreground font-sans selection:bg-accent selection:text-white overflow-x-hidden">
 
       {/* Ambient color layer — sama seperti splash screen & landing page,

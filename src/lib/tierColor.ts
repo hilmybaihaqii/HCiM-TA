@@ -52,3 +52,14 @@ export function normalizeTier(tier: string): RiskTier {
 export function getTierColor(tier: string): TierColorClasses {
   return TIER_COLORS[normalizeTier(tier)];
 }
+
+const TIER_CSS_VAR: Record<RiskTier, string> = {
+  low: 'var(--accent-teal)',
+  intermediate: 'var(--accent-amber)',
+  high: 'var(--accent-red)',
+};
+
+/** Warna tier sebagai CSS variable, untuk SVG/inline style (chart, titik status). */
+export function getTierCssVar(tier: string): string {
+  return TIER_CSS_VAR[normalizeTier(tier)];
+}

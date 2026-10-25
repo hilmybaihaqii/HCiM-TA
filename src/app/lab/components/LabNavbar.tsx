@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FlaskConical, ActivitySquare, User, LogOut, ChevronDown, Shield, MonitorPlay } from 'lucide-react';
+import { FlaskConical, ActivitySquare, User, LogOut, ChevronDown, Shield, MonitorPlay, Workflow } from 'lucide-react';
 import { api } from '@/lib/api'; 
 
 interface UserProfile {
@@ -38,6 +38,7 @@ export default function LabNavbar() {
   }, [router]);
 
   const navItems = [
+    { name: 'Full Pipeline', path: '/lab/pipeline', icon: Workflow },
     { name: 'Digital Lab', path: '/lab', icon: FlaskConical },
     { name: 'Activity Logs', path: '/lab/logs', icon: ActivitySquare },
   ];
@@ -100,19 +101,25 @@ export default function LabNavbar() {
                     const isActive = pathname === item.path;
                     const Icon = item.icon;
                     return (
-                      <Link 
-                        key={item.name} 
-                        href={item.path} 
+                      <Link
+                        key={item.name}
+                        href={item.path}
                         title={item.name}
-                        // UI Menu Disederhanakan (Tanpa layoutId framer-motion)
-                        className={`relative px-3 py-2 md:px-4 md:py-1.5 rounded-full text-xs font-medium transition-all duration-300 flex items-center justify-center gap-2 ${
-                          isActive 
-                            ? 'bg-surface-white text-foreground shadow-sm border border-foreground/5' 
-                            : 'text-muted hover:text-foreground hover:bg-foreground/5'
+                        aria-current={isActive ? 'page' : undefined}
+                        className={`relative px-3 py-2 md:px-4 md:py-1.5 rounded-full text-xs font-medium transition-colors duration-300 flex items-center justify-center gap-2 ${
+                          isActive ? 'text-foreground' : 'text-muted hover:text-foreground'
                         }`}
                       >
-                        <Icon className="w-4 h-4 md:w-3.5 md:h-3.5" />
-                        <span className="hidden md:block">{item.name}</span>
+                        {/* Satu pil bersama yang bergeser ke tab aktif */}
+                        {isActive && (
+                          <motion.span
+                            layoutId="lab-nav-pill"
+                            className="absolute inset-0 rounded-full bg-surface-white shadow-sm border border-foreground/5"
+                            transition={{ type: 'spring', stiffness: 420, damping: 36 }}
+                          />
+                        )}
+                        <Icon className="relative z-10 w-4 h-4 md:w-3.5 md:h-3.5" />
+                        <span className="relative z-10 hidden md:block">{item.name}</span>
                       </Link>
                     );
                   })}
@@ -155,14 +162,14 @@ export default function LabNavbar() {
                   animate={{ opacity: 1, y: 0, scale: 1 }} 
                   exit={{ opacity: 0, y: 8, scale: 0.98 }}
                   transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                  className="absolute right-0 top-full mt-3 w-52 bg-surface-white/90 backdrop-blur-2xl border border-foreground/5 shadow-[0_16px_40px_rgba(0,0,0,0.08)] rounded-2xl p-2 flex flex-col z-101"
+                  className="absolute right-0 top-full mt-3 w-52 bg-surface-white/90 backdrop-blur-2xl border border-foreground/5 shadow-[0_16px_40px_rgba(0,0,0,0.08)] rounded-card p-2 flex flex-col z-101"
                 >
                   <Link 
                     href="/lab/profile" 
                     onClick={() => setShowProfileMenu(false)} 
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-muted hover:text-foreground hover:bg-foreground/3 transition-colors"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-control text-xs font-medium text-muted hover:text-foreground hover:bg-foreground/3 transition-colors"
                   >
-                    <User className="w-4 h-4" /> My Profile
+                    <User className="w-4 h-4" /> Profile
                   </Link>
 
                   {/* LOGIKA SWITCHER (Menggunakan Link Biasa Tanpa Animasi Tambahan) */}
@@ -173,7 +180,7 @@ export default function LabNavbar() {
                         <Link 
                           href="/lab/admin" 
                           onClick={() => setShowProfileMenu(false)} 
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-muted hover:text-foreground hover:bg-foreground/3 transition-colors"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-control text-xs font-medium text-muted hover:text-foreground hover:bg-foreground/3 transition-colors"
                         >
                           <Shield className="w-4 h-4" /> Admin Panel
                         </Link>
@@ -181,7 +188,7 @@ export default function LabNavbar() {
                         <Link 
                           href="/lab" 
                           onClick={() => setShowProfileMenu(false)} 
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-muted hover:text-foreground hover:bg-foreground/3 transition-colors"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-control text-xs font-medium text-muted hover:text-foreground hover:bg-foreground/3 transition-colors"
                         >
                           <MonitorPlay className="w-4 h-4" /> User View
                         </Link>
@@ -193,9 +200,9 @@ export default function LabNavbar() {
                   
                   <button 
                     onClick={handleLogoutClick} 
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-accent hover:bg-accent/10 transition-colors w-full text-left"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-control text-xs font-medium text-accent hover:bg-accent/10 transition-colors w-full text-left"
                   >
-                    <LogOut className="w-4 h-4" /> End Session
+                    <LogOut className="w-4 h-4" /> Sign out
                   </button>
                 </motion.div>
               )}
@@ -222,17 +229,17 @@ export default function LabNavbar() {
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 20, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="relative w-full max-w-[320px] bg-surface-white/80 backdrop-blur-2xl border border-foreground/10 shadow-[0_30px_80px_rgba(0,0,0,0.1)] rounded-3xl p-6 overflow-hidden"
+              className="relative w-full max-w-[320px] bg-surface-white/80 backdrop-blur-2xl border border-foreground/10 shadow-[0_30px_80px_rgba(0,0,0,0.1)] rounded-sheet p-6 overflow-hidden"
             >
               <div className="mb-6 text-center">
                 <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4 border border-accent/20">
                   <LogOut className="w-5 h-5 text-accent" />
                 </div>
                 <h3 className="text-lg font-medium text-foreground tracking-tight mb-1">
-                  End Session
+                  Sign out?
                 </h3>
                 <p className="text-xs text-muted leading-relaxed px-2">
-                  Are you sure you want to log out of your workspace?
+                  You can sign back in at any time.
                 </p>
               </div>
 
@@ -240,21 +247,14 @@ export default function LabNavbar() {
                 <button 
                   onClick={executeLogout}
                   disabled={isLoggingOut}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-full bg-accent text-white text-xs font-semibold tracking-wide hover:bg-accent/90 hover:scale-[1.02] transition-all duration-300 shadow-sm disabled:opacity-70 disabled:hover:scale-100"
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-control bg-accent text-white text-xs font-semibold tracking-wide hover:bg-accent/90 hover:scale-[1.02] transition-all duration-300 shadow-sm disabled:opacity-70 disabled:hover:scale-100"
                 >
-                  {isLoggingOut ? (
-                    <>
-                      <div className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                      Logging out
-                    </>
-                  ) : (
-                    'Yes, Log Out'
-                  )}
+                  {isLoggingOut ? 'Signing out…' : 'Sign out'}
                 </button>
                 <button 
                   onClick={() => setShowLogoutModal(false)}
                   disabled={isLoggingOut}
-                  className="w-full py-3 rounded-full border border-foreground/10 bg-transparent text-foreground text-xs font-semibold tracking-wide hover:bg-foreground/3 transition-colors disabled:opacity-50"
+                  className="w-full py-3 rounded-control border border-foreground/10 bg-transparent text-foreground text-xs font-semibold tracking-wide hover:bg-foreground/3 transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>

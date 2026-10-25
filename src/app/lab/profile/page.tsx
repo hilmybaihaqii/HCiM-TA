@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
+import LabPageHeader from '../components/LabPageHeader';
+import { Bone, HeaderSkeleton } from '../components/Skeletons';
 import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 
@@ -56,18 +57,20 @@ function ProfileOrchestrator() {
   const canShowDangerZone = !isLoading && profile?.role !== 'admin';
 
   return (
-    <div className="w-full flex flex-col text-foreground overflow-x-hidden pt-20 sm:pt-24 md:pt-32 pb-16 sm:pb-20 min-h-screen">
+    <div className="w-full flex flex-col text-foreground overflow-x-hidden pt-28 md:pt-36 pb-20 min-h-screen">
       {/* PENTING: max-width di sini disamakan (max-w-4xl) dengan max-width ProfileCard/tabs/content
           di bawah. Sebelumnya wrapper ini pakai max-w-7xl sementara isinya max-w-4xl tanpa mx-auto
           sendiri, jadi konten nempel ke kiri wrapper yang lebih lebar alih-alih ikut center. */}
       <div className="w-full max-w-4xl mx-auto px-4 sm:px-6">
 
-        <motion.h1
-          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
-          className="text-2xl sm:text-3xl font-medium tracking-tight text-foreground mb-6 sm:mb-8"
-        >
-          Profile Settings
-        </motion.h1>
+        <div className="mb-8 sm:mb-10">
+          <LabPageHeader
+            eyebrow="Profile"
+            title="Your account."
+            accent="Kept safe."
+            description="Your details, your password, and the option to deactivate your account."
+          />
+        </div>
 
         {/* 1. Profile Card */}
         <motion.div
@@ -140,8 +143,9 @@ function ProfileOrchestrator() {
 export default function ProfilePage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-muted" />
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 pt-28 md:pt-36 flex flex-col gap-10">
+        <HeaderSkeleton />
+        <Bone className="h-56 rounded-sheet" />
       </div>
     }>
       <ProfileOrchestrator />

@@ -4,7 +4,11 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 
-export default function SessionGuard({ children }: { children: React.ReactNode }) {
+export default function SessionGuard({ children, fallback }: {
+  children: React.ReactNode;
+  /** Opsional: tampilan selama sesi dicek (mis. skeleton). Default: teks "Verifying Session...". */
+  fallback?: React.ReactNode;
+}) {
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(false);
 
@@ -56,6 +60,9 @@ export default function SessionGuard({ children }: { children: React.ReactNode }
 
  // Selama sesi masih dicek, jangan render halaman Lab (cegah kedipan/bocor data)
   if (!isAuthorized) {
+    if (fallback) {
+      return <div className="fixed inset-0 z-9999 bg-background overflow-hidden">{fallback}</div>;
+    }
     return (
       <div className="fixed inset-0 w-full h-screen flex items-center justify-center bg-background z-9999">
         <div className="animate-pulse">

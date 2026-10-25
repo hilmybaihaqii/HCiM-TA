@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useRef } from 'react';
-import { motion, useScroll, useTransform, MotionValue } from 'framer-motion';
-import Link from 'next/link';
-import { MAP_VIEWBOX, WORLD_DOTS, NODES, ROUTES, AMBIENT_NODES, NodeKey } from '@/data/world-map-data';
+import { motion, useInView, useScroll, useTransform, MotionValue } from 'framer-motion';
+import BubbleLink from '@/components/ui/BubbleLink';
+import { WORLD_DOTS, NODES, ROUTES, AMBIENT_NODES, NodeKey } from '@/data/world-map-data';
 
 const luxEase = [0.16, 1, 0.3, 1] as const;
 
@@ -45,41 +45,11 @@ const Word = ({ children, progress, range }: { children: string; progress: Motio
 };
 
 /* =========================================================
-   REUSABLE COMPONENT: ROLLING BUTTON (Strict / No Shadow)
+   PETA
+   Peta utuh di semua ukuran layar. Nama negara selalu menempel di titiknya: peta ini
+   menggambarkan bahwa Cardivex bisa dibuka dari mana saja, bukan daftar kantor.
    ========================================================= */
-const RollingButton = ({ title, href, primary = false }: { title: string; href: string; primary?: boolean }) => {
-  return (
-    <Link
-      href={href}
-      className={`group relative flex items-center justify-center px-10 py-5 text-[10px] md:text-xs font-mono uppercase tracking-[0.2em] transition-all duration-500 overflow-hidden ${
-        primary
-          ? 'bg-foreground text-background hover:bg-accent hover:text-white'
-          : 'bg-transparent border border-foreground/20 text-foreground hover:border-foreground'
-      }`}
-      style={{ borderRadius: '9999px' }}
-    >
-      <span className="relative flex flex-col h-[1.2em] overflow-hidden">
-        <span className="transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-full">
-          {title}
-        </span>
-        <span className="absolute top-full transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-full">
-          {title}
-        </span>
-      </span>
-
-      {primary && (
-        <svg
-          className="w-4 h-4 ml-4 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-1"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-        </svg>
-      )}
-    </Link>
-  );
-};
+const MAP = { w: 1000, h: 460 };
 
 function arcPath(x1: number, y1: number, x2: number, y2: number) {
   const mx = (x1 + x2) / 2;
@@ -102,19 +72,21 @@ function arcPath(x1: number, y1: number, x2: number, y2: number) {
   return `M${x1} ${y1} Q${cx.toFixed(1)} ${cy.toFixed(1)} ${x2} ${y2}`;
 }
 
-const Route = ({ from, to, delay }: { from: NodeKey; to: NodeKey; delay: number }) => {
+/** Garis dari Jakarta: tergambar saat terlihat, lalu titik kecil terus berjalan di atasnya. */
+const Route = ({ from, to, delay, live }: { from: NodeKey; to: NodeKey; delay: number; live: boolean }) => {
   const a = NODES[from];
   const b = NODES[to];
   const d = arcPath(a.x, a.y, b.x, b.y);
   const gradId = `route-fade-${from}-${to}`;
+  const dur = 3.2 + (delay % 1) * 1.4;
 
   return (
     <g>
       <defs>
         <linearGradient id={gradId} gradientUnits="userSpaceOnUse" x1={a.x} y1={a.y} x2={b.x} y2={b.y}>
           <stop offset="0%" stopColor="currentColor" stopOpacity={0.05} />
-          <stop offset="18%" stopColor="currentColor" stopOpacity={0.55} />
-          <stop offset="85%" stopColor="currentColor" stopOpacity={0.55} />
+          <stop offset="18%" stopColor="currentColor" stopOpacity={0.5} />
+          <stop offset="85%" stopColor="currentColor" stopOpacity={0.5} />
           <stop offset="100%" stopColor="currentColor" stopOpacity={0.15} />
         </linearGradient>
       </defs>
@@ -127,19 +99,26 @@ const Route = ({ from, to, delay }: { from: NodeKey; to: NodeKey; delay: number 
         strokeLinecap="round"
         className="text-foreground/70"
         initial={{ pathLength: 0, opacity: 0 }}
-        animate={{ pathLength: 1, opacity: 1 }}
+        animate={live ? { pathLength: 1, opacity: 1 } : undefined}
         transition={{ duration: 1.6, ease: luxEase, delay }}
       />
 
-      <motion.rect
-        x={b.x - 3.5}
-        y={b.y - 3.5}
-        width={7}
-        height={7}
+      {/* titik berjalan: masuk pelan, keluar pelan, berulang */}
+      {live && (
+        <circle r={2.6} className="fill-accent" opacity={0}>
+          <animateMotion dur={`${dur}s`} begin={`${delay + 1.4}s`} repeatCount="indefinite" path={d} keyPoints="0;1" keyTimes="0;1" calcMode="spline" keySplines="0.45 0 0.55 1" />
+          <animate attributeName="opacity" dur={`${dur}s`} begin={`${delay + 1.4}s`} repeatCount="indefinite" values="0;1;1;0" keyTimes="0;0.15;0.8;1" />
+        </circle>
+      )}
+
+      <motion.circle
+        cx={b.x}
+        cy={b.y}
+        r={4}
         className="fill-background stroke-foreground/60"
         strokeWidth={1.25}
         initial={{ opacity: 0, scale: 0.4 }}
-        animate={{ opacity: 1, scale: 1 }}
+        animate={live ? { opacity: 1, scale: 1 } : undefined}
         transition={{ duration: 0.5, ease: luxEase, delay: delay + 1.3 }}
         style={{ transformOrigin: `${b.x}px ${b.y}px` }}
       />
@@ -147,31 +126,120 @@ const Route = ({ from, to, delay }: { from: NodeKey; to: NodeKey; delay: number 
   );
 };
 
-
-const AmbientDots = () => (
+const AmbientDots = ({ live }: { live: boolean }) => (
   <>
     {AMBIENT_NODES.map((n, i) => (
-      <motion.circle
+      <circle
         key={i}
         cx={n.x}
         cy={n.y}
-        r={1.6}
-        className="fill-foreground/25"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: [0, 0.6, 0.25] }}
-        transition={{ duration: 2, delay: 0.4 + (i % 7) * 0.15, ease: luxEase }}
+        r={1.7}
+        className={`fill-foreground/30 ${live ? 'map-twinkle' : 'opacity-0'}`}
+        style={{ animationDelay: `${(i % 9) * 0.45}s` }}
       />
     ))}
   </>
 );
 
+function WorldMap() {
+  const ref = useRef<HTMLDivElement>(null);
+  const live = useInView(ref, { once: true, amount: 0.3 });
+  const jakarta = NODES.jakarta;
+  const pos = (x: number, y: number) => ({ left: `${(x / MAP.w) * 100}%`, top: `${(y / MAP.h) * 100}%` });
+  // Label di dekat tepi kiri/kanan disejajarkan ke dalam supaya tidak keluar layar (terutama di HP).
+  const alignX = (x: number) => (x / MAP.w > 0.86 ? '-100%' : x / MAP.w < 0.14 ? '0%' : '-50%');
+
+  return (
+    <div ref={ref} className="relative w-full max-w-7xl">
+      {/* peta utuh; di HP dibuat selebar layar (keluar dari padding) supaya titiknya lebih besar */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={live ? { opacity: 1, scale: 1 } : undefined}
+        transition={{ duration: 1.4, ease: luxEase }}
+        className="relative -mx-6 w-[calc(100%+3rem)] md:mx-0 md:w-full"
+        style={{ paddingTop: `${(MAP.h / MAP.w) * 100}%` }}
+      >
+        <svg viewBox={`0 0 ${MAP.w} ${MAP.h}`} className="absolute inset-0 h-full w-full overflow-visible" aria-hidden preserveAspectRatio="xMidYMid meet">
+          <path d={WORLD_DOTS} className="fill-foreground/20" />
+          <AmbientDots live={live} />
+          {ROUTES.map((key, i) => (
+            <Route key={key} from="jakarta" to={key} delay={0.3 + i * 0.22} live={live} />
+          ))}
+
+          {/* Jakarta: titik rumah dengan denyut cincin yang terus berulang */}
+          <g>
+            {live && (
+              <>
+                <circle cx={jakarta.x} cy={jakarta.y} r={6} className="map-beacon fill-accent/30" />
+                <circle cx={jakarta.x} cy={jakarta.y} r={6} className="map-beacon fill-accent/30" style={{ animationDelay: '1.2s' }} />
+              </>
+            )}
+            <circle cx={jakarta.x} cy={jakarta.y} r={9} className="fill-background stroke-foreground/40" strokeWidth={1.25} />
+            <circle cx={jakarta.x} cy={jakarta.y} r={4} className="fill-accent" />
+          </g>
+        </svg>
+
+        {/* label negara menempel di titiknya, di desktop maupun HP */}
+        <div className="pointer-events-none absolute inset-0">
+          {/* pembungkus biasa = posisi; motion.span di dalamnya = animasi (framer menimpa transform) */}
+          <span className="absolute" style={{ ...pos(jakarta.x, jakarta.y), transform: `translate(${alignX(jakarta.x)}, calc(-100% - 12px))` }}>
+            <motion.span
+              initial={{ opacity: 0, y: 6 }}
+              animate={live ? { opacity: 1, y: 0 } : undefined}
+              transition={{ duration: 0.6, ease: luxEase, delay: 0.4 }}
+              className="block whitespace-nowrap rounded-full bg-foreground px-2 py-0.5 text-[9px] font-medium text-surface-white md:px-3 md:py-1 md:text-[11px]"
+            >
+              {jakarta.label} · we are here
+            </motion.span>
+          </span>
+          {ROUTES.map((key, i) => {
+            const n = NODES[key];
+            const above = n.y > 140;
+            return (
+              <span key={key} className="absolute" style={{ ...pos(n.x, n.y), transform: `translate(${alignX(n.x)}, ${above ? 'calc(-100% - 8px)' : '8px'})` }}>
+                <motion.span
+                  initial={{ opacity: 0, y: above ? 6 : -6 }}
+                  animate={live ? { opacity: 1, y: 0 } : undefined}
+                  transition={{ duration: 0.6, ease: luxEase, delay: 1.5 + i * 0.22 }}
+                  className="block whitespace-nowrap rounded-full border border-foreground/10 bg-background/85 px-1.5 py-px text-[8px] text-foreground/80 backdrop-blur-sm md:px-2.5 md:py-0.5 md:text-[10px]"
+                >
+                  {n.label}
+                </motion.span>
+              </span>
+            );
+          })}
+        </div>
+      </motion.div>
+
+      <style jsx global>{`
+        @keyframes map-beacon {
+          0% { transform: scale(1); opacity: 0.7; }
+          100% { transform: scale(3.6); opacity: 0; }
+        }
+        @keyframes map-twinkle {
+          0%, 100% { opacity: 0.25; }
+          50% { opacity: 0.9; }
+        }
+        .map-beacon {
+          transform-box: fill-box;
+          transform-origin: center;
+          animation: map-beacon 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+        }
+        .map-twinkle {
+          animation: map-twinkle 3.6s ease-in-out infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .map-beacon, .map-twinkle { animation: none; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 /* =========================================================
    MAIN SECTION: GLOBAL ACCESS
    ========================================================= */
 export default function CTASection() {
-  const jakarta = NODES.jakarta;
-  const mapAspectPercent = (460 / 1000) * 100;
-
   return (
     <section className="relative w-full bg-background font-sans overflow-hidden pt-32 md:pt-48 pb-24 md:pb-40 flex flex-col items-center justify-center min-h-[70vh]">
 
@@ -185,7 +253,7 @@ export default function CTASection() {
         }}
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 flex flex-col items-center text-center">
+      <div className="relative z-10 max-w-7xl mx-auto w-full px-6 md:px-12 flex flex-col items-center text-center">
 
         {/* Eyebrow */}
         <motion.div
@@ -212,107 +280,29 @@ export default function CTASection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 1, delay: 0.2, ease: luxEase }}
-          className="mt-8 mb-16 md:mb-20 text-sm md:text-base text-muted max-w-lg leading-relaxed bg-background/50 backdrop-blur-[2px]"
+          className="mt-8 mb-14 md:mb-20 text-sm md:text-base text-muted max-w-lg leading-relaxed bg-background/50 backdrop-blur-[2px]"
         >
           Every simulation, biomarker, and SHAP-audited classification runs on
           the same pipeline — whether it&apos;s called from a lab in Jakarta or a
           clinic on the other side of the world.
         </motion.p>
 
+        <div className="mb-14 flex w-full justify-center md:mb-20">
+          <WorldMap />
+        </div>
+
+        {/* Tombol: efek gelembung yang sama dengan hero */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1.2, ease: luxEase }}
-          className="relative w-full max-w-7xl mb-16 md:mb-20"
-          style={{ paddingTop: `${mapAspectPercent}%` }}
-        >
-          <div className="absolute inset-0">
-            <svg viewBox={MAP_VIEWBOX} className="w-full h-full overflow-visible" aria-hidden preserveAspectRatio="xMidYMid meet">
-              <motion.path
-                d={WORLD_DOTS}
-                className="fill-foreground/24"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 1.4, ease: luxEase }}
-              />
-
-              <AmbientDots />
-
-              {ROUTES.map((key, i) => (
-                <Route key={key} from="jakarta" to={key} delay={0.3 + i * 0.22} />
-              ))}
-
-              <motion.g
-                initial={{ opacity: 0, scale: 0.6 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, ease: luxEase, delay: 0.15 }}
-                style={{ transformOrigin: `${jakarta.x}px ${jakarta.y}px` }}
-              >
-                <rect
-                  x={jakarta.x - 7}
-                  y={jakarta.y - 7}
-                  width={14}
-                  height={14}
-                  className="fill-none stroke-foreground/40"
-                  strokeWidth={1.25}
-                />
-                <rect
-                  x={jakarta.x - 3}
-                  y={jakarta.y - 3}
-                  width={6}
-                  height={6}
-                  className="fill-accent"
-                />
-              </motion.g>
-
-            </svg>
-          </div>
-
-          <div className="absolute inset-0 pointer-events-none">
-            <span
-              className="absolute -translate-x-1/2 -translate-y-full font-mono text-[10px] sm:text-[11px] font-semibold tracking-[0.15em] uppercase text-foreground whitespace-nowrap"
-              style={{
-                left: `${(jakarta.x / 1000) * 100}%`,
-                top: `${(jakarta.y / 460) * 100 - 2}%`,
-              }}
-            >
-              {jakarta.label}
-            </span>
-            {ROUTES.map((key) => {
-              const n = NODES[key];
-              const above = n.y > 40;
-              return (
-                <span
-                  key={key}
-                  className={`absolute -translate-x-1/2 font-mono text-[9px] sm:text-[10px] tracking-[0.12em] uppercase text-foreground/55 whitespace-nowrap ${
-                    above ? '-translate-y-full' : ''
-                  }`}
-                  style={{
-                    left: `${(n.x / 1000) * 100}%`,
-                    top: `${(n.y / 460) * 100 + (above ? -1.5 : 2.5)}%`,
-                  }}
-                >
-                  {n.label}
-                </span>
-              );
-            })}
-          </div>
-        </motion.div>
-
-        {/* Action Buttons */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
-          whileInView={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 1, delay: 0.4, ease: luxEase }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto"
+          transition={{ duration: 1, delay: 0.2, ease: luxEase }}
+          className="flex w-full flex-col items-stretch justify-center gap-3 sm:w-auto sm:flex-row sm:items-center [&>*]:w-full sm:[&>*]:w-auto"
         >
-          <div className="w-full sm:w-auto">
-            <RollingButton title="Create Account" href="/register" primary />
-          </div>
-          <div className="w-full sm:w-auto">
-            <RollingButton title="Log In" href="/login" />
-          </div>
+          <BubbleLink href="/register" primary>
+            Create account
+          </BubbleLink>
+          <BubbleLink href="/login">Log in</BubbleLink>
         </motion.div>
 
       </div>

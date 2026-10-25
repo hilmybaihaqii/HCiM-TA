@@ -5,6 +5,10 @@ import { api } from "@/lib/api";
 import { motion } from "framer-motion";
 import PredictionsTable from "./components/PredictionTable";
 import ShapTable from "./components/ShapTable";
+import RiskDonut from "./components/RiskDonut";
+import LabPageHeader from "../components/LabPageHeader";
+import { Bone } from "../components/Skeletons";
+import { getTierCssVar } from "@/lib/tierColor";
 
 interface SummaryResponse {
   total_predictions: number;
@@ -35,83 +39,50 @@ export default function LogsPage() {
   };
 
   return (
-    <div className="w-full flex flex-col text-foreground pt-28 pb-20 min-h-screen">
+    <div className="w-full flex flex-col text-foreground pt-28 md:pt-36 pb-20 min-h-screen">
       <div className="w-full max-w-7xl mx-auto px-6 md:px-12">
-        {/* Header & Dashboard Stats */}
-        <div className="mb-12 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
-          <div className="max-w-xl">
-            <h1 className="text-3xl font-medium tracking-tight mb-2">
-              History & Records
-            </h1>
-            <p className="text-sm text-muted leading-relaxed">
-              Review your past predictions, understand the model&apos;s
-              decision-making process, and monitor the distribution of your
-              cardiovascular toxicity risks.
-            </p>
-          </div>
+        {/* Header: bentuk yang sama dengan Full Pipeline */}
+        <LabPageHeader
+          eyebrow="Activity logs"
+          title="History"
+          accent="and records."
+          description="Your past predictions, the factors behind them, and how the risk results are spread."
+        />
 
-          {summary && (
+        {/* Ringkasan: satu baris di tengah, total hanya ditulis sekali (di tengah donut) */}
+        <div className="min-h-36 my-10 md:my-12 flex justify-center">
+          {summary ? (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex flex-wrap sm:flex-nowrap gap-3 sm:gap-4"
+              className="flex flex-col sm:flex-row items-center gap-8 sm:gap-14"
             >
-              {/* Card 1: Total Predictions */}
-              <div className="bg-surface-white/60 border border-foreground/10 p-4 sm:p-5 rounded-2xl flex flex-col items-center justify-center flex-1 min-w-27.5">
-                <span className="text-3xl font-bold text-foreground">
-                  {summary.total_predictions}
-                </span>
-                <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted mt-1 text-center">
-                  Total Info
-                </span>
-              </div>
-
-              {/* Card 2: Risk Distribution (High, Intermediate, Low) */}
-              <div className="bg-surface-white/60 border border-foreground/10 p-4 sm:p-5 rounded-2xl flex flex-col justify-center flex-2 min-w-45">
-                <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted text-center mb-3">
-                  Risk Distribution
-                </span>
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="flex items-center gap-2 text-muted">
-                      <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"></span>
-                      High Risk
-                    </span>
-                    <span className="font-mono font-medium">
-                      {getCount("High")}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="flex items-center gap-2 text-muted">
-                      <span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
-                      Intermediate
-                    </span>
-                    <span className="font-mono font-medium">
-                      {getCount("Intermediate")}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="flex items-center gap-2 text-muted">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                      Low Risk
-                    </span>
-                    <span className="font-mono font-medium">
-                      {getCount("Low")}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 3: Total SHAP */}
-              <div className="bg-surface-white/60 border border-foreground/10 p-4 sm:p-5 rounded-2xl flex flex-col items-center justify-center flex-1 min-w-27.5">
-                <span className="text-3xl font-bold text-foreground">
+              <RiskDonut
+                centerLabel="predictions"
+                slices={[
+                  { key: "high", label: "High", count: getCount("High"), color: getTierCssVar("high") },
+                  { key: "intermediate", label: "Intermediate", count: getCount("Intermediate"), color: getTierCssVar("intermediate") },
+                  { key: "low", label: "Low", count: getCount("Low"), color: getTierCssVar("low") },
+                ]}
+              />
+              <span aria-hidden="true" className="w-12 h-px sm:w-px sm:h-16 bg-foreground/10" />
+              <div className="text-center sm:text-left">
+                <span className="block text-3xl font-medium tabular-nums text-foreground leading-none">
                   {summary.total_explanations}
                 </span>
-                <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted mt-1 text-center">
-                  Analyses
-                </span>
+                <span className="mt-2 block text-xs text-muted">SHAP analyses</span>
               </div>
             </motion.div>
+          ) : (
+            <div className="flex flex-col sm:flex-row items-center gap-8 sm:gap-14" aria-hidden="true">
+              <div className="flex items-center gap-5">
+                <Bone className="w-32 h-32 rounded-full" />
+                <div className="flex flex-col gap-3">
+                  {[0, 1, 2].map(i => <Bone key={i} className="h-3 w-28" />)}
+                </div>
+              </div>
+              <Bone className="h-10 w-24" />
+            </div>
           )}
         </div>
 
