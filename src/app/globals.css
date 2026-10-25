@@ -57,6 +57,23 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Lenis (scroll halus di landing page) — lihat components/SmoothScroll.tsx.
+   scroll-behavior bawaan harus mati supaya tidak bertabrakan dengan Lenis. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+html.lenis {
+  scroll-behavior: auto !important;
+}
+.lenis:not(.lenis-autoToggle).lenis-stopped {
+  overflow: clip;
+}
+.lenis [data-lenis-prevent],
+.lenis [data-lenis-prevent-wheel] {
+  overscroll-behavior: contain;
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
@@ -91,6 +108,17 @@ body {
 /* Menggunakan warna accent untuk hover scrollbar */
 ::-webkit-scrollbar-thumb:hover {
   background-color: var(--accent-red);
+}
+
+/* Scrollbar halaman disembunyikan (Chrome, Edge, Safari, Firefox); halaman tetap bisa di-scroll.
+   Area scroll di dalam halaman (tabel, menu) tetap memakai scrollbar tipis di atas. */
+html,
+body {
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
 }
 
 @media (prefers-color-scheme: dark) {
