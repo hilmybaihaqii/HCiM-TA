@@ -5,11 +5,20 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Users, Activity, BrainCircuit, Network, ShieldAlert } from 'lucide-react';
-import { api } from '@/lib/api';
+import { useSessionUser } from '@/components/SessionGuard';
 import AdminSplashScreen from './components/AdminSplashScreen';
+import LabContainer from '../components/LabContainer';
 
-interface UserProfile {
-  role: 'user' | 'admin';
+const SPLASH_MS = 2200;
+const SPLASH_SEEN_KEY = 'adminSplashSeen';
+
+/** Splash "Welcome, Admin." cukup sekali per sesi browser, bukan tiap kali masuk panel admin. */
+function readSplashSeen(): boolean {
+  try {
+    return sessionStorage.getItem(SPLASH_SEEN_KEY) === '1';
+  } catch {
+    return true;
+  }
 }
 
 const adminNavItems = [
@@ -23,49 +32,30 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname();
 
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
-  const [splashFinished, setSplashFinished] = useState(false);
+  // Sesi sudah dicek SessionGuard di layout /lab; di sini tinggal cek role
+  const isAuthorized = useSessionUser().role === 'admin';
+  // Area lab hanya dirender di client (SessionGuard), jadi sessionStorage aman dibaca saat init
+  const [showSplash, setShowSplash] = useState(() => isAuthorized && !readSplashSeen());
 
   useEffect(() => {
-    let isMounted = true;
+    if (!isAuthorized) router.replace('/lab');
+  }, [isAuthorized, router]);
 
-    // 1. Cek Sesi ke API Backend
-    api("/auth/me")
-      .then((data) => {
-        if (!isMounted) return;
-        const user = data as UserProfile;
-        if (user.role === 'admin') {
-          setIsAuthorized(true);
-        } else {
-          router.replace('/lab');
-        }
-      })
-      .catch(() => {
-        if (isMounted) router.replace('/login');
-      })
-      .finally(() => {
-        if (isMounted) setAuthChecked(true);
-      });
-
+  useEffect(() => {
+    if (!showSplash) return;
     const timer = setTimeout(() => {
-      if (isMounted) setSplashFinished(true);
-    }, 2200);
-
-    return () => {
-      isMounted = false;
-      clearTimeout(timer);
-    };
-  }, [router]);
-
-  const showSplash = !authChecked || !splashFinished;
+      setShowSplash(false);
+      try { sessionStorage.setItem(SPLASH_SEEN_KEY, '1'); } catch { /* storage diblokir: abaikan */ }
+    }, SPLASH_MS);
+    return () => clearTimeout(timer);
+  }, [showSplash]);
 
   return (
     <>
       {/* =========================================================
           KOMPONEN SPLASH SCREEN TERPISAH
           ========================================================= */}
-      <AdminSplashScreen isVisible={showSplash} authChecked={authChecked} />
+      <AdminSplashScreen isVisible={showSplash} authChecked />
 
       {/* =========================================================
           FALLBACK JIKA AKSES DITOLAK
@@ -81,7 +71,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           KONTEN ADMIN UTAMA
           ========================================================= */}
       {!showSplash && isAuthorized && (
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 pt-20 sm:pt-24 pb-20">
+        <LabContainer>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -118,7 +108,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           >
             {children}
           </motion.div>
-        </div>
+        </LabContainer>
       )}
     </>
   );

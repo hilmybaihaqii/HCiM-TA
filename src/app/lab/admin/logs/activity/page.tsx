@@ -303,7 +303,7 @@ export default function ActivityLogsPage() {
             exit={{ opacity: 0, y: -10, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-500 text-xs text-center font-mono shadow-sm">
+            <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-card text-rose-500 text-xs text-center font-mono shadow-sm">
               [SYSTEM_ERROR] {errorMsg}
             </div>
           </motion.div>

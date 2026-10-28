@@ -1,34 +1,27 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import LabPageHeader from '../components/LabPageHeader';
+import LabContainer from '../components/LabContainer';
 import { Bone, HeaderSkeleton } from '../components/Skeletons';
 import { useSearchParams } from 'next/navigation';
-import { api } from '@/lib/api';
+import { useSessionUser } from '@/components/SessionGuard';
 
 import ProfileCard from './components/ProfileCard';
 import SecuritySettings from './components/SecuritySettings';
 import DangerZone from './components/DangerZone';
 
-interface UserProfileData {
-  display_name?: string;
-  email?: string;
-  role?: string;
-}
-
-interface AuthMeResponse {
-  items?: UserProfileData[];
-  display_name?: string;
-  email?: string;
-  role?: string;
-}
-
 function ProfileOrchestrator() {
   const searchParams = useSearchParams();
+  const user = useSessionUser();
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [profile, setProfile] = useState<{ name: string; email: string; role: string } | null>(null);
+  // Data profil diambil dari sesi (SessionGuard), tanpa panggilan /auth/me tambahan
+  const profile = {
+    name: user.display_name || 'Unknown',
+    email: user.email || 'No email',
+    role: user.role,
+  };
 
   const [activeTab, setActiveTab] = useState<'security' | 'danger'>('security');
   // Dihitung langsung saat inisialisasi (bukan lewat effect), karena searchParams
@@ -37,31 +30,12 @@ function ProfileOrchestrator() {
     searchParams.get('action') === 'change-password' ? 'form' : 'request'
   );
 
-  useEffect(() => {
-    // Ambil data profil
-    api('/auth/me')
-      .then((res: unknown) => {
-        const rawData = res as AuthMeResponse;
-        const data = rawData?.items ? rawData.items[0] : rawData;
-
-        setProfile({
-          name: data?.display_name || 'Unknown',
-          email: data?.email || 'No email',
-          role: data?.role?.toLowerCase() || 'user'
-        });
-      })
-      .catch(() => console.warn("Failed to load profile data."))
-      .finally(() => setIsLoading(false));
-  }, []);
-
-  const canShowDangerZone = !isLoading && profile?.role !== 'admin';
+  const canShowDangerZone = profile.role !== 'admin';
 
   return (
-    <div className="w-full flex flex-col text-foreground overflow-x-hidden pt-28 md:pt-36 pb-20 min-h-screen">
-      {/* PENTING: max-width di sini disamakan (max-w-4xl) dengan max-width ProfileCard/tabs/content
-          di bawah. Sebelumnya wrapper ini pakai max-w-7xl sementara isinya max-w-4xl tanpa mx-auto
-          sendiri, jadi konten nempel ke kiri wrapper yang lebih lebar alih-alih ikut center. */}
-      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6">
+    <div className="w-full flex flex-col text-foreground overflow-x-hidden">
+      {/* Lebar "narrow" (max-w-4xl) sama dengan ProfileCard/tabs/content di bawah, supaya ikut center */}
+      <LabContainer size="narrow">
 
         <div className="mb-8 sm:mb-10">
           <LabPageHeader
@@ -77,7 +51,7 @@ function ProfileOrchestrator() {
           initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }}
           className="mb-10 sm:mb-12"
         >
-          <ProfileCard isLoading={isLoading} profile={profile} />
+          <ProfileCard isLoading={false} profile={profile} />
         </motion.div>
 
         {/* 2. Tabs Navigation dengan sliding underline */}
@@ -134,7 +108,7 @@ function ProfileOrchestrator() {
           </motion.div>
         </AnimatePresence>
 
-      </div>
+      </LabContainer>
     </div>
   );
 }
@@ -143,10 +117,10 @@ function ProfileOrchestrator() {
 export default function ProfilePage() {
   return (
     <Suspense fallback={
-      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 pt-28 md:pt-36 flex flex-col gap-10">
+      <LabContainer size="narrow" className="flex flex-col gap-10">
         <HeaderSkeleton />
         <Bone className="h-56 rounded-sheet" />
-      </div>
+      </LabContainer>
     }>
       <ProfileOrchestrator />
     </Suspense>

@@ -6,25 +6,30 @@ import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 // Asumsikan data ini diimpor dari src/data/compounds.ts
 import { BIOMARKERS, COMPOUND_LIBRARY } from '@/data/compounds';
 
-export default function LabForm({ onSubmit }: { onSubmit: (data: number[]) => void }) {
-  const [values, setValues] = useState<string[]>(Array(11).fill(''));
+/** Sama dengan breakpoint md Tailwind (768px) */
+const MOBILE_QUERY = '(max-width: 767.98px)';
+
+export default function LabForm({ onSubmit, initial }: {
+  onSubmit: (data: number[]) => void;
+  /** Nilai awal (mis. setelah prediksi gagal, supaya isian tidak hilang) */
+  initial?: number[];
+}) {
+  const [values, setValues] = useState<string[]>(() => (initial?.length === 11 ? initial.map(String) : Array(11).fill('')));
   const [activePreset, setActivePreset] = useState<string | null>(null);
   const [page, setPage] = useState(0);
-  const [isMobile, setIsMobile] = useState(false);
+  // Nilai awal langsung dari media query (area lab hanya dirender di client), supaya render pertama
+  // di ponsel sudah 4 obat, tidak 12 lalu melompat.
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia(MOBILE_QUERY).matches);
 
-  // Efek untuk mendeteksi ukuran layar & reset page langsung di callback event
+  // Ikuti perubahan ukuran layar (rotasi, resize) & reset page langsung di callback event
   useEffect(() => {
-    const checkMobile = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      if (!mobile) {
-        setPage(0); // Aman dari cascading render karena dipicu oleh event resize langsung
-      }
+    const mql = window.matchMedia(MOBILE_QUERY);
+    const onChange = () => {
+      setIsMobile(mql.matches);
+      if (!mql.matches) setPage(0);
     };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
   }, []);
 
   const injectPreset = (presetId: string, presetValues: number[]) => {

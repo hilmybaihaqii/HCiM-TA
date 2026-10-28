@@ -129,6 +129,39 @@ export function isTrainingDrug(name?: string | null): boolean {
   return !!name && TRAINING_DRUGS.has(name.toLowerCase());
 }
 
+/**
+ * Perubahan ukuran biomarker relatif terhadap sel tanpa obat (0.16 = 16% lebih besar).
+ * Rasio dari simulator = nilai obat / |nilai kontrol|, jadi biomarker yang nilainya negatif
+ * (vrest, max_dv) bernilai -1 saat tidak berubah (lihat data CiPA: vrest ≈ -1.0).
+ * Tanda kontrol diambil dari nilai kontrol kalau ada, kalau tidak dari tanda rasionya.
+ */
+export function ratioChange(ratio?: number | null, control?: number | null): number | null {
+  if (typeof ratio !== "number" || !Number.isFinite(ratio)) return null;
+  const negative = typeof control === "number" && control !== 0 ? control < 0 : ratio < 0;
+  return negative ? -ratio - 1 : ratio - 1;
+}
+
+/** "+16%", "−8%", "0%" */
+export function formatChange(change: number | null): string {
+  if (change === null) return "n/a";
+  const v = Math.round(change * 100);
+  return v === 0 ? "0%" : `${v > 0 ? "+" : "−"}${Math.abs(v)}%`;
+}
+
+/** Biomarker dengan perubahan ukuran terbesar dari sel tanpa obat */
+export function strongestChange(
+  ratios?: (number | null)[] | null,
+  control?: Record<string, number | null>,
+): { key: string; change: number } | null {
+  let best: { key: string; change: number } | null = null;
+  for (let i = 0; i < (ratios?.length ?? 0); i++) {
+    const key = FEATURES[i];
+    const change = ratioChange(ratios?.[i], control?.[key]);
+    if (change !== null && (!best || Math.abs(change) > Math.abs(best.change))) best = { key, change };
+  }
+  return best;
+}
+
 /** "1, 2, 3 and 4" */
 export function joinList(items: (string | number)[]): string {
   const s = items.map(String);

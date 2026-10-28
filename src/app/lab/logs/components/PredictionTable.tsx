@@ -150,17 +150,20 @@ export default function PredictionsTable() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col sm:flex-row justify-between gap-4 mb-2">
-        <p className="text-xs text-muted">Showing {total} records</p>
+        {/* Filter hanya bekerja pada halaman yang sedang dimuat (API belum punya parameter search) */}
+        <p className="text-xs text-muted">
+          {searchQuery.trim()
+            ? `${filteredLogs.length} of ${logs.length} on this page match`
+            : `Showing ${total} records`}
+        </p>
         <div className="relative w-full sm:w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
           <input
-            type="text"
-            placeholder="Search records..."
+            type="search"
+            placeholder="Filter this page by ID or result"
+            aria-label="Filter this page by ID or result"
             value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setPage(0);
-            }}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-surface-white/60 border border-foreground/10 text-xs rounded-control pl-9 pr-4 py-2 focus:outline-none focus:border-foreground/30 transition-all"
           />
         </div>

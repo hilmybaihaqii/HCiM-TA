@@ -95,7 +95,8 @@ function OtpInput({ value, onChange, length = 6 }: { value: string; onChange: (v
   };
 
   return (
-    <div className="flex items-center justify-center gap-2 sm:gap-3">
+    // grid 6 kolom: kotak menyusut di layar sempit (≤360px) alih-alih keluar dari kartu
+    <div className="grid grid-cols-6 gap-1.5 sm:gap-3 w-full max-w-sm mx-auto">
       {digits.map((d, i) => (
         <input
           key={i}
@@ -107,7 +108,7 @@ function OtpInput({ value, onChange, length = 6 }: { value: string; onChange: (v
           onChange={(e) => handleChange(i, e.target.value)}
           onKeyDown={(e) => handleKeyDown(i, e)}
           onPaste={handlePaste}
-          className="w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-mono font-medium bg-background/50 border border-foreground/10 rounded-control focus:outline-none focus:border-foreground/40 focus:bg-background transition-colors"
+          className="w-full min-w-0 h-13 sm:h-14 text-center text-xl font-mono font-medium bg-background/50 border border-foreground/10 rounded-control focus:outline-none focus:border-foreground/40 focus:bg-background transition-colors"
         />
       ))}
     </div>

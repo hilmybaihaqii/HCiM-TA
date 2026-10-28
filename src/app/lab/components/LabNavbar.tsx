@@ -1,47 +1,71 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FlaskConical, ActivitySquare, User, LogOut, ChevronDown, Shield, MonitorPlay, Workflow } from 'lucide-react';
-import { api } from '@/lib/api'; 
-
-interface UserProfile {
-  id: string;
-  email: string;
-  display_name: string;
-  role: 'user' | 'admin';
-}
+import { api } from '@/lib/api';
+import { useSessionUser } from '@/components/SessionGuard';
 
 export default function LabNavbar() {
   const pathname = usePathname();
-  const router = useRouter();
-  
+  const user = useSessionUser();
+
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  
-  const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   // Deteksi apakah user sedang berada di area admin
   const isAdminRoute = pathname?.startsWith('/lab/admin');
 
+  // Menu profil menutup saat klik/tap di luar atau tekan Escape
   useEffect(() => {
-    api("/auth/me")
-      .then((data) => {
-        setUser(data as UserProfile);
-      })
-      .catch((err) => {
-        console.warn('Profile load skipped because session check failed:', err);
-      });
-  }, [router]);
+    if (!showProfileMenu) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (!profileRef.current?.contains(e.target as Node)) setShowProfileMenu(false);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowProfileMenu(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [showProfileMenu]);
 
   const navItems = [
     { name: 'Full Pipeline', path: '/lab/pipeline', icon: Workflow },
     { name: 'Digital Lab', path: '/lab', icon: FlaskConical },
     { name: 'Activity Logs', path: '/lab/logs', icon: ActivitySquare },
   ];
+
+  // Pil menu: posisi diukur dari tombol aktif lalu digeser dengan CSS transform.
+  // Tab yang diklik langsung jadi tujuan (tanpa menunggu halaman baru selesai dimuat), jadi pil
+  // bergerak sekali, mulus, di jalurnya. Sebelumnya layoutId Framer melompat saat isi halaman berganti.
+  const navRef = useRef<HTMLElement>(null);
+  const linkRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  // Klik dicatat bersama path asalnya; begitu path berganti, catatan ini otomatis tidak dipakai lagi
+  const [clicked, setClicked] = useState<{ to: string; from: string | null } | null>(null);
+  const [pill, setPill] = useState<{ x: number; w: number } | null>(null);
+  const activePath = clicked && clicked.from === pathname ? clicked.to : pathname;
+  const activeIndex = navItems.findIndex(item => item.path === activePath);
+
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = linkRefs.current[activeIndex];
+      setPill(el ? { x: el.offsetLeft, w: el.offsetWidth } : null);
+    };
+    measure();
+    const nav = navRef.current;
+    if (!nav) return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(nav);
+    return () => ro.disconnect();
+  }, [activeIndex, isAdminRoute]);
 
   const handleLogoutClick = () => {
     setShowProfileMenu(false);
@@ -68,7 +92,7 @@ export default function LabNavbar() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 w-full z-50 pt-4 md:pt-6 px-4 md:px-12 pointer-events-none flex justify-center">
+      <header className="fixed top-0 left-0 w-full z-50 pt-[max(1rem,env(safe-area-inset-top))] md:pt-[max(1.5rem,env(safe-area-inset-top))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] md:px-12 pointer-events-none flex justify-center">
         <div className="w-full max-w-7xl flex items-center pointer-events-auto bg-surface-white/70 backdrop-blur-xl border border-foreground/5 shadow-[0_4px_20px_rgba(0,0,0,0.02)] rounded-full px-3 md:px-4 py-2.5">
           
           {/* ============================== */}
@@ -86,63 +110,61 @@ export default function LabNavbar() {
           {/* BAGIAN TENGAH: MENU DINAMIS    */}
           {/* ============================== */}
           <div className="shrink-0 flex items-center justify-center">
-            <AnimatePresence mode="wait">
-              {!isAdminRoute && (
-                <motion.nav 
-                  key="user-nav"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                  id="tour-navbar-menu" 
-                  className="flex items-center gap-1 md:gap-1.5 bg-foreground/3 p-1 rounded-full border border-foreground/5"
-                >
-                  {navItems.map((item) => {
-                    const isActive = pathname === item.path;
-                    const Icon = item.icon;
-                    return (
-                      <Link
-                        key={item.name}
-                        href={item.path}
-                        title={item.name}
-                        aria-current={isActive ? 'page' : undefined}
-                        className={`relative px-3 py-2 md:px-4 md:py-1.5 rounded-full text-xs font-medium transition-colors duration-300 flex items-center justify-center gap-2 ${
-                          isActive ? 'text-foreground' : 'text-muted hover:text-foreground'
-                        }`}
-                      >
-                        {/* Satu pil bersama yang bergeser ke tab aktif */}
-                        {isActive && (
-                          <motion.span
-                            layoutId="lab-nav-pill"
-                            className="absolute inset-0 rounded-full bg-surface-white shadow-sm border border-foreground/5"
-                            transition={{ type: 'spring', stiffness: 420, damping: 36 }}
-                          />
-                        )}
-                        <Icon className="relative z-10 w-4 h-4 md:w-3.5 md:h-3.5" />
-                        <span className="relative z-10 hidden md:block">{item.name}</span>
-                      </Link>
-                    );
-                  })}
-                </motion.nav>
-              )}
-            </AnimatePresence>
+            {!isAdminRoute && (
+              <nav
+                ref={navRef}
+                id="tour-navbar-menu"
+                className="relative flex items-center gap-1 md:gap-1.5 bg-foreground/5 p-1 rounded-full border border-foreground/8"
+              >
+                {/* Satu pil bersama yang bergeser ke tab aktif */}
+                {pill && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute top-1 bottom-1 left-0 rounded-full bg-surface-white shadow-sm border border-foreground/10 transition-[transform,width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                    style={{ width: pill.w, transform: `translateX(${pill.x}px)` }}
+                  />
+                )}
+                {navItems.map((item, i) => {
+                  const isActive = activePath === item.path;
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.name}
+                      ref={el => { linkRefs.current[i] = el; }}
+                      href={item.path}
+                      title={item.name}
+                      onClick={() => setClicked({ to: item.path, from: pathname })}
+                      aria-current={pathname === item.path ? 'page' : undefined}
+                      className={`relative z-10 px-3 py-2 md:px-4 md:py-1.5 rounded-full text-xs font-medium transition-colors duration-300 flex items-center justify-center gap-2 ${
+                        isActive ? 'text-foreground' : 'text-foreground/60 hover:text-foreground'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4 md:w-3.5 md:h-3.5" />
+                      <span className="hidden md:block">{item.name}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+            )}
           </div>
 
           {/* ============================== */}
           {/* BAGIAN KANAN: PROFIL           */}
           {/* ============================== */}
-          <div className="flex-1 flex justify-end relative">
-            <button 
+          <div ref={profileRef} className="flex-1 flex justify-end relative">
+            <button
               id="tour-user-profile"
+              aria-haspopup="menu"
+              aria-expanded={showProfileMenu}
               onClick={() => setShowProfileMenu(!showProfileMenu)}
               className="flex items-center gap-2 pl-3 pr-1 py-1 rounded-full hover:bg-foreground/4 transition-colors focus:outline-none"
             >
               <div className="hidden sm:flex flex-col items-end mr-1">
                 <span className="text-xs font-medium text-foreground leading-none truncate max-w-30">
-                  {user ? getFirstName(user.display_name) : '...'}
+                  {getFirstName(user.display_name)}
                 </span>
                 <span className="text-[10px] text-muted font-mono mt-0.5 tracking-wide truncate max-w-32.5">
-                  {user ? user.email : '...'}
+                  {user.email}
                 </span>
               </div>
               
@@ -173,7 +195,7 @@ export default function LabNavbar() {
                   </Link>
 
                   {/* LOGIKA SWITCHER (Menggunakan Link Biasa Tanpa Animasi Tambahan) */}
-                  {user?.role === 'admin' && (
+                  {user.role === 'admin' && (
                     <>
                       <div className="h-px bg-foreground/5 my-1 mx-2" />
                       {!isAdminRoute ? (

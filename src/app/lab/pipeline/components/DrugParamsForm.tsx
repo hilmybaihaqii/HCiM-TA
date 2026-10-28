@@ -205,9 +205,8 @@ function Overview({ mode, doses }: { mode: Mode; doses: number[] }) {
 
       <OverviewColumn index={2} title="We simulate">
         <p className="text-sm text-muted leading-relaxed">
-          One virtual heart cell at {joinList(doses)}× Cmax, 1000 beats each. The 11 biomarkers are averaged over the doses.
+          One virtual heart cell at {joinList(doses)}× Cmax. The 11 biomarkers are the mean over the doses.
         </p>
-        <p className="mt-3 text-xs text-muted">About 1–2 minutes</p>
       </OverviewColumn>
 
       <OverviewColumn index={3} title="You get">
@@ -367,7 +366,7 @@ export default function DrugParamsForm({
     exposure: { title: 'Exposure', hint: 'Therapeutic Cmax of the compound.' },
     herg: { title: 'hERG binding', hint: 'Dynamic hERG binding parameters (Kmax, Ku, n, halfmax, Vhalf) from the CiPA hERG fitting.' },
     channels: { title: 'Other channels', hint: 'Optional. Leave a row empty if the drug does not block that channel.' },
-    review: { title: 'Review & run', hint: `Simulated at ${joinList(doses)}× Cmax, biomarkers averaged. Usually 1–2 minutes.` },
+    review: { title: 'Review & run', hint: `Simulated at ${joinList(doses)}× Cmax, biomarkers taken as the mean over doses.` },
   };
 
   const body = (() => {

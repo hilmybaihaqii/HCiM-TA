@@ -25,7 +25,7 @@ const CustomTooltip = ({
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
         className="bg-white/95 backdrop-blur-2xl border border-black/5 shadow-[0_30px_80px_rgba(0,0,0,0.12)] rounded-card p-6 md:p-8 flex flex-col relative overflow-hidden"
       >
-        <div className="absolute top-0 right-10 w-32 h-px bg-linear-to-r from-transparent via-[#E63946]/30 to-transparent" />
+        <div className="absolute top-0 right-10 w-32 h-px bg-linear-to-r from-transparent via-accent/30 to-transparent" />
         
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
@@ -37,24 +37,24 @@ const CustomTooltip = ({
             </span>
           </div>
           
-          <button {...closeProps} className="p-1.5 text-neutral-300 hover:text-neutral-900 hover:bg-neutral-100 rounded-control transition-colors outline-none group" title="Skip Tour">
+          <button {...closeProps} className="p-1.5 text-neutral-300 hover:text-foreground hover:bg-neutral-100 rounded-control transition-colors outline-none group" title="Skip Tour">
             <X className="w-4 h-4 transition-transform group-hover:rotate-90" />
           </button>
         </div>
 
         <div className="mb-8">
-          {step.title && <h3 className="text-lg md:text-xl font-medium tracking-tight text-neutral-900 mb-2">{step.title}</h3>}
+          {step.title && <h3 className="text-lg md:text-xl font-medium tracking-tight text-foreground mb-2">{step.title}</h3>}
           <p className="text-xs md:text-[13px] text-neutral-500 leading-relaxed">{step.content}</p>
         </div>
 
         <div className="flex items-center justify-between mt-auto">
           {index > 0 ? (
-            <button {...backProps} className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-neutral-400 hover:text-neutral-900 transition-colors outline-none">
+            <button {...backProps} className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-neutral-400 hover:text-foreground transition-colors outline-none">
               <ChevronLeft className="w-3 h-3" /> Back
             </button>
           ) : <div />}
 
-          <button {...primaryProps} className="group flex items-center gap-2 px-5 py-2.5 bg-neutral-900 hover:bg-[#E63946] text-white text-[11px] font-bold uppercase tracking-widest rounded-control transition-all duration-300 shadow-sm hover:shadow-[0_8px_20px_rgba(230,57,70,0.25)] hover:-translate-y-0.5 outline-none">
+          <button {...primaryProps} className="group flex items-center gap-2 px-5 py-2.5 bg-foreground hover:bg-accent text-white text-[11px] font-bold uppercase tracking-widest rounded-control transition-all duration-300 shadow-sm hover:shadow-[0_8px_20px_rgba(184,84,92,0.25)] hover:-translate-y-0.5 outline-none">
             {isLastStep ? 'Get Started' : 'Next'}
             {!isLastStep && <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />}
           </button>

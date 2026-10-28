@@ -2,15 +2,16 @@
 
 import React, { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   ACTIVE_STATUSES, DEFAULT_DOSES, DrugDb, PipelineJob, PipelineRequest,
-  createJob, getDrugs, getJob, isFormError, listJobs, readApiError,
+  createJob, getDrugs, getJob, isFormError, joinList, listJobs, readApiError,
 } from '@/lib/pipeline';
 import { FormState, formFromRequest, initialForm } from './form';
 import DrugParamsForm from './components/DrugParamsForm';
 import LabPageHeader from '../components/LabPageHeader';
-import PipelineEngine, { RunningDetails } from './components/JobProgress';
+import LabContainer from '../components/LabContainer';
+import PipelineMonitor, { RunningDetails } from './components/JobProgress';
 import { PageSkeleton } from '../components/Skeletons';
 import PipelineResult, { PipelineFailure, failureCopy } from './components/PipelineResult';
 
@@ -210,17 +211,18 @@ function PipelinePageInner() {
 
   return (
     <div className="w-full flex flex-col min-h-100 text-foreground overflow-x-hidden">
-      <div className="w-full pt-28 md:pt-36 relative z-10">
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 flex flex-col gap-8">
+      <div className="w-full relative z-10">
+        {/* pb-0: tiap tampilan (form/running/result) sudah punya pb-20 sendiri */}
+        <LabContainer className="flex flex-col gap-8 pb-0!">
           <LabPageHeader
             eyebrow="Full pipeline"
-            title="Simulate the heart."
-            accent="Predict the risk."
-            description="Give us a drug. We run it through a virtual human heart cell, then through the TdP risk model."
+            title="From drug data"
+            accent="to TdP risk."
+            description={`Enter a drug's exposure and ion-channel block. We simulate a human ventricular cell at ${joinList(db?.doses ?? DEFAULT_DOSES)}× Cmax, measure 11 biomarkers, and classify the risk for the mean and for each dose.`}
           />
-          <PipelineEngine job={currentJob} loading={!!jobId && !currentJob && view !== 'error'} doses={doses} />
+          <PipelineMonitor job={currentJob} loading={!!jobId && !currentJob && view !== 'error'} doses={doses} db={db} />
 
-          <AnimatePresence mode="wait">
+          {/* Tanpa AnimatePresence mode="wait": bisa macet di opacity 0 sehingga hasil tidak tampil */}
             {view === 'form' && (
               <motion.div
                 key="form"
@@ -258,7 +260,7 @@ function PipelinePageInner() {
                 animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                 transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               >
-                <PipelineResult job={currentJob} db={db} onRunAnother={runAnother} />
+                <PipelineResult key={currentJob.id} job={currentJob} db={db} onRunAnother={runAnother} />
               </motion.div>
             )}
 
@@ -281,8 +283,7 @@ function PipelinePageInner() {
                 />
               </motion.div>
             )}
-          </AnimatePresence>
-        </div>
+        </LabContainer>
       </div>
     </div>
   );
