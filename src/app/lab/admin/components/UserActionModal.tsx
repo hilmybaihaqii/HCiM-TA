@@ -79,7 +79,7 @@ export default function UserActionModal({
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.95, y: 20, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="relative w-full max-w-90 bg-surface-white/90 backdrop-blur-2xl border border-foreground/10 shadow-[0_30px_80px_rgba(0,0,0,0.1)] rounded-3xl p-6 overflow-hidden"
+            className="relative w-full max-w-90 bg-surface-white/90 backdrop-blur-2xl border border-foreground/10 shadow-[0_30px_80px_rgba(0,0,0,0.1)] rounded-sheet p-6 overflow-hidden"
           >
             <div className="mb-6 text-center flex flex-col items-center">
               <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 border ${config.colorClass}`}>

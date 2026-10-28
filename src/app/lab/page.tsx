@@ -1,247 +1,186 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { api } from '@/lib/api'; 
-import EngineVisualizer from './components/EngineVisualizer';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { ChartColumn, Gauge, ListChecks } from 'lucide-react';
+import { formatChange, strongestChange } from '@/lib/pipeline';
+import { explainRisk, predictErrorMessage, predictRisk, type PredictionOutput, type ShapData } from '@/lib/predict';
+import { getTierColor } from '@/lib/tierColor';
 import LabForm from './components/LabForm';
-import LabResults, { parsePredictResponse, PredictionOutput } from './components/LabResults';
-import { PageSkeleton, ResultSkeleton } from './components/Skeletons';
 import TutorialGuide from './components/LabTutorial';
 import LabPageHeader from './components/LabPageHeader';
+import LabContainer from './components/LabContainer';
+import HeartbeatLoader from './components/report/HeartbeatLoader';
+import RiskVerdict from './components/report/RiskVerdict';
+import BiomarkerList from './components/report/BiomarkerList';
+import StageMonitor, { type Stage, type StageState } from './components/report/StageMonitor';
+import { primaryBtn } from './components/report/ui';
 
-type Stage = 'idle' | 'ingestion' | 'inference' | 'consensus' | 'completed';
+/*
+ * Digital Lab: 11 rasio biomarker milik user -> model risiko.
+ * Tampilan status, loading dan hasil sama dengan Full Pipeline (components/report), supaya konsisten.
+ * Sesuai panduan API: predict langsung, explain (SHAP) hanya saat user memintanya.
+ */
 
-type SHAPData = {
-  predicted_class: string;
-  base_value: number;
-  contributions: { biomarker: string; value: number; shap: number }[];
-};
-
-type SimulationResult = { 
-  success: boolean; 
-  tier?: string; 
-  shapData?: SHAPData; 
+type Report = {
+  inputs: number[];
+  status: 'predicting' | 'done' | 'error';
+  tier?: string;
   prediction?: PredictionOutput | null;
-  error?: string; 
+  predictionId?: string;
+  error?: string;
+  shap?: ShapData | null;
+  explaining?: boolean;
+  shapError?: string;
 };
 
-// ============================================================================
-// HALAMAN UTAMA (OTAK SISTEM AI)
-// ============================================================================
+function stageStates(r: Report | null): StageState[] {
+  if (!r) return ['active', 'pending', 'pending'];
+  if (r.status === 'predicting') return ['done', 'active', 'pending'];
+  if (r.status === 'error') return ['done', 'failed', 'pending'];
+  if (r.shap) return ['done', 'done', 'done'];
+  return ['done', 'done', r.explaining ? 'active' : 'pending'];
+}
+
+function statusText(r: Report | null): string {
+  if (!r) return 'Ready for your biomarkers';
+  if (r.status === 'predicting') return 'Running the risk model';
+  if (r.status === 'error') return 'The prediction stopped';
+  if (r.explaining) return 'Computing the main drivers';
+  return r.shap ? 'Result and main drivers ready' : 'Result ready';
+}
+
+function buildStages(r: Report | null): Stage[] {
+  const shift = r ? strongestChange(r.inputs) : null;
+  const top = r?.shap ? [...r.shap.contributions].sort((a, b) => Math.abs(b.shap) - Math.abs(a.shap))[0] : undefined;
+  const tier = r?.tier && r.tier !== 'unknown' ? r.tier : null;
+  return [
+    {
+      id: 'biomarkers',
+      title: 'Your biomarkers',
+      icon: ChartColumn,
+      does: 'The 11 ratios you entered, each compared with the drug-free cell.',
+      output: shift ? <>Largest change <span className="font-mono">{shift.key} {formatChange(shift.change)}</span></> : undefined,
+    },
+    {
+      id: 'risk',
+      title: 'Risk model',
+      icon: Gauge,
+      does: 'Classifies TdP risk as low, intermediate or high.',
+      output: tier ? <><span className={`capitalize ${getTierColor(tier).text}`}>{tier}</span> risk</> : undefined,
+    },
+    {
+      id: 'drivers',
+      title: 'Main drivers',
+      icon: ListChecks,
+      does: 'SHAP shows which biomarkers moved the model most. Runs when you ask for it.',
+      output: top ? <>Strongest driver <span className="font-mono">{top.biomarker}</span></> : undefined,
+    },
+  ];
+}
+
 export default function DigitalLabPage() {
-  const [isInitializing, setIsInitializing] = useState(true);
-  const [activeStage, setActiveStage] = useState<Stage>('idle');
-  const [result, setResult] = useState<SimulationResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [report, setReport] = useState<Report | null>(null);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setIsInitializing(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
+  const patch = (next: Partial<Report>) => setReport(r => (r ? { ...r, ...next } : r));
 
-  const fetchWithRetry = async (endpoint: string, payload: { data: number[]; prediction_id?: string }, retries = 3) => {
-    for (let i = 0; i < retries; i++) {
-      try {
-        return await api(endpoint, {
-          method: "POST",
-          body: payload
-        });
-      } catch (err: unknown) {
-        if (i === retries - 1) throw err; 
-        await new Promise(res => setTimeout(res, 3000));
-      }
-    }
-  };
-
-  const handleSimulation = async (inputs: number[]) => {
-    setError(null);
-    setResult(null);
-    setActiveStage('ingestion');
-    
-    await new Promise(r => setTimeout(r, 600));
-    setActiveStage('inference');
-    
+  const handleSubmit = async (inputs: number[]) => {
+    setReport({ inputs, status: 'predicting' });
     try {
-      const payload = { data: inputs };
-
-      const predictData = await fetchWithRetry("/api/predict", payload);
-      setActiveStage('consensus');
-      
-      const predictionId =
-        typeof predictData?.prediction_id === 'string' && predictData.prediction_id.trim() !== ''
-          ? predictData.prediction_id.trim()
-          : undefined;
-
-      const explainPayload: { data: number[]; prediction_id?: string } = {
-        data: inputs,
-        ...(predictionId ? { prediction_id: predictionId } : {}),
-      };
-
-      const explainData = await fetchWithRetry("/api/explain", explainPayload);
-      await new Promise(r => setTimeout(r, 600)); 
-      
-      const tierLabel = String(predictData.data[0].label || 'unknown').toLowerCase();
-      const shapResult = explainData.data[0];
-      // Parse response /api/predict yang lebih lengkap (confidences + conformal prediction)
-      const parsedPrediction = parsePredictResponse(predictData.data);
-
-      setResult({
-        success: true,
-        tier: tierLabel, 
-        shapData: {
-          predicted_class: tierLabel, 
-          base_value: shapResult.base_value,
-          contributions: shapResult.contributions
-        },
-        prediction: parsedPrediction,
-      });
-      setActiveStage('completed');
-
-    } catch (err: unknown) {
-      // Error asli & {status,data} dari api.ts sengaja di-flatten manual di sini,
-      // karena Error native (message/stack non-enumerable) tampil sebagai "{}" kosong
-      // kalau di-log langsung lewat Next.js dev overlay.
-      console.error("AI Node Error Detail:", {
-        name: err instanceof Error ? err.name : undefined,
-        message: err instanceof Error ? err.message : undefined,
-        ...(typeof err === 'object' && err !== null ? err : { raw: err }),
-      });
-
-      const apiErr = err as Record<string, unknown>;
-      const status = typeof apiErr?.status === 'number' ? apiErr.status : undefined;
-      const errData = apiErr?.data as Record<string, unknown> | null;
-
-      let detailMsg: string | undefined;
-      if (errData) {
-        if (typeof errData.detail === 'string') {
-          detailMsg = errData.detail;
-        } else if (Array.isArray(errData.detail) && errData.detail.length > 0) {
-          const firstErr = errData.detail[0] as Record<string, unknown> | string;
-          detailMsg = typeof firstErr === 'string' ? firstErr : (typeof firstErr?.msg === 'string' ? firstErr.msg : JSON.stringify(firstErr));
-        } else if (typeof errData.message === 'string') {
-          detailMsg = errData.message;
-        } else if (typeof errData.error === 'string') {
-          detailMsg = errData.error;
-        }
-      }
-      if (!detailMsg && typeof apiErr?.message === 'string') {
-        detailMsg = apiErr.message;
-      }
-
-      if (status === 401) {
-        setError('Session expired. Please reload the page to authenticate.');
-      } else if (status === 422) {
-        setError(detailMsg ? `Invalid input: ${detailMsg}` : 'Invalid input');
-      } else if (status === 429) {
-        setError('Too many requests. Please wait a few seconds and try again.');
-      } else if (status === 502 || status === 503 || status === 504) {
-        setError('The AI engine is waking up. Please try again in about a minute.');
-      } else if (err instanceof TypeError) {
-        // fetch() gagal total di level jaringan (backend unreachable / cold-start / offline)
-        setError('Could not reach the AI engine. Please check your connection and try again.');
-      } else {
-        const backendMessage = detailMsg || apiErr?.error || (err instanceof Error ? err.message : 'Unknown Server Error');
-        setError(`AI Engine Failed: ${backendMessage}`);
-      }
-      setActiveStage('idle');
+      const p = await predictRisk(inputs);
+      patch({ status: 'done', tier: p.tier, prediction: p.prediction, predictionId: p.predictionId });
+    } catch (err) {
+      console.error('Digital Lab prediction failed:', err);
+      patch({ status: 'error', error: predictErrorMessage(err) });
     }
   };
 
-  const handleReset = () => {
-    setResult(null);
-    setActiveStage('idle');
+  const handleExplain = async () => {
+    if (!report?.tier || report.explaining || report.shap) return;
+    patch({ explaining: true, shapError: undefined });
+    try {
+      const shap = await explainRisk(report.inputs, report.tier, report.predictionId);
+      patch({ explaining: false, shap });
+    } catch (err) {
+      patch({ explaining: false, shapError: predictErrorMessage(err) });
+    }
   };
+
+  const showForm = !report || report.status === 'error';
 
   return (
-    <>
-      {/* CROSSFADE TRANSACTIONS UNTUK SKELETON -> MAIN PAGE */}
-      <AnimatePresence mode="wait">
-        {isInitializing ? (
-          <motion.div 
-            key="skeleton" 
-            exit={{ opacity: 0, filter: 'blur(4px)' }} 
-            transition={{ duration: 0.4, ease: "easeInOut" }}
-            className="w-full"
-          >
-            <PageSkeleton />
-          </motion.div>
-        ) : (
-          <motion.div 
-            key="main"
-            id="tour-main-lab" 
-            initial={{ opacity: 0, filter: 'blur(4px)' }} 
-            animate={{ opacity: 1, filter: 'blur(0px)' }} 
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} 
-            className="w-full flex flex-col min-h-100 text-foreground overflow-x-hidden"
-          >
-            <TutorialGuide />
+    <motion.div
+      id="tour-main-lab"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      className="w-full flex flex-col text-foreground overflow-x-hidden"
+    >
+      <TutorialGuide />
 
-            <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 pt-28 md:pt-36 pb-20 flex flex-col gap-8">
-              <LabPageHeader
-                eyebrow="Digital lab"
-                title="Bring your biomarkers."
-                accent="Get the risk."
-                description="Enter the 11 biomarker ratios from your own simulation and run the Cardivex risk model."
-              />
-              <EngineVisualizer activeStage={activeStage} />
+      <LabContainer className="flex flex-col gap-8">
+        <LabPageHeader
+          eyebrow="Digital lab"
+          title="Bring your biomarkers."
+          accent="Get the risk."
+          description="Enter the 11 biomarker ratios from your own simulation and run the Cardivex risk model."
+        />
 
-              <div className="relative min-h-100">
-              
-              {error && (
-                <motion.div 
-                  initial={{ opacity: 0, y: -10, scale: 0.98 }} 
-                  animate={{ opacity: 1, y: 0, scale: 1 }} 
-                  role="alert"
-                  className="mb-6 pl-4 border-l-2 border-rose-500/70 text-sm text-rose-600 leading-relaxed"
-                >
-                  {error}
-                </motion.div>
-              )}
+        <StageMonitor
+          id="tour-engine-visualizer"
+          label="Digital lab"
+          status={statusText(report)}
+          stages={buildStages(report)}
+          states={stageStates(report)}
+        />
 
-              {/* PREMIUM BLUR TRANSITIONS ANTARA STAGE */}
-              <AnimatePresence mode="wait">
-                {(activeStage === 'idle' || activeStage === 'ingestion') && !result && (
-                  <motion.div 
-                    key="form" 
-                    initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }} 
-                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} 
-                    exit={{ opacity: 0, y: -20, filter: 'blur(8px)', scale: 0.98 }}
-                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  >
-                    <LabForm onSubmit={handleSimulation} />
-                  </motion.div>
-                )}
-
-                {(activeStage === 'inference' || activeStage === 'consensus') && (
-                  <motion.div 
-                    key="processing" 
-                    initial={{ opacity: 0, scale: 0.95, filter: 'blur(8px)' }} 
-                    animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }} 
-                    exit={{ opacity: 0, scale: 0.95, filter: 'blur(8px)' }}
-                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                    className="w-full"
-                  >
-                    <ResultSkeleton label="Checking the risk" />
-                  </motion.div>
-                )}
-
-                {activeStage === 'completed' && result && result.tier && result.shapData && (
-                  <motion.div 
-                    key="results" 
-                    initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }} 
-                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                  >
-                    <LabResults tier={result.tier} shap={result.shapData} prediction={result.prediction} onReset={handleReset} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              </div>
-            </div>
+        {showForm && (
+          <motion.div key="form" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
+            {report?.error && (
+              <p role="alert" className="mb-6 text-center text-sm text-accent leading-relaxed text-balance">{report.error}</p>
+            )}
+            <LabForm onSubmit={handleSubmit} initial={report?.inputs} />
           </motion.div>
         )}
-      </AnimatePresence>
-    </>
+
+        {report?.status === 'predicting' && (
+          <HeartbeatLoader
+            eyebrow="Your biomarkers"
+            title="Checking the risk"
+            detail="The model is reading the 11 biomarker ratios you entered."
+            steps={[{ label: 'Risk group', state: 'active' }]}
+          />
+        )}
+
+        {report?.status === 'done' && report.tier && (
+          <motion.div
+            key="report"
+            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full max-w-5xl mx-auto flex flex-col gap-14 md:gap-20 pt-6 pb-20"
+          >
+            <div className="flex items-center justify-between gap-4 px-1">
+              <p className="min-w-0 text-sm text-foreground/70 leading-snug">
+                Result for <span className="hidden sm:inline">the 11 ratios you entered</span><span className="sm:hidden">your 11 ratios</span>
+              </p>
+              <button type="button" onClick={() => setReport(null)} className={`${primaryBtn} max-sm:px-3.5 max-sm:py-2 max-sm:text-xs`}>
+                New prediction
+              </button>
+            </div>
+
+            <RiskVerdict tier={report.tier} prediction={report.prediction} />
+
+            <BiomarkerList
+              ratios={report.inputs}
+              tier={report.tier}
+              shap={report.shap}
+              explaining={report.explaining}
+              shapError={report.shapError}
+              onExplain={() => void handleExplain()}
+            />
+          </motion.div>
+        )}
+      </LabContainer>
+    </motion.div>
   );
 }

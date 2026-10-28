@@ -5,7 +5,7 @@ export default function LabFooter() {
 
   return (
     <footer className="w-full mt-auto border-t border-foreground/5 bg-background relative z-10">
-      <div className="w-full max-w-7xl mx-auto px-6 md:px-12 py-6 md:py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 pt-6 md:pt-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:pb-[calc(2rem+env(safe-area-inset-bottom))] flex flex-col sm:flex-row items-center justify-between gap-4">
         
         <span className="text-[10px] font-mono uppercase tracking-[0.15em] text-muted">
           For research use

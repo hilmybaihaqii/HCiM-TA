@@ -20,7 +20,7 @@ export default function AdminTable<T>({ columns, data, isLoading, emptyMessage =
   const skeletonRows = Array.from({ length: 5 });
 
   return (
-    <div className="w-full overflow-hidden border border-foreground/5 rounded-3xl bg-surface-white/40 backdrop-blur-md shadow-sm">
+    <div className="w-full overflow-hidden border border-foreground/5 rounded-sheet bg-surface-white/40 backdrop-blur-md shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
@@ -39,7 +39,7 @@ export default function AdminTable<T>({ columns, data, isLoading, emptyMessage =
                 <tr key={rowIndex}>
                   {columns.map((col, colIndex) => (
                     <td key={colIndex} className={`p-4 ${col.className || ''}`}>
-                      <div className="h-4 bg-foreground/10 rounded animate-pulse w-3/4 max-w-200px" />
+                      <div className="h-4 bg-foreground/10 rounded animate-pulse w-3/4 max-w-[200px]" />
                     </td>
                   ))}
                 </tr>
@@ -54,7 +54,7 @@ export default function AdminTable<T>({ columns, data, isLoading, emptyMessage =
             ) : (
               /* --- Data State --- */
               data.map((row, rowIndex) => (
-                <tr key={rowIndex} className="hover:bg-foreground/2 transition-colors">
+                <tr key={rowIndex} className="odd:bg-[color-mix(in_srgb,var(--foreground)_3.5%,var(--background))] hover:bg-foreground/5 transition-colors">
                   {columns.map((col, colIndex) => (
                     <td key={colIndex} className={`p-4 ${col.className || ''}`}>
                       {col.accessor(row)}

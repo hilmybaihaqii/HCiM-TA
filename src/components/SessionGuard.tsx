@@ -1,8 +1,39 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+
+export interface SessionUser {
+  id: string;
+  email: string;
+  display_name: string;
+  role: 'user' | 'admin';
+}
+
+const SessionContext = createContext<SessionUser | null>(null);
+
+/**
+ * User yang sedang login, dari satu panggilan /auth/me di SessionGuard.
+ * Pakai ini di dalam area yang dibungkus SessionGuard, jangan panggil /auth/me lagi.
+ */
+export function useSessionUser(): SessionUser {
+  const user = useContext(SessionContext);
+  if (!user) throw new Error('useSessionUser must be used inside <SessionGuard>');
+  return user;
+}
+
+/** /auth/me bisa datang polos atau dibungkus { items: [...] } */
+function readUser(raw: unknown): SessionUser {
+  const data = (raw as { items?: unknown[] } | null)?.items?.[0] ?? raw;
+  const u = (data ?? {}) as Partial<SessionUser>;
+  return {
+    id: u.id ?? '',
+    email: u.email ?? '',
+    display_name: u.display_name ?? '',
+    role: String(u.role ?? 'user').toLowerCase() === 'admin' ? 'admin' : 'user',
+  };
+}
 
 export default function SessionGuard({ children, fallback }: {
   children: React.ReactNode;
@@ -10,7 +41,7 @@ export default function SessionGuard({ children, fallback }: {
   fallback?: React.ReactNode;
 }) {
   const router = useRouter();
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [user, setUser] = useState<SessionUser | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -18,10 +49,10 @@ export default function SessionGuard({ children, fallback }: {
 
     const verifySession = async (attempt = 0) => {
       try {
-        await api('/auth/me');
+        const data = await api('/auth/me');
 
         if (isMounted) {
-          setIsAuthorized(true);
+          setUser(readUser(data));
         }
       } catch (error) {
         if (!isMounted) {
@@ -59,12 +90,12 @@ export default function SessionGuard({ children, fallback }: {
   }, [router]);
 
  // Selama sesi masih dicek, jangan render halaman Lab (cegah kedipan/bocor data)
-  if (!isAuthorized) {
+  if (!user) {
     if (fallback) {
       return <div className="fixed inset-0 z-9999 bg-background overflow-hidden">{fallback}</div>;
     }
     return (
-      <div className="fixed inset-0 w-full h-screen flex items-center justify-center bg-background z-9999">
+      <div className="fixed inset-0 w-full h-dvh flex items-center justify-center bg-background z-9999">
         <div className="animate-pulse">
           <span className="text-sm font-medium text-foreground/60 tracking-wider">
             Verifying Session...
@@ -74,5 +105,5 @@ export default function SessionGuard({ children, fallback }: {
     );
   }
   // Jika sah, render halamannya
-  return <>{children}</>;
+  return <SessionContext.Provider value={user}>{children}</SessionContext.Provider>;
 }

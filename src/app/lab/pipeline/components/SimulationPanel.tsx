@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
-import { FEATURES, PipelineJob, SimResult, Trace, formatDrugName, joinList } from '@/lib/pipeline';
+import { FEATURES, PipelineJob, SimResult, Trace, joinList, ratioChange } from '@/lib/pipeline';
+import { SHORT_DESC } from '../../components/report/biomarkerText';
 import TraceChart, { Series } from './TraceChart';
+import type { DoseKey } from '../useDosePredictions';
+import type { PredictionOutput } from '@/lib/predict';
 
 // Palet sekuensial satu hue: makin gelap = dosis makin tinggi. Semua >= 3:1 terhadap surface
 // (dicek dengan validator dataviz). Kontrol: abu-abu netral + garis putus sebagai pembeda kedua.
@@ -17,26 +18,12 @@ const PRESETS: { label: string; domain: [number, number] }[] = [
   { label: 'Full beat', domain: [0, 2000] },
 ];
 
-const DESCRIPTIONS: Record<(typeof FEATURES)[number], string> = {
-  qNet: 'Net charge carried by the main ionic currents during the beat (CiPA risk metric; lower = higher risk)',
-  dvdtmax: 'Maximum upstroke velocity of the action potential',
-  vmax: 'Peak membrane potential',
-  vrest: 'Resting membrane potential',
-  APD50: 'Action potential duration at 50% repolarization',
-  APD90: 'Action potential duration at 90% repolarization (longer = QT-prolonging)',
-  max_dv: 'Maximum rate of voltage change during repolarization',
-  camax: 'Peak intracellular calcium',
-  carest: 'Resting intracellular calcium',
-  CaTD50: 'Calcium transient duration at 50% recovery',
-  CaTD90: 'Calcium transient duration at 90% recovery',
-};
-
-/** Rasio dianggap "bergerak kuat" kalau menyimpang >= 10% dari kontrol (mis. APD90 > 1.1, qNet < 0.9). */
-const isStrongShift = (r?: number | null) => typeof r === 'number' && Math.abs(r - 1) >= 0.1;
+/** Perubahan dianggap kuat kalau ukurannya bergeser >= 10% dari sel tanpa obat (lihat ratioChange). */
+const isStrongShift = (r?: number | null, control?: number | null) => Math.abs(ratioChange(r, control) ?? 0) >= 0.1;
 
 const numFmt = new Intl.NumberFormat('en-US', { maximumSignificantDigits: 4 });
-const fmtValue = (v?: number | null) => (typeof v === 'number' && Number.isFinite(v) ? numFmt.format(v) : '—');
-const fmtRatio = (v?: number | null) => (typeof v === 'number' && Number.isFinite(v) ? v.toFixed(4) : '—');
+export const fmtValue = (v?: number | null) => (typeof v === 'number' && Number.isFinite(v) ? numFmt.format(v) : '—');
+const fmtRatio = (v?: number | null) => (typeof v === 'number' && Number.isFinite(v) ? v.toFixed(3) : '—');
 
 type DoseTrace = Trace & { dose: number };
 
@@ -46,22 +33,47 @@ function getRuns(r: SimResult, fallbackDose: number): DoseTrace[] {
   return r.trace ? [{ dose: fallbackDose, ...r.trace }] : [];
 }
 
-/** Peringatan proaritmia: teks dengan garis kiri, bukan chip berikon. */
-function Warning({ children }: { children: React.ReactNode }) {
-  return <li className="pl-4 border-l-2 border-amber-500/70 text-sm text-amber-800 leading-relaxed">{children}</li>;
-}
+export const doseSeriesLabel = (dose: number) => `${dose}× Cmax`;
 
 /* =========================================================
    TRACE: dua chart sinkron (hover, zoom, legend dipakai bersama)
    ========================================================= */
-function TracesSection({ apSeries, caSeries }: { apSeries: Series[]; caSeries: Series[] }) {
+
+/** Data kurva AP & kalsium per dosis + kontrol */
+export function useTraceSeries(job: PipelineJob) {
+  const r = job.sim_result;
+  const fallbackDose = job.sim_params?.dose ?? 2;
+  return useMemo(() => {
+    if (!r) return { apSeries: [] as Series[], caSeries: [] as Series[] };
+    const runs = getRuns(r, fallbackDose);
+    const control = r.control_trace;
+    return {
+      apSeries: [
+        ...(control ? [{ label: CONTROL_LABEL, x: control.time, y: control.voltage, color: CONTROL_COLOR, dashed: true }] : []),
+        ...runs.map((t, i) => ({ label: doseSeriesLabel(t.dose), x: t.time, y: t.voltage, color: DOSE_COLORS[i % 4] })),
+      ],
+      caSeries: [
+        ...(control ? [{ label: CONTROL_LABEL, x: control.time, y: control.cai.map(v => v * 1e6), color: CONTROL_COLOR, dashed: true }] : []),
+        ...runs.map((t, i) => ({ label: doseSeriesLabel(t.dose), x: t.time, y: t.cai.map(v => v * 1e6), color: DOSE_COLORS[i % 4] })),
+      ],
+    };
+  }, [r, fallbackDose]);
+}
+
+export function TracesSection({ apSeries, caSeries, highlight = null }: {
+  apSeries: Series[];
+  caSeries: Series[];
+  /** Label kurva yang ditonjolkan (dosis yang dipilih); kurva lain diredupkan */
+  highlight?: string | null;
+}) {
   const [domain, setDomain] = useState<[number, number]>(PRESETS[0].domain);
   const [hoverT, setHoverT] = useState<number | null>(null);
   const [hidden, setHidden] = useState<Set<string>>(() => new Set());
-  const [focus, setFocus] = useState<string | null>(null);
+  const [hoverFocus, setHoverFocus] = useState<string | null>(null);
 
   const labels = apSeries.map(s => s.label);
   const isPreset = PRESETS.some(p => p.domain[0] === domain[0] && p.domain[1] === domain[1]);
+  const focus = hoverFocus ?? (highlight && labels.includes(highlight) ? highlight : null);
 
   const toggle = (label: string) => setHidden(prev => {
     const next = new Set(prev);
@@ -79,8 +91,9 @@ function TracesSection({ apSeries, caSeries }: { apSeries: Series[]; caSeries: S
   return (
     <div>
       {/* Satu baris kontrol: legend di kiri, rentang waktu di kanan */}
-      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 mb-6">
-        <div className="flex flex-wrap gap-x-1 gap-y-1 -ml-2">
+      {/* Ponsel: legend & rentang waktu rata tengah; desktop: kiri & kanan */}
+      <div className="flex flex-wrap items-center justify-center sm:justify-between gap-x-6 gap-y-3 mb-6">
+        <div className="flex flex-wrap justify-center sm:justify-start gap-x-1 gap-y-1 sm:-ml-2">
           {apSeries.map(s => {
             const off = hidden.has(s.label);
             return (
@@ -88,13 +101,14 @@ function TracesSection({ apSeries, caSeries }: { apSeries: Series[]; caSeries: S
                 key={s.label}
                 type="button"
                 onClick={() => toggle(s.label)}
-                onMouseEnter={() => !off && setFocus(s.label)}
-                onMouseLeave={() => setFocus(null)}
-                onFocus={() => !off && setFocus(s.label)}
-                onBlur={() => setFocus(null)}
+                onMouseEnter={() => !off && setHoverFocus(s.label)}
+                onMouseLeave={() => setHoverFocus(null)}
+                onFocus={() => !off && setHoverFocus(s.label)}
+                onBlur={() => setHoverFocus(null)}
                 aria-pressed={!off}
                 title={off ? 'Show' : 'Hide'}
-                className={`flex items-center gap-2 px-2 py-1 rounded-chip text-xs transition-colors hover:bg-foreground/4 ${off ? 'text-muted/40' : 'text-foreground'}`}
+                className={`flex items-center gap-2 px-2 py-1 rounded-chip text-xs transition-colors hover:bg-foreground/4
+                  ${off ? 'text-muted/40' : 'text-foreground'} ${focus === s.label ? 'bg-foreground/4 font-medium' : ''}`}
               >
                 <svg width="16" height="6" aria-hidden="true">
                   <line x1="0" y1="3" x2="16" y2="3" stroke={off ? 'currentColor' : s.color} strokeWidth="2" strokeDasharray={s.dashed ? '4 3' : undefined} />
@@ -137,206 +151,149 @@ function TracesSection({ apSeries, caSeries }: { apSeries: Series[]; caSeries: S
       </div>
 
       {/* Di layar sentuh drag tidak dipakai untuk zoom (bentrok dengan scroll) */}
-      <p className="mt-4 text-[11px] text-muted/80">
-        <span className="hidden md:inline">Hover to read values. Drag across a chart to zoom.</span>
-        <span className="md:hidden">Tap a chart to read values.</span>
+      <p className="mt-4 text-[11px] text-muted/80 text-center sm:text-left">
+        <span className="hidden md:inline">Hover to read values. Drag across a chart to zoom. Click a legend entry to hide it.</span>
+        <span className="md:hidden">Tap a chart to read values. Tap a legend entry to hide it.</span>
       </p>
     </div>
   );
 }
 
-export default function SimulationPanel({ job }: { job: PipelineJob }) {
+/* =========================================================
+   MATRIKS BIOMARKER: rasio tiap dosis + rata-rata, kolom dosis terpilih ditonjolkan
+   ========================================================= */
+export function BiomarkerMatrix({ job, selected, onSelect }: {
+  job: PipelineJob;
+  selected: DoseKey;
+  onSelect?: (key: DoseKey) => void;
+}) {
   const r = job.sim_result;
-  const [showPerDose, setShowPerDose] = useState(false);
-  const [showMethod, setShowMethod] = useState(false);
-
-  const fallbackDose = job.sim_params?.dose ?? 2;
-  const runs = useMemo(() => (r ? getRuns(r, fallbackDose) : []), [r, fallbackDose]);
-
-  const apSeries: Series[] = useMemo(() => {
-    if (!r) return [];
-    return [
-      ...(r.control_trace ? [{ label: CONTROL_LABEL, x: r.control_trace.time, y: r.control_trace.voltage, color: CONTROL_COLOR, dashed: true }] : []),
-      ...runs.map((t, i) => ({ label: `${t.dose}× Cmax`, x: t.time, y: t.voltage, color: DOSE_COLORS[i % 4] })),
-    ];
-  }, [r, runs]);
-
-  const caSeries: Series[] = useMemo(() => {
-    if (!r) return [];
-    return [
-      ...(r.control_trace ? [{ label: CONTROL_LABEL, x: r.control_trace.time, y: r.control_trace.cai.map(v => v * 1e6), color: CONTROL_COLOR, dashed: true }] : []),
-      ...runs.map((t, i) => ({ label: `${t.dose}× Cmax`, x: t.time, y: t.cai.map(v => v * 1e6), color: DOSE_COLORS[i % 4] })),
-    ];
-  }, [r, runs]);
-
+  const perDose = useMemo(() => [...(r?.per_dose ?? [])].sort((a, b) => a.dose - b.dose), [r]);
   if (!r) return null;
 
-  const drugName = job.sim_params?.drug || job.request?.drug;
-  const drugLabel = drugName ? formatDrugName(drugName) : 'Custom compound';
-  const doses = r.doses ?? job.sim_params?.doses ?? runs.map(t => t.dose);
-  const conc = Array.isArray(r.conc_nM) ? r.conc_nM : [r.conc_nM];
-  const isMean = doses.length > 1;
-  const seconds = typeof job.sim_latency_ms === 'number' ? (job.sim_latency_ms / 1000).toFixed(1) : null;
-  const ratios = job.ratios ?? [];
-  const perDose = r.per_dose ?? [];
-
-  const excluded = Object.entries(r.excluded_doses ?? {}).filter(([, d]) => Array.isArray(d) && d.length);
-  const flags = r.flags ?? { EADs: 0, noDepols: 0, noRepols: 0 };
+  const meanRatios = job.ratios ?? [];
+  const selectedRun = selected === 'mean' ? null : perDose.find(d => d.dose === selected) ?? null;
+  const drugRaw = selectedRun ? selectedRun.raw_metrics : r.raw_metrics;
+  const columns: { key: DoseKey; label: string; ratios: (number | null)[] }[] = [
+    ...perDose.map(d => ({ key: d.dose as DoseKey, label: `${d.dose}×`, ratios: d.ratios ?? [] })),
+    { key: 'mean', label: 'Mean', ratios: meanRatios },
+  ];
+  const isSel = (k: DoseKey) => k === selected;
 
   return (
-    <div className="w-full bg-surface-white/70 backdrop-blur-md border border-foreground/10 rounded-sheet overflow-hidden shadow-sm">
-      {/* ---------- Ringkasan ---------- */}
-      <div className="px-6 sm:px-10 md:px-16 pt-10 md:pt-12 pb-8">
-        <span className="text-xs font-mono uppercase tracking-wider text-muted">01 · Heart-cell simulation</span>
-        <p className="mt-3 text-lg md:text-xl text-foreground max-w-3xl leading-snug">
-          {isMean ? (
-            <>
-              {drugLabel} at {joinList(doses)}× Cmax
-              {conc.length > 1 && <span className="text-muted"> ({fmtValue(conc[0])}–{fmtValue(conc[conc.length - 1])} nM)</span>}
-              , biomarkers averaged over the {doses.length} doses.
-            </>
-          ) : (
-            <>{drugLabel} at {doses[0] ?? fallbackDose}× Cmax{conc[0] != null && <span className="text-muted"> ({fmtValue(conc[0])} nM)</span>}.</>
-          )}
-          {seconds && <span className="text-muted"> {seconds} s.</span>}
-        </p>
+    <div>
+      <p className="text-sm text-foreground/70 max-w-3xl leading-relaxed">
+        Ratio to the drug-free cell (drug value ÷ |drug-free value|). No change is 1, or −1 for biomarkers that are
+        negative, such as vrest. Changes of 10% or more are marked. The highlighted column is the dose you are
+        looking at{onSelect ? '; click a column header to switch' : ''}.
+      </p>
 
-        {(flags.EADs > 0 || flags.noDepols > 0 || flags.noRepols > 0 || excluded.length > 0) && (
-          <ul className="mt-6 flex flex-col gap-2.5 max-w-3xl">
-            {flags.EADs > 0 && <Warning>Early afterdepolarizations detected</Warning>}
-            {(flags.noDepols > 0 || flags.noRepols > 0) && <Warning>Depolarization/repolarization failure in some beats</Warning>}
-            {excluded.map(([metric, d]) => (
-              <Warning key={metric}>
-                At {joinList(d)}× Cmax the cell failed to repolarize; {metric} averaged over the other doses.
-              </Warning>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {/* ---------- Grafik ---------- */}
-      <div className="px-6 sm:px-10 md:px-16 pb-10 md:pb-12">
-        <TracesSection apSeries={apSeries} caSeries={caSeries} />
-      </div>
-
-      <div className="border-t border-foreground/8" />
-
-      {/* ---------- Tabel biomarker ---------- */}
-      <div className="px-6 sm:px-10 md:px-16 py-8 md:py-10">
-        <div className="flex flex-wrap items-baseline justify-between gap-2 mb-6">
-          <div>
-            <span className="text-xs font-mono uppercase tracking-wider text-muted">02 · 11 biomarkers</span>
-            <p className="mt-2 text-base text-foreground max-w-xl">
-              The {isMean ? 'mean ratio' : 'ratio'} to the drug-free control is what the AI model used.
-            </p>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto -mx-2">
-          <table className="w-full min-w-[40rem] text-sm">
-            <thead>
-              <tr className="text-left text-[10px] font-mono uppercase tracking-wider text-muted border-b border-foreground/8">
-                <th className="px-2 py-2.5 font-medium">Biomarker</th>
-                <th className="px-2 py-2.5 font-medium text-right">Control</th>
-                <th className="px-2 py-2.5 font-medium text-right">{isMean ? 'Drug (mean)' : 'Drug'}</th>
-                <th className="px-2 py-2.5 font-medium text-right">{isMean ? 'Mean ratio' : 'Ratio'}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {FEATURES.map((key, i) => {
-                const ratio = ratios[i];
-                const strong = isStrongShift(ratio);
-                return (
-                  <tr key={key} className="border-b border-foreground/6 last:border-b-0 align-top">
-                    <td className="px-2 py-3">
-                      <span className="font-medium text-foreground">{key}</span>
-                      <span className="block text-[11px] text-muted leading-snug mt-0.5 max-w-sm">{DESCRIPTIONS[key]}</span>
-                    </td>
-                    <td className="px-2 py-3 text-right font-mono text-muted">{fmtValue(r.control_metrics?.[key])}</td>
-                    <td className="px-2 py-3 text-right font-mono text-foreground">{fmtValue(r.raw_metrics?.[key])}</td>
-                    <td className={`px-2 py-3 text-right font-mono ${strong ? 'text-accent font-semibold' : 'text-foreground'}`}>
-                      {fmtRatio(ratio)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {perDose.length > 0 && (
-          <div className="mt-6">
-            <button
-              type="button"
-              onClick={() => setShowPerDose(v => !v)}
-              className="flex items-center gap-1.5 text-sm text-muted hover:text-foreground transition-colors"
-              aria-expanded={showPerDose}
-            >
-              Per dose ratios
-              <ChevronDown className={`w-4 h-4 transition-transform ${showPerDose ? 'rotate-180' : ''}`} />
-            </button>
-            <AnimatePresence initial={false}>
-              {showPerDose && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
+      <div className="mt-6 overflow-x-auto -mx-2 overscroll-x-contain">
+        <table className="w-full min-w-[44rem] text-sm border-separate border-spacing-0">
+          <thead>
+            <tr className="text-[10px] font-mono uppercase tracking-wider text-foreground/60">
+              <th className="sticky left-0 z-10 bg-background shadow-[inset_-1px_0_0_rgb(42_42_42/0.1)] px-2 py-2.5 font-medium text-left border-b border-foreground/8">Biomarker</th>
+              <th className="px-2 py-2.5 font-medium text-right border-b border-foreground/8">Control</th>
+              <th className="px-2 py-2.5 font-medium text-right border-b border-foreground/8">
+                Drug {selected === 'mean' ? '(mean)' : `(${selected}×)`}
+              </th>
+              {columns.map(c => (
+                <th
+                  key={String(c.key)}
+                  className={`px-2 py-2.5 font-medium text-right border-b border-foreground/8 ${isSel(c.key) ? 'bg-accent/6 text-accent rounded-t-card' : ''}`}
                 >
-                  <div className="overflow-x-auto -mx-2 mt-4">
-                    <table className="w-full min-w-[36rem] text-sm">
-                      <thead>
-                        <tr className="text-[10px] font-mono uppercase tracking-wider text-muted border-b border-foreground/8">
-                          <th className="px-2 py-2.5 font-medium text-left">Biomarker</th>
-                          {perDose.map(d => <th key={d.dose} className="px-2 py-2.5 font-medium text-right">{d.dose}×</th>)}
-                          <th className="px-2 py-2.5 font-medium text-right">Mean</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {FEATURES.map((key, i) => (
-                          <tr key={key} className="border-b border-foreground/6 last:border-b-0">
-                            <td className="px-2 py-2 font-medium text-foreground">{key}</td>
-                            {perDose.map(d => (
-                              <td key={d.dose} className="px-2 py-2 text-right font-mono text-muted">{fmtRatio(d.ratios?.[i])}</td>
-                            ))}
-                            <td className={`px-2 py-2 text-right font-mono ${isStrongShift(ratios[i]) ? 'text-accent font-semibold' : 'text-foreground'}`}>
-                              {fmtRatio(ratios[i])}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        )}
+                  {onSelect ? (
+                    <button type="button" onClick={() => onSelect(c.key)} className="uppercase tracking-wider hover:text-foreground transition-colors">
+                      {c.label}
+                    </button>
+                  ) : c.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {FEATURES.map((key, i) => {
+              // Baris selang-seling dengan warna solid, supaya kolom sticky ikut tertutup rapi
+              const zebra = i % 2 === 0 ? 'bg-[color-mix(in_srgb,var(--foreground)_3.5%,var(--background))]' : 'bg-background';
+              const control = r.control_metrics?.[key];
+              return (
+                <tr key={key} className="align-top">
+                  <td className={`sticky left-0 z-10 ${zebra} px-2 py-3 max-w-56 rounded-l-chip shadow-[inset_-1px_0_0_rgb(42_42_42/0.1)]`}>
+                    <span className="font-medium text-foreground">{key}</span>
+                    <span className="hidden sm:block text-[11px] text-foreground/60 leading-snug mt-0.5">{SHORT_DESC[key]}</span>
+                  </td>
+                  <td className={`${zebra} px-2 py-3 text-right font-mono text-foreground/70`}>{fmtValue(control)}</td>
+                  <td className={`${zebra} px-2 py-3 text-right font-mono text-foreground`}>{fmtValue(drugRaw?.[key])}</td>
+                  {columns.map((c, ci) => {
+                    const v = c.ratios[i];
+                    return (
+                      <td
+                        key={String(c.key)}
+                        className={`${zebra} px-2 py-3 text-right font-mono tabular-nums ${ci === columns.length - 1 ? 'rounded-r-chip' : ''}
+                          ${isSel(c.key) ? 'shadow-[inset_0_0_0_9999px_rgb(184_84_92/0.07)]' : ''}
+                          ${isStrongShift(v, control) ? 'text-accent font-semibold' : isSel(c.key) ? 'text-foreground' : 'text-foreground/70'}`}
+                      >
+                        {fmtRatio(v)}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
+    </div>
+  );
+}
 
-      {/* ---------- Catatan metode ---------- */}
-      <div className="px-6 sm:px-10 md:px-16 py-5 border-t border-foreground/8">
-        <button
-          type="button"
-          onClick={() => setShowMethod(v => !v)}
-          className="flex items-center gap-1.5 text-xs text-muted hover:text-foreground transition-colors"
-          aria-expanded={showMethod}
-        >
-          How this was simulated
-          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showMethod ? 'rotate-180' : ''}`} />
-        </button>
-        <AnimatePresence initial={false}>
-          {showMethod && (
-            <motion.p
-              initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden pt-3 text-xs text-muted leading-relaxed max-w-3xl"
-            >
-              Single virtual cell with fixed (optimal) drug parameters, FDA CiPA IKr-dynamic O&apos;Hara-Rudy model, 1000 beats
-              at 2000 ms cycle length, simulated at 1, 2, 3 and 4× Cmax. Biomarkers are expressed as ratios to a drug-free
-              control cell and averaged over the 4 concentrations, the same way as the training data. The conformal
-              prediction set is a calibrated heuristic for single inputs.
-            </motion.p>
-          )}
-        </AnimatePresence>
-      </div>
+/* =========================================================
+   CATATAN RUN: data run & keluaran conformal
+   ========================================================= */
+
+const fmtStat = (v: number) => (Number.isFinite(v) ? String(Number(v.toPrecision(4))) : '—');
+
+/**
+ * Data run & model, hanya dari respons API (job + predict). Tidak ada angka protokol yang ditulis tangan.
+ * Catatan kalibrasi conformal ditampilkan apa adanya dari model.
+ */
+export function MethodNote({ job, prediction }: { job: PipelineJob; prediction?: PredictionOutput | null }) {
+  const r = job.sim_result;
+  const doses = r?.doses ?? job.sim_params?.doses ?? [];
+  const conc = r ? (Array.isArray(r.conc_nM) ? r.conc_nM : [r.conc_nM]) : [];
+  const seconds = typeof job.sim_latency_ms === 'number' ? (job.sim_latency_ms / 1000).toFixed(1) : null;
+  const c = prediction?.conformal;
+
+  const facts: { k: string; v: string }[] = [
+    { k: 'Doses', v: doses.length ? `${joinList(doses)}× Cmax` : '—' },
+    ...(conc.length ? [{ k: 'Concentrations', v: conc.map(x => `${fmtValue(x)} nM`).join(', ') }] : []),
+    ...(r?.dose_mode ? [{ k: 'Dose mode', v: r.dose_mode.replace(/_/g, ' ') }] : []),
+    ...(seconds ? [{ k: 'Simulation time', v: `${seconds} s` }] : []),
+    ...(r?.engine_version ? [{ k: 'Simulation engine', v: r.engine_version }] : []),
+    ...(c ? [
+      { k: 'Prediction set', v: c.predictionSet.join(', ') || '—' },
+      { k: 'Alpha (α)', v: fmtStat(c.alpha) },
+      { k: 'Threshold (q̂)', v: fmtStat(c.qHat) },
+    ] : []),
+  ];
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-8 lg:gap-14">
+      <dl>
+        {facts.map(f => (
+          <div key={f.k} className="flex items-baseline justify-between gap-4 py-2 border-b border-foreground/10 last:border-b-0 text-sm">
+            <dt className="text-foreground/70">{f.k}</dt>
+            <dd className="text-right text-foreground">{f.v}</dd>
+          </div>
+        ))}
+      </dl>
+      {c?.calibrationNote || c?.warning ? (
+        <div className="flex flex-col gap-3 text-sm text-foreground/70 leading-relaxed">
+          <span className="text-xs font-mono uppercase tracking-wider text-foreground/60">From the risk model</span>
+          {c.calibrationNote && <p>{c.calibrationNote}</p>}
+          {c.warning && <p className="text-accent">{c.warning}</p>}
+        </div>
+      ) : null}
     </div>
   );
 }

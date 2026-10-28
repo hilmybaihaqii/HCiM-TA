@@ -10,22 +10,46 @@ lab/
 ├── components/
 │   ├── LabNavbar.tsx        tabs (sliding pill), profile menu, logout
 │   ├── LabFooter.tsx
+│   ├── LabContainer.tsx     page width, gutters, top offset under the navbar (use on every lab page)
 │   ├── LabPageHeader.tsx    shared page header (use on every lab page)
-│   ├── EngineStatus.tsx     shared "Engine status" panel (steps, progress, status text)
-│   ├── EngineVisualizer.tsx Digital Lab stages → EngineStatus
 │   ├── LabForm.tsx          Digital Lab input matrix
-│   ├── LabResults.tsx       verdict, confidence, conformal set, SHAP (also used by Full Pipeline)
-│   ├── Skeletons.tsx        shared skeleton loading (page, engine, result, lab shell)
-│   └── LabTutorial.tsx      guided tour (targets the #tour-* ids)
+│   ├── Skeletons.tsx        shared skeleton loading (page, status panel, lab shell)
+│   ├── LabTutorial.tsx      guided tour (targets the #tour-* ids)
+│   └── report/              one risk report for Digital Lab and Full Pipeline
+│       ├── StageMonitor.tsx     status panel: stages, real output per stage
+│       ├── HeartbeatLoader.tsx  animated ECG loader for model work
+│       ├── RiskVerdict.tsx      tier, 400-tree votes, conformal output
+│       ├── BiomarkerList.tsx    11 biomarkers: change, SHAP influence, tap for details
+│       ├── biomarkerText.ts     reference text per biomarker
+│       └── ui.tsx               buttons, SectionHead, SlideIndicator
 ├── pipeline/                Full Pipeline: drug data → heart-cell simulation → risk model
 │   ├── page.tsx             state machine (form / running / result), polling, ?job= resume
 │   ├── form.ts              form state, validation, request building
-│   └── components/          wizard, progress, simulation panel, trace chart
+│   ├── useDosePredictions.ts  risk per dose (mean from the job, 1–4× on demand), cached per job
+│   └── components/
+│       ├── JobProgress.tsx      PipelineMonitor (5 real stages) + RunningDetails
+│       ├── PipelineResult.tsx   result: verdict, dose strip, 11 biomarkers, one 3-way detail switch
+│       ├── SimulationPanel.tsx  traces, per-dose biomarker matrix, warnings, method note
+│       ├── DrugInputs.tsx       drug parameters (Cmax, hERG, IC50/Hill) + per-dose run table
+│       └── …                    wizard (DrugParamsForm, ModeSelector), TraceChart
 ├── logs/                    Activity Logs (history tables, risk donut)
 └── profile/
 ```
 
-API helpers live in `src/lib/` (`api.ts`, `pipeline.ts`, `tierColor.ts`).
+API helpers live in `src/lib/` (`api.ts`, `pipeline.ts`, `predict.ts`, `tierColor.ts`).
+`predict.ts` holds the risk model calls (predict + explain, retry on transient errors only) used by
+both Digital Lab and the per-dose results.
+
+## Data rules (risk reports)
+
+- Show only what the API returns (job, sim_result, predict, explain) or values derived from it.
+  No hand-written protocol numbers (beat counts, cycle length, run time) and no made-up advice.
+- Confidence is the vote share of the 400-tree forest (multiples of 1/400). Show it as votes, never
+  rounded percentages, so 399/400 does not read as 100%.
+- Per-dose results: `predict` runs when a dose is picked; `explain` (SHAP, slower) only when the
+  user asks for the main drivers, as the API guide recommends.
+- Reference text (`SHORT_DESC`, `BIOMARKER_INFO`) explains what a biomarker is; it never states a
+  result.
 
 ## UI rules
 
@@ -43,8 +67,20 @@ API helpers live in `src/lib/` (`api.ts`, `pipeline.ts`, `tierColor.ts`).
 - **Tier colors:** `getTierColor(tier)` for Tailwind classes, `getTierCssVar(tier)` for SVG and inline styles.
 - **Type:** sans only on new pages (no italic). One accent color per view.
 - **Charts:** inline SVG, no chart library. Hover readout on every chart.
-- **Loading:** always a skeleton from `Skeletons.tsx`. No spinners, no pulsing dots or rings.
+- **Loading:** page and data loading use a skeleton from `Skeletons.tsx`. Waiting on the model
+  (simulation, per-dose prediction, SHAP) uses `HeartbeatLoader`, with steps that match what is
+  really running. No spinners, and no made-up progress.
 - **Copy:** plain language a lab scientist would say out loud. Avoid machine words like
-  "ingestion", "telemetry", "vector matrix" or "engine online".
-- **Engine status:** both Digital Lab and Full Pipeline show `EngineStatus` under the header,
-  with four steps: input, processing, analysis, result.
+  "ingestion", "telemetry", "vector matrix" or "engine online", and marketing lines.
+- **Status panel:** both pages use `StageMonitor`. Digital Lab: your biomarkers, risk model, main
+  drivers. Full Pipeline: drug, queue, simulation, biomarkers, risk model. Each stage shows its real
+  output once done.
+- **Sliding indicators:** position from the index (`SlideIndicator`) or from a measured element (navbar),
+  animated with CSS transform. Not Framer `layoutId`, which jumps when content above changes height.
+- **Tables & lists:** alternate rows with `bg-[color-mix(in_srgb,var(--foreground)_3.5%,var(--background))]`
+  (solid, about 3.5% darker than the page). Sticky first columns use the same solid colours plus a 1px edge.
+- **Biomarker change:** ratios are drug ÷ |drug-free|, so "no change" is −1 for negative biomarkers
+  (vrest, max_dv). Always use `ratioChange()` from `lib/pipeline`, never `ratio − 1`.
+- **Layout:** few controls, no stacked cards. Separate sections with hairlines, not boxes.
+  Rows fill the full width on phones (label left, value right, or centered); avoid left-only text
+  that leaves the right side empty. Important data (e.g. per-dose results) never hides in an accordion.

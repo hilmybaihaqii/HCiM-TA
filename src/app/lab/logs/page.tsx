@@ -7,6 +7,7 @@ import PredictionsTable from "./components/PredictionTable";
 import ShapTable from "./components/ShapTable";
 import RiskDonut from "./components/RiskDonut";
 import LabPageHeader from "../components/LabPageHeader";
+import LabContainer from "../components/LabContainer";
 import { Bone } from "../components/Skeletons";
 import { getTierCssVar } from "@/lib/tierColor";
 
@@ -21,11 +22,15 @@ export default function LogsPage() {
     "predictions",
   );
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
+  const [summaryFailed, setSummaryFailed] = useState(false);
 
   useEffect(() => {
     api("/api/history/summary")
       .then((res) => setSummary(res as SummaryResponse))
-      .catch(() => console.error("Failed to fetch summary data."));
+      .catch((err) => {
+        console.error("Failed to fetch summary data.", err);
+        setSummaryFailed(true);
+      });
   }, []);
 
   // Membantu membaca key JSON dengan aman (menghindari error jika undefined atau beda casing)
@@ -39,8 +44,8 @@ export default function LogsPage() {
   };
 
   return (
-    <div className="w-full flex flex-col text-foreground pt-28 md:pt-36 pb-20 min-h-screen">
-      <div className="w-full max-w-7xl mx-auto px-6 md:px-12">
+    <div className="w-full flex flex-col text-foreground">
+      <LabContainer>
         {/* Header: bentuk yang sama dengan Full Pipeline */}
         <LabPageHeader
           eyebrow="Activity logs"
@@ -73,6 +78,10 @@ export default function LogsPage() {
                 <span className="mt-2 block text-xs text-muted">SHAP analyses</span>
               </div>
             </motion.div>
+          ) : summaryFailed ? (
+            <p role="alert" className="self-center pl-4 border-l-2 border-accent/70 text-sm text-muted leading-relaxed">
+              Could not load the summary. Your history below is still available.
+            </p>
           ) : (
             <div className="flex flex-col sm:flex-row items-center gap-8 sm:gap-14" aria-hidden="true">
               <div className="flex items-center gap-5">
@@ -111,7 +120,7 @@ export default function LogsPage() {
         >
           {activeTab === "predictions" ? <PredictionsTable /> : <ShapTable />}
         </motion.div>
-      </div>
+      </LabContainer>
     </div>
   );
 }

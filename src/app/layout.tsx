@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Figtree } from "next/font/google";
 import SplashScreen from "@/components/SplashScreen";
 import { SplashProvider } from "@/components/SplashProvider";
@@ -15,6 +15,15 @@ const figtree = Figtree({
 export const metadata: Metadata = {
   title: "Cardiotoxicity Prediction",
   description: "Animal-free cardiotoxicity prediction platform.",
+};
+
+// viewportFit "cover": halaman boleh mengisi area notch/home bar, jarak aman diatur lewat env(safe-area-inset-*).
+// themeColor: warna toolbar Safari/Chrome mobile sama dengan latar halaman.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#F6F4F3",
 };
 
 export default function RootLayout({
