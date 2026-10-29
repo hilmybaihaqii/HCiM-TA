@@ -165,7 +165,7 @@ function DrugPicker({ db, value, onSelect, error }: {
                 onMouseDown={e => { e.preventDefault(); choose(name); }}
                 onMouseEnter={() => setHighlight(i)}
                 className={`flex items-baseline justify-between gap-3 px-4 py-2 text-sm cursor-pointer transition-colors
-                  ${i === highlight ? 'bg-foreground/4' : ''} ${name === value ? 'text-accent' : 'text-foreground'}`}
+                  ${i === highlight ? 'bg-foreground/4' : ''} ${name === value ? 'text-action' : 'text-foreground'}`}
               >
                 <span className="truncate">{formatDrugName(name)}</span>
                 {isTrainingDrug(name) && <span className="shrink-0 text-[11px] text-amber-700">training set</span>}
@@ -532,10 +532,10 @@ export default function DrugParamsForm({
                   className="w-full text-left group disabled:cursor-default"
                   aria-current={active ? 'step' : undefined}
                 >
-                  <span className={`block h-0.5 rounded-full transition-colors duration-300 ${active || done ? 'bg-accent' : 'bg-foreground/10'}`} />
+                  <span className={`block h-0.5 rounded-full transition-colors duration-300 ${active || done ? 'bg-action' : 'bg-foreground/10'}`} />
                   <span className={`mt-2.5 flex items-center gap-1.5 text-[10px] md:text-[11px] font-mono uppercase tracking-wider
                     ${active ? 'text-foreground' : done ? 'text-foreground/60' : 'text-muted/50'} ${reachable && !active ? 'group-hover:text-foreground' : ''}`}>
-                    {done && !active ? <Check className="w-3 h-3 text-accent shrink-0" /> : <span className="text-accent/80">{i + 1}</span>}
+                    {done && !active ? <Check className="w-3 h-3 text-action shrink-0" /> : <span className="text-action/80">{i + 1}</span>}
                     {/* Di layar kecil nama langkah tampil di baris terpisah di bawah */}
                     <span className="hidden md:inline truncate">{STEP_LABEL[s]}</span>
                   </span>
@@ -576,7 +576,7 @@ export default function DrugParamsForm({
             type="button"
             onClick={back}
             disabled={submitting}
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-control border border-foreground/15 text-sm font-medium text-foreground hover:border-foreground/40 hover:bg-foreground/3 active:scale-[0.98] transition-all duration-300 disabled:opacity-40"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-control border border-action/30 bg-surface-white text-sm font-medium text-action hover:border-action hover:bg-action/5 active:scale-[0.98] transition-all duration-300 disabled:opacity-40"
           >
             <span aria-hidden="true">←</span> {stepIndex === 0 ? 'Back to modes' : 'Back'}
           </button>
@@ -586,7 +586,7 @@ export default function DrugParamsForm({
               type="submit"
               disabled={!canSubmit}
               className={`flex items-center justify-center gap-2.5 px-7 py-3 rounded-control text-sm font-medium transition-all duration-300
-                ${canSubmit ? 'bg-accent text-surface-white hover:bg-accent-dark active:scale-[0.98]' : 'bg-foreground/8 text-muted/60 cursor-not-allowed'}`}
+                ${canSubmit ? 'bg-accent text-surface-white shadow-sm shadow-accent/20 hover:bg-accent-dark active:scale-[0.98]' : 'bg-foreground/8 text-muted/60 cursor-not-allowed'}`}
             >
               {submitting ? 'Starting…' : (
                 <>Run full pipeline <span aria-hidden="true">→</span></>
@@ -595,7 +595,7 @@ export default function DrugParamsForm({
           ) : (
             <button
               type="submit"
-              className="flex items-center gap-2 px-7 py-3 rounded-control bg-foreground text-surface-white text-sm font-medium hover:bg-foreground/85 active:scale-[0.98] transition-all duration-300"
+              className="flex items-center gap-2 px-7 py-3 rounded-control bg-action text-surface-white text-sm font-medium shadow-sm shadow-action/20 hover:bg-action-dark active:scale-[0.98] transition-all duration-300"
             >
               {step === 'overview' ? 'Start' : 'Next'} <span aria-hidden="true">→</span>
             </button>

@@ -3,8 +3,10 @@
 // Prediksi risiko per dosis untuk hasil Full Pipeline.
 // Backend sudah menghitung 11 rasio untuk tiap dosis (sim_result.per_dose), jadi prediksi per dosis
 // cukup memanggil model risiko dengan rasio dosis itu, tanpa simulasi ulang. Hasil "mean" datang dari job.
+// Hasil disimpan di tingkat modul (per job), bukan di komponen: prediksi yang sedang berjalan tetap
+// selesai & tersimpan walau user pindah tab, dan tampil lagi saat kembali. Salinannya di sessionStorage.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useSyncExternalStore } from 'react';
 import { PipelineJob } from '@/lib/pipeline';
 import {
   explainRisk, parsePredictResponse, predictErrorMessage, predictRisk, type PredictionOutput, type ShapData,
@@ -31,6 +33,8 @@ export type DoseResult = {
   shapError?: string;
 };
 
+type Results = Record<string, DoseResult>;
+
 export const doseId = (key: DoseKey) => String(key);
 
 const storageKey = (jobId: string) => `pipeline-doses:${jobId}`;
@@ -50,14 +54,49 @@ function meanFromJob(job: PipelineJob): DoseResult {
   return { status: 'done', tier, prediction: parsePredictResponse(raw), shap };
 }
 
-function readStored(jobId: string): Record<string, DoseResult> {
+/* ---------- Store per job (tingkat modul) ---------- */
+
+const store = new Map<string, Results>();
+const inFlight = new Set<string>();
+/** prediction_id per dosis, supaya explain tercatat pada prediksi yang sama di Activity Logs */
+const predictionIds = new Map<string, string>();
+const listeners = new Set<() => void>();
+
+/** Dosis yang selesai dari sesi sebelumnya; status "jalan" yang terputus oleh refresh dibuang */
+function readStored(jobId: string): Results {
   try {
     const raw = sessionStorage.getItem(storageKey(jobId));
-    return raw ? (JSON.parse(raw) as Record<string, DoseResult>) : {};
+    return raw ? (JSON.parse(raw) as Results) : {};
   } catch {
     return {};
   }
 }
+
+function resultsFor(job: PipelineJob): Results {
+  let r = store.get(job.id);
+  if (!r) {
+    r = { ...readStored(job.id), mean: meanFromJob(job) };
+    store.set(job.id, r);
+  }
+  return r;
+}
+
+function patch(jobId: string, id: string, next: Partial<DoseResult>) {
+  const prev = store.get(jobId) ?? {};
+  const updated = { ...prev, [id]: { ...(prev[id] ?? { status: 'idle' as const }), ...next } };
+  store.set(jobId, updated);
+  // Simpan hasil per dosis yang sudah selesai, supaya tetap ada setelah refresh halaman
+  const done = Object.fromEntries(Object.entries(updated).filter(([k, r]) => k !== 'mean' && r.status === 'done'));
+  try {
+    sessionStorage.setItem(storageKey(jobId), JSON.stringify(done));
+  } catch { /* storage penuh/diblokir: hasil tetap ada selama halaman terbuka */ }
+  listeners.forEach(l => l());
+}
+
+const subscribe = (l: () => void) => {
+  listeners.add(l);
+  return () => { listeners.delete(l); };
+};
 
 export function useDosePredictions(job: PipelineJob) {
   const options: DoseOption[] = useMemo(() => {
@@ -68,47 +107,8 @@ export function useDosePredictions(job: PipelineJob) {
     ];
   }, [job]);
 
-  // Area lab hanya dirender di client, jadi sessionStorage aman dibaca saat init
-  const [results, setResults] = useState<Record<string, DoseResult>>(() => ({
-    ...readStored(job.id),
-    mean: meanFromJob(job),
-  }));
-
-  const inFlight = useRef(new Set<string>());
-  const alive = useRef(true);
-  useEffect(() => {
-    alive.current = true;
-    return () => { alive.current = false; };
-  }, []);
-
-  // Simpan hasil per dosis yang sudah selesai, supaya tetap ada setelah refresh halaman
-  useEffect(() => {
-    const done = Object.fromEntries(
-      Object.entries(results).filter(([k, r]) => k !== 'mean' && r.status === 'done'),
-    );
-    try {
-      sessionStorage.setItem(storageKey(job.id), JSON.stringify(done));
-    } catch { /* storage penuh/diblokir: hasil tetap ada selama halaman terbuka */ }
-  }, [results, job.id]);
-
-  const patch = useCallback((id: string, next: Partial<DoseResult>) => {
-    if (!alive.current) return;
-    setResults(prev => ({ ...prev, [id]: { ...(prev[id] ?? { status: 'idle' }), ...next } }));
-  }, []);
-
-  // prediction_id per dosis, supaya explain tercatat pada prediksi yang sama di Activity Logs
-  const predictionIds = useRef(new Map<string, string>());
-
-  /** SHAP untuk satu dosis yang sudah punya tier; dicatat pada prediction_id yang sama di Activity Logs. */
-  const explainWith = useCallback(async (id: string, ratios: number[], tier: string) => {
-    patch(id, { status: 'explaining', shapError: undefined });
-    try {
-      const shap = await explainRisk(ratios, tier, predictionIds.current.get(id));
-      patch(id, { status: 'done', shap });
-    } catch (err) {
-      patch(id, { status: 'done', shapError: predictErrorMessage(err) });
-    }
-  }, [patch]);
+  const snapshot = useCallback(() => resultsFor(job), [job]);
+  const results = useSyncExternalStore(subscribe, snapshot, snapshot);
 
   /**
    * Prediksi satu dosis: tier dulu (cepat, langsung tampil), lalu SHAP otomatis.
@@ -117,30 +117,39 @@ export function useDosePredictions(job: PipelineJob) {
    */
   const run = useCallback(async (key: DoseKey) => {
     const id = doseId(key);
+    const flight = `${job.id}:${id}`;
     const option = options.find(o => doseId(o.key) === id);
-    const current = results[id];
-    if (!option?.ratios || inFlight.current.has(id) || current?.shap) return;
+    const current = resultsFor(job)[id];
+    if (!option?.ratios || inFlight.has(flight) || current?.shap) return;
 
-    inFlight.current.add(id);
+    inFlight.add(flight);
     try {
       let tier = current?.tier;
       if (!tier) {
-        patch(id, { status: 'predicting', error: undefined });
+        patch(job.id, id, { status: 'predicting', error: undefined });
         try {
           const p = await predictRisk(option.ratios);
-          if (p.predictionId) predictionIds.current.set(id, p.predictionId);
+          if (p.predictionId) predictionIds.set(flight, p.predictionId);
           tier = p.tier;
-          patch(id, { status: 'done', tier: p.tier, prediction: p.prediction });
+          patch(job.id, id, { status: 'done', tier: p.tier, prediction: p.prediction });
         } catch (err) {
-          patch(id, { status: 'error', error: predictErrorMessage(err) });
+          patch(job.id, id, { status: 'error', error: predictErrorMessage(err) });
           return;
         }
       }
-      if (tier && tier !== 'unknown') await explainWith(id, option.ratios, tier);
+      if (tier && tier !== 'unknown') {
+        patch(job.id, id, { status: 'explaining', shapError: undefined });
+        try {
+          const shap = await explainRisk(option.ratios, tier, predictionIds.get(flight));
+          patch(job.id, id, { status: 'done', shap });
+        } catch (err) {
+          patch(job.id, id, { status: 'done', shapError: predictErrorMessage(err) });
+        }
+      }
     } finally {
-      inFlight.current.delete(id);
+      inFlight.delete(flight);
     }
-  }, [options, results, patch, explainWith]);
+  }, [job, options]);
 
   return { options, results, run };
 }

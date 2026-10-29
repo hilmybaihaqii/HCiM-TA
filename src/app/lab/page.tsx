@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { ChartColumn, Gauge, ListChecks } from 'lucide-react';
 import { formatChange, strongestChange } from '@/lib/pipeline';
-import { explainRisk, predictErrorMessage, predictRisk, type PredictionOutput, type ShapData } from '@/lib/predict';
 import { getTierColor } from '@/lib/tierColor';
 import LabForm from './components/LabForm';
 import TutorialGuide from './components/LabTutorial';
@@ -15,24 +14,14 @@ import RiskVerdict from './components/report/RiskVerdict';
 import BiomarkerList from './components/report/BiomarkerList';
 import StageMonitor, { type Stage, type StageState } from './components/report/StageMonitor';
 import { primaryBtn } from './components/report/ui';
+import { type Report, clearLabReport, retryLabExplain, submitLabReport, useLabReport } from './useLabReport';
 
 /*
  * Digital Lab: 11 rasio biomarker milik user -> model risiko.
  * Tampilan status, loading dan hasil sama dengan Full Pipeline (components/report), supaya konsisten.
- * Sesuai panduan API: predict langsung, explain (SHAP) hanya saat user memintanya.
+ * Setiap prediksi langsung diikuti SHAP. Laporan disimpan di useLabReport, jadi tetap ada saat user
+ * berpindah tab (juga yang masih berjalan) dan hanya hilang lewat "New prediction".
  */
-
-type Report = {
-  inputs: number[];
-  status: 'predicting' | 'done' | 'error';
-  tier?: string;
-  prediction?: PredictionOutput | null;
-  predictionId?: string;
-  error?: string;
-  shap?: ShapData | null;
-  explaining?: boolean;
-  shapError?: string;
-};
 
 function stageStates(r: Report | null): StageState[] {
   if (!r) return ['active', 'pending', 'pending'];
@@ -80,38 +69,7 @@ function buildStages(r: Report | null): Stage[] {
 }
 
 export default function DigitalLabPage() {
-  const [report, setReport] = useState<Report | null>(null);
-
-  const patch = (next: Partial<Report>) => setReport(r => (r ? { ...r, ...next } : r));
-
-  const explain = async (inputs: number[], tier: string, predictionId?: string) => {
-    patch({ explaining: true, shapError: undefined });
-    try {
-      const shap = await explainRisk(inputs, tier, predictionId);
-      patch({ explaining: false, shap });
-    } catch (err) {
-      patch({ explaining: false, shapError: predictErrorMessage(err) });
-    }
-  };
-
-  // Tier dulu (langsung tampil), lalu SHAP otomatis: setiap prediksi tercatat bersama SHAP-nya
-  const handleSubmit = async (inputs: number[]) => {
-    setReport({ inputs, status: 'predicting' });
-    let p;
-    try {
-      p = await predictRisk(inputs);
-      patch({ status: 'done', tier: p.tier, prediction: p.prediction, predictionId: p.predictionId });
-    } catch (err) {
-      console.error('Digital Lab prediction failed:', err);
-      patch({ status: 'error', error: predictErrorMessage(err) });
-      return;
-    }
-    if (p.tier !== 'unknown') await explain(inputs, p.tier, p.predictionId);
-  };
-
-  const retryExplain = () => {
-    if (report?.tier && !report.explaining && !report.shap) void explain(report.inputs, report.tier, report.predictionId);
-  };
+  const report = useLabReport();
 
   const showForm = !report || report.status === 'error';
 
@@ -146,7 +104,7 @@ export default function DigitalLabPage() {
             {report?.error && (
               <p role="alert" className="mb-6 text-center text-sm text-accent leading-relaxed text-balance">{report.error}</p>
             )}
-            <LabForm onSubmit={handleSubmit} initial={report?.inputs} />
+            <LabForm onSubmit={inputs => void submitLabReport(inputs)} initial={report?.inputs} />
           </motion.div>
         )}
 
@@ -170,7 +128,7 @@ export default function DigitalLabPage() {
               <p className="min-w-0 text-sm text-foreground/70 leading-snug">
                 Result for <span className="hidden sm:inline">the 11 ratios you entered</span><span className="sm:hidden">your 11 ratios</span>
               </p>
-              <button type="button" onClick={() => setReport(null)} className={`${primaryBtn} max-sm:px-3.5 max-sm:py-2 max-sm:text-xs`}>
+              <button type="button" onClick={clearLabReport} className={`${primaryBtn} max-sm:px-3.5 max-sm:py-2 max-sm:text-xs`}>
                 New prediction
               </button>
             </div>
@@ -183,7 +141,7 @@ export default function DigitalLabPage() {
               shap={report.shap}
               explaining={report.explaining}
               shapError={report.shapError}
-              onExplain={retryExplain}
+              onExplain={retryLabExplain}
             />
           </motion.div>
         )}

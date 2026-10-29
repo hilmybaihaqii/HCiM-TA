@@ -23,15 +23,16 @@ function Node({ state, icon: Icon, size = 'md' }: { state: StageState; icon: Luc
   const dim = size === 'sm' ? 'w-9 h-9' : 'w-11 h-11';
   return (
     <span className={`relative z-10 ${dim} rounded-full border flex items-center justify-center shrink-0 transition-colors duration-500
-      ${state === 'done' ? 'bg-accent border-transparent text-surface-white'
-        : state === 'active' || state === 'failed' ? 'bg-surface-white border-accent text-accent'
+      ${state === 'done' ? 'bg-action border-transparent text-surface-white'
+        : state === 'active' ? 'bg-surface-white border-action text-action'
+        : state === 'failed' ? 'bg-surface-white border-accent text-accent'
         : 'bg-surface-white border-foreground/15 text-foreground/60'}`}
     >
       {/* Langkah aktif: cincin tipis yang mengembang pelan */}
       {state === 'active' && (
         <motion.span
           aria-hidden="true"
-          className="absolute inset-0 rounded-full border border-accent/60"
+          className="absolute inset-0 rounded-full border border-action/60"
           initial={{ opacity: 0.5, scale: 1 }}
           animate={{ opacity: 0, scale: 1.45 }}
           transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }}
@@ -46,10 +47,10 @@ function Node({ state, icon: Icon, size = 'md' }: { state: StageState; icon: Luc
 function Connector({ state }: { state: 'done' | 'flowing' | 'idle' }) {
   return (
     <span aria-hidden="true" className="relative flex-1 h-px mx-2 overflow-hidden">
-      <span className={`absolute inset-0 ${state === 'done' ? 'bg-accent' : 'bg-foreground/15'}`} />
+      <span className={`absolute inset-0 ${state === 'done' ? 'bg-action' : 'bg-foreground/15'}`} />
       {state === 'flowing' && (
         <motion.span
-          className="absolute inset-y-0 w-1/3 bg-linear-to-r from-transparent via-accent/70 to-transparent"
+          className="absolute inset-y-0 w-1/3 bg-linear-to-r from-transparent via-action/70 to-transparent"
           initial={{ left: '-33%' }}
           animate={{ left: '100%' }}
           transition={{ duration: 1.6, repeat: Infinity, ease: 'linear' }}
@@ -106,7 +107,7 @@ export default function StageMonitor({ id, label, status, meta, stages, states }
             key={status}
             initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
-            className="truncate text-xs md:text-sm text-accent"
+            className="truncate text-xs md:text-sm text-action"
           >
             {status}
           </motion.span>
@@ -140,7 +141,7 @@ export default function StageMonitor({ id, label, status, meta, stages, states }
                 onClick={() => setPicked(i)}
                 aria-label={`${s.title}: ${states[i]}`}
                 aria-pressed={shown === i}
-                className={`rounded-full transition-shadow ${shown === i ? 'ring-2 ring-accent/25 ring-offset-2 ring-offset-surface-white' : ''}`}
+                className={`rounded-full transition-shadow ${shown === i ? 'ring-2 ring-action/25 ring-offset-2 ring-offset-surface-white' : ''}`}
               >
                 <Node state={states[i]} icon={s.icon} size="sm" />
               </button>

@@ -4,6 +4,7 @@
 
 import { api } from "@/lib/api";
 import { readApiError } from "@/lib/pipeline";
+import { invalidateHistory } from "@/lib/historyCache";
 
 /* =========================================================
    TIPE & PARSER UNTUK RESPONSE /api/predict
@@ -86,7 +87,9 @@ export function isTransient(err: unknown): boolean {
 async function postWithRetry(endpoint: string, body: { data: number[]; prediction_id?: string }, retries = 3) {
   for (let i = 0; ; i++) {
     try {
-      return await api(endpoint, { method: "POST", body });
+      const res = await api(endpoint, { method: "POST", body });
+      invalidateHistory(); // ada catatan baru di riwayat
+      return res;
     } catch (err: unknown) {
       if (i >= retries - 1 || !isTransient(err)) throw err;
       await new Promise((res) => setTimeout(res, RETRY_DELAY_MS));

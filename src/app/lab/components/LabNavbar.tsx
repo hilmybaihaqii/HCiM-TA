@@ -81,6 +81,12 @@ export default function LabNavbar() {
     } finally {
       setShowLogoutModal(false);
       setIsLoggingOut(false);
+      // Hasil lab yang diingat per tab (Digital Lab, job pipeline, dosis) jangan terlihat oleh akun berikutnya
+      try {
+        Object.keys(sessionStorage)
+          .filter(k => k === 'digital-lab-report' || k.startsWith('pipeline-'))
+          .forEach(k => sessionStorage.removeItem(k));
+      } catch { /* storage diblokir: tidak ada yang perlu dihapus */ }
       window.location.href = '/login';
     }
   };

@@ -17,6 +17,13 @@
   --accent-teal-dark: #0F6252;
   --accent-amber: #D98B1E;      /* Intermediate Risk — lebih jenuh & tegas */
   --accent-amber-dark: #A66A14;
+
+  /* === Aksi: tombol & pilihan aktif di area /lab ===
+     Hitam charcoal (sama dengan teks). Merah aksen hanya untuk tombol yang menjalankan model
+     (Predict risk, Run full pipeline) dan untuk tanda risiko / perubahan kuat.
+     action-dark = warna hover (sedikit lebih terang supaya terasa). */
+  --action: #2A2A2A;
+  --action-dark: #4A4442;
 }
 
 @theme inline {
@@ -33,7 +40,9 @@
   --color-teal: var(--accent-teal);
   --color-teal-dark: var(--accent-teal-dark);
   --color-amber: var(--accent-amber);
-  --color-amber-dark: var(--accent-amber-dark);
+  --color-amber-dark: var(--accent-amber-dark);
+  --color-action: var(--action);
+  --color-action-dark: var(--action-dark);
 
   --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
 }

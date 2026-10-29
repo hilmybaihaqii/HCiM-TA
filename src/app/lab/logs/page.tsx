@@ -2,15 +2,15 @@
 
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { api } from "@/lib/api";
+import { cachedGet } from "@/lib/historyCache";
 import { getTierColor, getTierCssVar } from "@/lib/tierColor";
 import PredictionHistory from "./components/PredictionHistory";
 import ShapHistory from "./components/ShapHistory";
-import RiskDonut from "./components/RiskDonut";
+import RiskBars from "./components/RiskBars";
 import LabPageHeader from "../components/LabPageHeader";
 import LabContainer from "../components/LabContainer";
 import { Bone } from "../components/Skeletons";
-import { SectionHead, SlideIndicator } from "../components/report/ui";
+import { SectionHead, TabRail } from "../components/report/ui";
 
 interface SummaryResponse {
   total_predictions: number;
@@ -26,6 +26,16 @@ function tierCount(summary: SummaryResponse | null, tier: string): number {
   return key ? summary!.tier_counts[key] : 0;
 }
 
+/** Satu angka ringkasan: label kecil di atas, angka besar di bawah */
+function Figure({ label, children, word = false }: { label: string; children: React.ReactNode; word?: boolean }) {
+  return (
+    <div className="flex flex-col items-center md:items-start gap-1.5 px-2 md:px-0 md:pr-6 min-w-0">
+      <dt className="text-xs text-foreground/60 truncate max-w-full">{label}</dt>
+      <dd className={`font-medium tracking-tight tabular-nums text-foreground ${word ? "text-base leading-6 md:text-2xl md:leading-9" : "text-2xl md:text-4xl leading-none"}`}>{children}</dd>
+    </div>
+  );
+}
+
 type Tab = "predictions" | "shap";
 
 export default function LogsPage() {
@@ -34,8 +44,8 @@ export default function LogsPage() {
   const [summaryFailed, setSummaryFailed] = useState(false);
 
   useEffect(() => {
-    api("/api/history/summary")
-      .then(res => setSummary(res as SummaryResponse))
+    cachedGet<SummaryResponse>("/api/history/summary")
+      .then(res => setSummary(res))
       .catch(err => {
         console.error("Failed to fetch summary data.", err);
         setSummaryFailed(true);
@@ -44,10 +54,6 @@ export default function LogsPage() {
 
   const counts = TIERS.map(t => ({ tier: t, count: tierCount(summary, t) }));
   const top = [...counts].sort((a, b) => b.count - a.count)[0];
-  const tabs: { id: Tab; label: string; count?: number }[] = [
-    { id: "predictions", label: "Predictions", count: summary?.total_predictions },
-    { id: "shap", label: "SHAP analyses", count: summary?.total_explanations },
-  ];
 
   return (
     <div className="w-full flex flex-col text-foreground">
@@ -59,84 +65,72 @@ export default function LogsPage() {
           description="Your past predictions, the factors behind them, and how the risk results are spread."
         />
 
-        {/* ---------- Ringkasan: donut kiri, angka kanan (ponsel: bertumpuk rata tengah) ---------- */}
+        {/* ---------- Ringkasan: tiga angka di kiri, bar chart risiko di kanan (ponsel: bertumpuk) ---------- */}
         <section aria-labelledby="summary-heading" className="w-full">
           <SectionHead id="summary-heading" title="Overview" meta="All your records" />
-          <div className="mt-6 min-h-36">
+          <div className="mt-6 pt-6 border-t border-foreground/10 min-h-36">
             {summary ? (
               <motion.div
-                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                className="grid grid-cols-1 sm:grid-cols-[auto_1fr] items-center gap-8 sm:gap-14"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                className="grid grid-cols-1 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] items-center gap-8 md:gap-12"
               >
-                <div className="justify-self-center sm:justify-self-start">
-                  <RiskDonut
-                    centerLabel="predictions"
+                <dl className="grid grid-cols-3 divide-x divide-foreground/10 md:divide-x-0">
+                  <Figure label="Predictions">{summary.total_predictions}</Figure>
+                  <Figure label="SHAP analyses">{summary.total_explanations}</Figure>
+                  <Figure label="Most common" word>
+                    {top && top.count > 0
+                      ? <span className={`capitalize ${getTierColor(top.tier).text}`}>{top.tier}</span>
+                      : "—"}
+                  </Figure>
+                </dl>
+                <div className="md:pl-12 md:border-l md:border-foreground/10">
+                  <p className="mb-2 px-2 text-xs text-foreground/60">Risk results</p>
+                  <RiskBars
                     slices={counts.map(c => ({ key: c.tier, label: c.tier[0].toUpperCase() + c.tier.slice(1), count: c.count, color: getTierCssVar(c.tier) }))}
                   />
                 </div>
-                <dl className="w-full">
-                  {[
-                    { k: "Predictions", v: summary.total_predictions },
-                    { k: "SHAP analyses", v: summary.total_explanations },
-                  ].map(r => (
-                    <div key={r.k} className="flex items-baseline justify-between gap-6 px-3 py-2.5 rounded-chip odd:bg-[color-mix(in_srgb,var(--foreground)_3.5%,var(--background))]">
-                      <dt className="text-sm text-foreground/70">{r.k}</dt>
-                      <dd className="font-mono text-base tabular-nums text-foreground">{r.v}</dd>
-                    </div>
-                  ))}
-                  {top && top.count > 0 && (
-                    <div className="flex items-baseline justify-between gap-6 px-3 py-2.5 rounded-chip">
-                      <dt className="text-sm text-foreground/70">Most common result</dt>
-                      <dd className={`text-sm font-medium capitalize ${getTierColor(top.tier).text}`}>{top.tier}</dd>
-                    </div>
-                  )}
-                </dl>
               </motion.div>
             ) : summaryFailed ? (
               <p role="alert" className="py-10 text-center text-sm text-foreground/70">
                 Could not load the overview. Your history below is still available.
               </p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] items-center gap-8 sm:gap-14" aria-hidden="true">
-                <div className="flex items-center gap-5 justify-self-center sm:justify-self-start">
-                  <Bone className="w-32 h-32 rounded-full" />
-                  <div className="flex flex-col gap-3">{[0, 1, 2].map(i => <Bone key={i} className="h-3 w-24" />)}</div>
+              <div className="grid grid-cols-1 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] items-center gap-8 md:gap-12" aria-hidden="true">
+                <div className="grid grid-cols-3 gap-4">
+                  {[0, 1, 2].map(i => (
+                    <div key={i} className="flex flex-col items-center md:items-start gap-2">
+                      <Bone className="h-3 w-16" />
+                      <Bone className="h-8 w-14" />
+                    </div>
+                  ))}
                 </div>
-                <div className="flex flex-col gap-3">{[0, 1, 2].map(i => <Bone key={i} className="h-8 w-full rounded-chip" />)}</div>
+                <div className="flex flex-col gap-4 md:pl-12">
+                  {[0, 1, 2].map(i => <Bone key={i} className="h-5 w-full rounded-full" />)}
+                </div>
               </div>
             )}
           </div>
         </section>
 
-        {/* ---------- Riwayat: satu switch, satu daftar ---------- */}
+        {/* ---------- Riwayat: satu rel tab, satu daftar ---------- */}
         <section aria-label="Records" className="w-full">
-          <div role="tablist" aria-label="Record type" className="relative grid grid-cols-2 p-1 rounded-control bg-foreground/6">
-            <span className="absolute inset-1 pointer-events-none">
-              <SlideIndicator
-                index={tabs.findIndex(t => t.id === tab)}
-                count={tabs.length}
-                className="inset-y-0 left-0 rounded-[calc(var(--radius-control)-4px)] bg-surface-white border border-foreground/15 shadow-sm"
-              />
-            </span>
-            {tabs.map(t => (
-              <button
-                key={t.id}
-                type="button"
-                role="tab"
-                aria-selected={tab === t.id}
-                onClick={() => setTab(t.id)}
-                className={`relative z-10 px-2 py-2 text-sm font-medium transition-colors ${tab === t.id ? "text-foreground" : "text-foreground/60 hover:text-foreground"}`}
-              >
-                {t.label}
-                {typeof t.count === "number" && <span className="ml-1.5 font-mono text-xs text-foreground/50">{t.count}</span>}
-              </button>
-            ))}
-          </div>
+          <TabRail
+            tabs={[
+              { id: "predictions", label: "Predictions" },
+              { id: "shap", label: "SHAP analyses" },
+            ]}
+            value={tab}
+            onChange={id => setTab(id as Tab)}
+            label="Record type"
+            panelPrefix="records"
+          />
 
           <motion.div
             key={tab}
+            id={`records-${tab}`}
             role="tabpanel"
-            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
             className="pt-6"
           >

@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { SHORT_DESC } from '../../components/report/biomarkerText';
 import {
-  HistoryMessage, HistoryRow, HistorySkeleton, Pager, TierFilter, TierText, TierFilterValue, ValueRows,
-  formatWhen, matchesTier, useHistoryPage,
+  HistoryControls, HistoryMessage, HistoryRow, HistorySkeleton, Pager, TierText, TierFilterValue, ValueRows,
+  formatWhen, matchesQuery, matchesTier, useHistory,
 } from './history';
 
 interface Contribution {
@@ -16,6 +16,8 @@ interface Contribution {
 
 interface ShapLog {
   id: string;
+  /** Prediksi yang dijelaskan (kalau backend menyimpannya) */
+  prediction_id?: string | null;
   predicted_class: string;
   base_value: number;
   contributions: Contribution[];
@@ -62,26 +64,39 @@ function ShapDetail({ log }: { log: ShapLog }) {
           };
         })}
       />
-      <p className="text-xs text-foreground/60 truncate">Record <span className="font-mono text-foreground/80">{log.id}</span></p>
+      <dl className="flex flex-wrap justify-between gap-x-6 gap-y-1 text-xs text-foreground/60">
+        {log.prediction_id && (
+          <div className="flex gap-2 min-w-0"><dt>Prediction</dt><dd className="font-mono text-foreground/80 truncate">{log.prediction_id}</dd></div>
+        )}
+        <div className="flex gap-2 min-w-0"><dt>Record</dt><dd className="font-mono text-foreground/80 truncate">{log.id}</dd></div>
+      </dl>
     </div>
   );
 }
 
+/** Pencarian: ID analisis, ID prediksi, tanggal, hasil, atau faktor utama */
+const matchShap = (log: ShapLog, query: string, tier: TierFilterValue) => {
+  if (!matchesTier(log.predicted_class, tier)) return false;
+  const top = sortByInfluence(log.contributions)[0];
+  return matchesQuery(query, [log.id, log.prediction_id, log.predicted_class, formatWhen(log.created_at), top ? nameOf(top) : null]);
+};
+
 /** Riwayat SHAP: satu baris per analisis, buka untuk melihat pengaruh tiap biomarker. */
 export default function ShapHistory() {
-  const { items, total, loading, error, page, pages, setPage } = useHistoryPage<ShapLog>('/api/history/explanations');
-  const [filter, setFilter] = useState<TierFilterValue>('all');
+  const h = useHistory<ShapLog>('/api/history/explanations', matchShap);
+  const { items: shown, total, loading, error, page, pages, setPage } = h;
   const [open, setOpen] = useState<string | null>(null);
-  const shown = useMemo(() => items.filter(l => matchesTier(l.predicted_class, filter)), [items, filter]);
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3">
-        <p className="text-sm text-foreground/70">
-          {filter === 'all' ? `${total} analyses` : `${shown.length} of ${items.length} on this page`}
-        </p>
-        <TierFilter value={filter} onChange={setFilter} />
-      </div>
+      <HistoryControls
+        query={h.query}
+        onQuery={v => { setOpen(null); h.setQuery(v); }}
+        tier={h.tier}
+        onTier={v => { setOpen(null); h.setTier(v); }}
+        placeholder="Search by record ID, prediction ID, date or main factor"
+        summary={!loading && h.filtering ? `${total} matching ${total === 1 ? 'analysis' : 'analyses'}` : null}
+      />
 
       <div>
         <div className={`${ROW} px-2 sm:px-3 pb-2 text-[11px] text-foreground/60 border-b border-foreground/10`}>
@@ -95,7 +110,7 @@ export default function ShapHistory() {
         ) : error ? (
           <HistoryMessage>Could not load your SHAP analyses. Reload the page to try again.</HistoryMessage>
         ) : shown.length === 0 ? (
-          <HistoryMessage>{items.length === 0 ? 'No SHAP analyses yet.' : 'No analyses with this result on this page.'}</HistoryMessage>
+          <HistoryMessage>{h.filtering ? 'No analyses match your search.' : 'No SHAP analyses yet.'}</HistoryMessage>
         ) : (
           <ul>
             {shown.map(log => {
