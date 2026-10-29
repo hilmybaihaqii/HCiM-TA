@@ -9,7 +9,7 @@ import { DoseKey, DoseOption, DoseResult, doseId, useDosePredictions } from '../
 import HeartbeatLoader from '../../components/report/HeartbeatLoader';
 import RiskVerdict from '../../components/report/RiskVerdict';
 import BiomarkerList from '../../components/report/BiomarkerList';
-import { SectionHead, SlideIndicator, primaryBtn, textLink } from '../../components/report/ui';
+import { SectionHead, SlideIndicator, TabRail, primaryBtn, textLink } from '../../components/report/ui';
 import DrugInputs from './DrugInputs';
 import { BiomarkerMatrix, MethodNote, TracesSection, doseSeriesLabel, useTraceSeries } from './SimulationPanel';
 
@@ -75,7 +75,7 @@ function DoseStrip({ options, results, selected, onSelect, eadsByDose }: {
       className="relative grid border-y border-foreground/10"
       style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
     >
-      <SlideIndicator index={index} count={options.length} className="left-0 -bottom-px h-0.5 px-3 before:block before:h-full before:rounded-full before:bg-foreground" />
+      <SlideIndicator index={index} count={options.length} className="left-0 -bottom-px h-0.5 px-3 before:block before:h-full before:rounded-full before:bg-action" />
       {options.map(o => {
         const r = results[doseId(o.key)];
         const isSel = doseId(o.key) === doseId(selected);
@@ -89,7 +89,7 @@ function DoseStrip({ options, results, selected, onSelect, eadsByDose }: {
             role="radio"
             aria-checked={isSel}
             onClick={() => onSelect(o.key)}
-            className={`relative py-4 md:py-5 text-center transition-colors ${isSel ? 'text-foreground' : 'text-foreground/60 hover:text-foreground'}`}
+            className={`relative py-4 md:py-5 text-center transition-colors duration-300 ${isSel ? 'text-action' : 'text-foreground/60 hover:text-foreground'}`}
           >
             <span className="block text-sm font-medium">
               {o.key === 'mean' ? 'Mean' : <>{o.key}×<span className="hidden sm:inline"> Cmax</span></>}
@@ -173,7 +173,6 @@ export default function PipelineResult({ job, db, onRunAnother }: {
     .filter(o => o.key !== 'mean' && severity(results[doseId(o.key)]?.tier) > severity(mean?.tier))
     .map(o => ({ dose: o.key as number, tier: results[doseId(o.key)]!.tier! }));
   const untested = options.some(o => o.key !== 'mean' && o.ratios && !results[doseId(o.key)]?.tier);
-  const detailIndex = DETAILS.findIndex(d => d.id === detail);
 
   return (
     // Satu kolom konten yang konsisten; di layar lebar baris tidak melebar berlebihan
@@ -197,8 +196,9 @@ export default function PipelineResult({ job, db, onRunAnother }: {
       {/* ---------- 1. Vonis (key unik per bagian: jangan sama dengan key BiomarkerList) ---------- */}
       <motion.div
         key={`verdict-${doseId(selected)}`}
-        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
         transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+        className="min-h-[var(--verdict-h)] flex flex-col justify-center [--verdict-h:20rem] sm:[--verdict-h:18rem]"
       >
         <Verdict option={selectedOption} result={selectedResult} onRetry={() => void run(selected)} />
       </motion.div>
@@ -245,34 +245,15 @@ export default function PipelineResult({ job, db, onRunAnother }: {
       {/* ---------- 4. Detail: satu pilihan, bukan banyak tab ---------- */}
       <section aria-label="More detail">
         <SectionHead title="Behind the result" />
-        <div role="tablist" aria-label="More detail" className="relative mt-5 grid grid-cols-3 p-1 rounded-control bg-foreground/6">
-          {/* Pil putih bergeser mulus dari index, tidak dari ukuran layout */}
-          <span className="absolute inset-1 pointer-events-none">
-            <SlideIndicator
-              index={detailIndex}
-              count={DETAILS.length}
-              className="inset-y-0 left-0 rounded-[calc(var(--radius-control)-4px)] bg-surface-white border border-foreground/15 shadow-sm"
-            />
-          </span>
-          {DETAILS.map(d => (
-            <button
-              key={d.id}
-              type="button"
-              role="tab"
-              aria-selected={detail === d.id}
-              onClick={() => setDetail(d.id)}
-              className={`relative z-10 px-2 py-2 text-xs sm:text-sm font-medium transition-colors
-                ${detail === d.id ? 'text-foreground' : 'text-foreground/60 hover:text-foreground'}`}
-            >
-              {d.label}
-            </button>
-          ))}
+        <div className="mt-5">
+          <TabRail tabs={DETAILS} value={detail} onChange={id => setDetail(id as DetailId)} label="More detail" panelPrefix="detail" />
         </div>
 
         <motion.div
           key={detail}
+          id={`detail-${detail}`}
           role="tabpanel"
-          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
           className="pt-8 md:pt-10"
         >

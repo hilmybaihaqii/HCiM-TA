@@ -104,15 +104,15 @@ export default function ModeSelector({ onSelect, current }: { onSelect: (m: Mode
               type="button"
               onClick={() => onSelect(m.id)}
               className={`group w-full text-left flex flex-col rounded-card border p-5 md:p-7 transition-all duration-300
-                hover:border-accent/40 hover:bg-surface-white
-                ${isCurrent ? 'border-accent/40 bg-surface-white' : 'border-foreground/8'}`}
+                hover:border-action/40 hover:bg-surface-white
+                ${isCurrent ? 'border-action/40 bg-surface-white' : 'border-foreground/8'}`}
             >
               <span className="font-mono text-[11px] text-muted">0{m.id} · {m.title}</span>
               <span className="mt-4 md:mt-6 text-lg md:text-xl font-medium tracking-tight text-foreground leading-snug">{m.question}</span>
               <span className="mt-2 text-sm text-muted leading-relaxed">{m.short}</span>
               <span className="mt-6 md:mt-auto md:pt-8 flex items-center justify-between text-xs">
                 <span className="text-muted">{m.effort}</span>
-                <span className="text-foreground group-hover:text-accent transition-colors">
+                <span className="text-foreground group-hover:text-action transition-colors">
                   Choose <span aria-hidden="true" className="inline-block transition-transform duration-300 group-hover:translate-x-0.5">→</span>
                 </span>
               </span>

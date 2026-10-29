@@ -87,7 +87,14 @@ function unwrapGradio(raw: unknown): unknown {
   return raw;
 }
 
-export async function getDrugs(): Promise<DrugDb> {
+/** Database obat CiPA tidak berubah selama sesi: cukup diambil sekali per tab (gagal = coba lagi lain kali). */
+let drugsRequest: Promise<DrugDb> | null = null;
+export function getDrugs(): Promise<DrugDb> {
+  drugsRequest ??= fetchDrugs().catch(err => { drugsRequest = null; throw err; });
+  return drugsRequest;
+}
+
+async function fetchDrugs(): Promise<DrugDb> {
   const payload = unwrapGradio(await api("/api/pipeline/drugs")) as Partial<DrugDb> | undefined;
   if (!payload || typeof payload.drugs !== "object" || payload.drugs === null) {
     throw new Error("Unexpected drug database response");

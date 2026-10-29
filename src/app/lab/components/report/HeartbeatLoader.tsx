@@ -218,12 +218,12 @@ export default function HeartbeatLoader({ eyebrow, title, detail, steps, since }
             >
               <span
                 className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 transition-colors
-                  ${s.state === 'done' ? 'bg-accent text-surface-white'
-                    : s.state === 'active' ? 'border border-accent'
+                  ${s.state === 'done' ? 'bg-action text-surface-white'
+                    : s.state === 'active' ? 'border border-action'
                     : 'border border-foreground/15'}`}
               >
                 {s.state === 'done' && <Check className="w-2.5 h-2.5" strokeWidth={3} />}
-                {s.state === 'active' && <span className="w-1.5 h-1.5 rounded-full bg-accent" />}
+                {s.state === 'active' && <span className="w-1.5 h-1.5 rounded-full bg-action" />}
               </span>
               <span className={`truncate ${s.state === 'pending' ? 'text-foreground/50' : 'text-foreground'}`}>{s.label}</span>
             </li>

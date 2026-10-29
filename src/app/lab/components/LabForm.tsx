@@ -101,11 +101,11 @@ export default function LabForm({ onSubmit, initial }: {
                   key={marker.id} 
                   className={`relative flex flex-col justify-between bg-foreground/1 border p-4 rounded-card transition-all duration-300 group
                     ${hasValue ? 'border-foreground/8 bg-surface-white/50' : 'border-foreground/4 hover:bg-surface-white/80'}
-                    focus-within:bg-surface-white focus-within:border-accent/40 focus-within:ring-4 focus-within:ring-accent/5 focus-within:shadow-[0_8px_20px_rgba(0,0,0,0.02)]
+                    focus-within:bg-surface-white focus-within:border-action/40 focus-within:ring-4 focus-within:ring-action/5 focus-within:shadow-[0_8px_20px_rgba(0,0,0,0.02)]
                   `}
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <label className="text-[11px] font-mono font-bold tracking-widest text-muted group-focus-within:text-accent transition-colors uppercase cursor-text">
+                    <label className="text-[11px] font-mono font-bold tracking-widest text-muted group-focus-within:text-action transition-colors uppercase cursor-text">
                       {marker.name}
                     </label>
                     <span className="text-[9px] font-mono text-muted/50 bg-foreground/2 px-1.5 py-0.5 rounded-chip border border-foreground/4">
@@ -180,7 +180,7 @@ export default function LabForm({ onSubmit, initial }: {
                         onClick={() => injectPreset(drug.id, drug.values)}
                         className={`group relative flex items-stretch h-12 w-full rounded-control transition-all duration-300 overflow-hidden outline-none text-left
                           ${isSelected 
-                            ? 'bg-surface-white border-transparent ring-1 ring-accent/60 shadow-[0_6px_16px_-4px_rgba(0,0,0,0.1)] scale-[1.02]' 
+                            ? 'bg-surface-white border-transparent ring-1 ring-action/60 shadow-[0_6px_16px_-4px_rgba(0,0,0,0.1)] scale-[1.02]' 
                             : 'bg-surface-white/60 border border-foreground/10 hover:border-foreground/20 hover:shadow-md hover:-translate-y-0.5 backdrop-blur-sm'
                           }
                         `}
@@ -188,7 +188,7 @@ export default function LabForm({ onSubmit, initial }: {
                         {/* Sisi Kiri Kapsul */}
                         <div className={`relative w-11 shrink-0 flex items-center justify-center transition-all duration-300
                           ${isSelected 
-                            ? 'bg-accent text-surface-white' 
+                            ? 'bg-action text-surface-white' 
                             : 'bg-foreground/4 text-muted group-hover:bg-foreground/8 group-hover:text-foreground'
                           }
                         `}>
@@ -203,20 +203,20 @@ export default function LabForm({ onSubmit, initial }: {
 
                         {/* Garis Pembatas Kapsul */}
                         <div className={`w-px shrink-0 transition-colors duration-300 
-                          ${isSelected ? 'bg-accent/20' : 'bg-foreground/5 group-hover:bg-foreground/10'}
+                          ${isSelected ? 'bg-action/20' : 'bg-foreground/5 group-hover:bg-foreground/10'}
                         `} />
 
                         {/* Sisi Kanan Kapsul */}
                         <div className={`flex-1 min-w-0 px-3.5 flex flex-col justify-center transition-all duration-300
-                          ${isSelected ? 'bg-accent/3' : 'bg-transparent'}
+                          ${isSelected ? 'bg-action/5' : 'bg-transparent'}
                         `}>
                           <span className={`text-xs font-bold tracking-tight truncate block w-full transition-colors 
-                            ${isSelected ? 'text-accent' : 'text-foreground group-hover:text-foreground/80'}
+                            ${isSelected ? 'text-action' : 'text-foreground group-hover:text-foreground/80'}
                           `}>
                             {drug.name}
                           </span>
                           <span className={`text-[8px] font-mono tracking-wider uppercase truncate block w-full mt-0.5 transition-colors
-                            ${isSelected ? 'text-accent/60' : 'text-muted/50'}
+                            ${isSelected ? 'text-action/60' : 'text-muted/50'}
                           `}>
                             {drug.type}
                           </span>
@@ -239,7 +239,7 @@ export default function LabForm({ onSubmit, initial }: {
                   className={`w-8 h-8 rounded-control flex items-center justify-center transition-all border outline-none
                     ${page === 0 
                       ? 'border-foreground/5 text-muted/20 cursor-not-allowed' 
-                      : 'border-foreground/10 text-muted hover:text-accent hover:bg-accent/10 active:scale-90'
+                      : 'border-foreground/10 text-muted hover:text-action hover:bg-action/10 active:scale-90'
                     }`}
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -254,8 +254,8 @@ export default function LabForm({ onSubmit, initial }: {
                       onClick={() => setPage(idx)}
                       className={`w-7 h-7 rounded-control text-[11px] font-mono font-medium transition-all duration-300 flex items-center justify-center outline-none
                         ${page === idx
-                          ? 'bg-accent text-surface-white shadow-sm scale-105'
-                          : 'bg-foreground/5 text-muted hover:bg-accent/10 hover:text-accent'
+                          ? 'bg-action text-surface-white shadow-sm scale-105'
+                          : 'bg-foreground/5 text-muted hover:bg-action/10 hover:text-action'
                         }
                       `}
                     >
@@ -272,7 +272,7 @@ export default function LabForm({ onSubmit, initial }: {
                   className={`w-8 h-8 rounded-control flex items-center justify-center transition-all border outline-none
                     ${page === totalPages - 1 
                       ? 'border-foreground/5 text-muted/20 cursor-not-allowed' 
-                      : 'border-foreground/10 text-muted hover:text-accent hover:bg-accent/10 active:scale-90'
+                      : 'border-foreground/10 text-muted hover:text-action hover:bg-action/10 active:scale-90'
                     }`}
                 >
                   <ChevronRight className="w-4 h-4" />

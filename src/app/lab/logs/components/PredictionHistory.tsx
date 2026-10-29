@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { FEATURES, formatChange, ratioChange } from '@/lib/pipeline';
+import { isStrongChange } from '@/lib/biomarkerHighlight';
 import { VoteBar } from '../../components/report/RiskVerdict';
 import { SHORT_DESC } from '../../components/report/biomarkerText';
 import {
-  HistoryMessage, HistoryRow, HistorySkeleton, Pager, TierFilter, TierText, TierFilterValue, ValueRows,
-  formatWhen, matchesTier, useHistoryPage,
+  HistoryControls, HistoryMessage, HistoryRow, HistorySkeleton, Pager, TierText, TierFilterValue, ValueRows,
+  formatWhen, matchesQuery, matchesTier, useHistory,
 } from './history';
 
 type Confidence = { confidence: number; label: string };
@@ -49,9 +50,9 @@ function PredictionDetail({ log }: { log: PredictionLog }) {
             key,
             hint: SHORT_DESC[key],
             bar: changes[i] === null ? null : (changes[i] as number) / maxDev,
-            strong: Math.abs(changes[i] ?? 0) >= 0.1,
+            strong: isStrongChange(key, input[i]),
             main: formatChange(changes[i]),
-            second: typeof input[i] === 'number' ? input[i].toFixed(3) : '—',
+            second: typeof input[i] === 'number' ? input[i].toFixed(4) : '—',
           }))}
         />
       ) : (
@@ -65,21 +66,26 @@ function PredictionDetail({ log }: { log: PredictionLog }) {
   );
 }
 
+/** Pencarian: ID catatan, tanggal, atau hasil */
+const matchPrediction = (log: PredictionLog, query: string, tier: TierFilterValue) =>
+  matchesTier(log.predicted_tier, tier) && matchesQuery(query, [log.id, log.predicted_tier, formatWhen(log.created_at)]);
+
 /** Riwayat prediksi: satu baris per prediksi, buka untuk melihat vote & 11 biomarker yang dikirim. */
 export default function PredictionHistory() {
-  const { items, total, loading, error, page, pages, setPage } = useHistoryPage<PredictionLog>('/api/history/predictions');
-  const [filter, setFilter] = useState<TierFilterValue>('all');
+  const h = useHistory<PredictionLog>('/api/history/predictions', matchPrediction);
+  const { items: shown, total, loading, error, page, pages, setPage } = h;
   const [open, setOpen] = useState<string | null>(null);
-  const shown = useMemo(() => items.filter(l => matchesTier(l.predicted_tier, filter)), [items, filter]);
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3">
-        <p className="text-sm text-foreground/70">
-          {filter === 'all' ? `${total} predictions` : `${shown.length} of ${items.length} on this page`}
-        </p>
-        <TierFilter value={filter} onChange={setFilter} />
-      </div>
+      <HistoryControls
+        query={h.query}
+        onQuery={v => { setOpen(null); h.setQuery(v); }}
+        tier={h.tier}
+        onTier={v => { setOpen(null); h.setTier(v); }}
+        placeholder="Search by record ID, date or result"
+        summary={!loading && h.filtering ? `${total} matching ${total === 1 ? 'prediction' : 'predictions'}` : null}
+      />
 
       <div>
         <div className={`${ROW} px-2 sm:px-3 pb-2 text-[11px] text-foreground/60 border-b border-foreground/10`}>
@@ -93,7 +99,7 @@ export default function PredictionHistory() {
         ) : error ? (
           <HistoryMessage>Could not load your predictions. Reload the page to try again.</HistoryMessage>
         ) : shown.length === 0 ? (
-          <HistoryMessage>{items.length === 0 ? 'No predictions yet.' : 'No predictions with this result on this page.'}</HistoryMessage>
+          <HistoryMessage>{h.filtering ? 'No predictions match your search.' : 'No predictions yet.'}</HistoryMessage>
         ) : (
           <ul>
             {shown.map(log => (

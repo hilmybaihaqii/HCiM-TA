@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { FEATURES, PipelineJob, SimResult, Trace, joinList, ratioChange } from '@/lib/pipeline';
+import { FEATURES, PipelineJob, SimResult, Trace, joinList } from '@/lib/pipeline';
+import { isStrongChange } from '@/lib/biomarkerHighlight';
 import { SHORT_DESC } from '../../components/report/biomarkerText';
 import TraceChart, { Series } from './TraceChart';
 import type { DoseKey } from '../useDosePredictions';
@@ -18,12 +19,9 @@ const PRESETS: { label: string; domain: [number, number] }[] = [
   { label: 'Full beat', domain: [0, 2000] },
 ];
 
-/** Perubahan dianggap kuat kalau ukurannya bergeser >= 10% dari sel tanpa obat (lihat ratioChange). */
-const isStrongShift = (r?: number | null, control?: number | null) => Math.abs(ratioChange(r, control) ?? 0) >= 0.1;
-
 const numFmt = new Intl.NumberFormat('en-US', { maximumSignificantDigits: 4 });
 export const fmtValue = (v?: number | null) => (typeof v === 'number' && Number.isFinite(v) ? numFmt.format(v) : '—');
-const fmtRatio = (v?: number | null) => (typeof v === 'number' && Number.isFinite(v) ? v.toFixed(3) : '—');
+const fmtRatio = (v?: number | null) => (typeof v === 'number' && Number.isFinite(v) ? v.toFixed(4) : '—');
 
 type DoseTrace = Trace & { dose: number };
 
@@ -134,7 +132,7 @@ export function TracesSection({ apSeries, caSeries, highlight = null }: {
             );
           })}
           {!isPreset && (
-            <button type="button" onClick={() => setDomain(PRESETS[0].domain)} className="font-mono text-accent hover:underline underline-offset-4">
+            <button type="button" onClick={() => setDomain(PRESETS[0].domain)} className="font-mono text-action hover:underline underline-offset-4">
               {domain[0]}–{domain[1]} ms · reset
             </button>
           )}
@@ -183,8 +181,10 @@ export function BiomarkerMatrix({ job, selected, onSelect }: {
   return (
     <div>
       <p className="text-sm text-foreground/70 max-w-3xl leading-relaxed">
-        Ratio to the drug-free cell (drug value ÷ |drug-free value|). No change is 1, or −1 for biomarkers that are
-        negative, such as vrest. Changes of 10% or more are marked. The highlighted column is the dose you are
+        The first two columns are the raw values from the simulation. The dose columns are ratios to the drug-free
+        cell (drug value ÷ |drug-free value|), and these are what the risk model reads. No change is 1, or −1 for
+        biomarkers that are negative, such as vrest. Marked: qNet below 0.9, APD50 or APD90 above 1.1, and any
+        other biomarker that moved more than 10%. The highlighted column is the dose you are
         looking at{onSelect ? '; click a column header to switch' : ''}.
       </p>
 
@@ -193,17 +193,17 @@ export function BiomarkerMatrix({ job, selected, onSelect }: {
           <thead>
             <tr className="text-[10px] font-mono uppercase tracking-wider text-foreground/60">
               <th className="sticky left-0 z-10 bg-background shadow-[inset_-1px_0_0_rgb(42_42_42/0.1)] px-2 py-2.5 font-medium text-left border-b border-foreground/8">Biomarker</th>
-              <th className="px-2 py-2.5 font-medium text-right border-b border-foreground/8">Control</th>
+              <th className="px-2 py-2.5 font-medium text-right border-b border-foreground/8">Drug-free</th>
               <th className="px-2 py-2.5 font-medium text-right border-b border-foreground/8">
-                Drug {selected === 'mean' ? '(mean)' : `(${selected}×)`}
+                With drug {selected === 'mean' ? '(mean)' : `(${selected}×)`}
               </th>
               {columns.map(c => (
                 <th
                   key={String(c.key)}
-                  className={`px-2 py-2.5 font-medium text-right border-b border-foreground/8 ${isSel(c.key) ? 'bg-accent/6 text-accent rounded-t-card' : ''}`}
+                  className={`px-2 py-2.5 font-medium text-right border-b border-foreground/8 ${isSel(c.key) ? 'bg-action/8 text-action rounded-t-card' : ''}`}
                 >
                   {onSelect ? (
-                    <button type="button" onClick={() => onSelect(c.key)} className="uppercase tracking-wider hover:text-foreground transition-colors">
+                    <button type="button" onClick={() => onSelect(c.key)} className="uppercase tracking-wider hover:text-action transition-colors">
                       {c.label}
                     </button>
                   ) : c.label}
@@ -230,8 +230,8 @@ export function BiomarkerMatrix({ job, selected, onSelect }: {
                       <td
                         key={String(c.key)}
                         className={`${zebra} px-2 py-3 text-right font-mono tabular-nums ${ci === columns.length - 1 ? 'rounded-r-chip' : ''}
-                          ${isSel(c.key) ? 'shadow-[inset_0_0_0_9999px_rgb(184_84_92/0.07)]' : ''}
-                          ${isStrongShift(v, control) ? 'text-accent font-semibold' : isSel(c.key) ? 'text-foreground' : 'text-foreground/70'}`}
+                          ${isSel(c.key) ? 'shadow-[inset_0_0_0_9999px_rgb(42_42_42/0.06)]' : ''}
+                          ${isStrongChange(key, v) ? 'text-accent font-semibold' : isSel(c.key) ? 'text-foreground' : 'text-foreground/70'}`}
                       >
                         {fmtRatio(v)}
                       </td>

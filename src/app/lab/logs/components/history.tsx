@@ -1,15 +1,15 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
-import { api } from '@/lib/api';
+import { ChevronDown, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
+import { cachedGet } from '@/lib/historyCache';
 import { getTierCssVar, normalizeTier } from '@/lib/tierColor';
-import { SlideIndicator, secondaryBtn } from '../../components/report/ui';
+import { TabRail, secondaryBtn } from '../../components/report/ui';
 import { Bone } from '../../components/Skeletons';
 
 /*
- * Bagian bersama riwayat Prediction & SHAP: ambil data per halaman, filter tier, baris yang bisa dibuka,
+ * Bagian bersama riwayat Prediction & SHAP: ambil data, pencarian & filter tier, baris yang bisa dibuka,
  * dan navigasi halaman. Detail tiap baris dibuka selebar penuh (bukan di dalam sel tabel), jadi tidak
  * berdempet di ponsel.
  */
@@ -21,32 +21,97 @@ export const ZEBRA = 'odd:bg-[color-mix(in_srgb,var(--foreground)_3.5%,var(--bac
 
 /* ---------- Data ---------- */
 
-export function useHistoryPage<T>(endpoint: string) {
+type Fetched<T> = { key: string; items: T[]; total: number; error: boolean };
+/** Batas aman saat memuat semua catatan untuk pencarian (40 × 50 = 2000 catatan) */
+const MAX_PAGES = 40;
+
+async function fetchPage<T>(endpoint: string, offset: number) {
+  // Lewat cache: berpindah tab atau kembali ke halaman ini tidak meminta data yang sama lagi
+  const res = await cachedGet<{ items?: T[]; total?: number } | null>(`${endpoint}?limit=${PAGE_SIZE}&offset=${offset}`);
+  const items = res?.items ?? [];
+  return { items, total: res?.total ?? items.length };
+}
+
+/**
+ * Riwayat dengan pencarian & filter tier.
+ * Tanpa pencarian/filter: satu halaman dari server per kali (limit/offset).
+ * Dengan pencarian/filter: semua catatan dimuat sekali, lalu disaring & dibagi per halaman di browser,
+ * jadi hasilnya mencakup seluruh riwayat, bukan hanya halaman yang sedang terbuka.
+ * `test` harus fungsi tingkat modul (stabil).
+ */
+export function useHistory<T>(endpoint: string, test: (item: T, query: string, tier: TierFilterValue) => boolean) {
   const [page, setPage] = useState(0);
+  const [query, setQueryState] = useState('');
+  const [tier, setTierState] = useState<TierFilterValue>('all');
+  const q = query.trim().toLowerCase();
+  const filtering = q !== '' || tier !== 'all';
+
   // `key` = request yang hasilnya sedang disimpan; loading = key belum sama dengan request saat ini
-  const [state, setState] = useState<{ key: string; items: T[]; total: number; error: boolean }>({
-    key: '', items: [], total: 0, error: false,
-  });
-  const url = `${endpoint}?limit=${PAGE_SIZE}&offset=${page * PAGE_SIZE}`;
+  const [paged, setPaged] = useState<Fetched<T>>({ key: '', items: [], total: 0, error: false });
+  const [all, setAll] = useState<Fetched<T>>({ key: '', items: [], total: 0, error: false });
+  const pageKey = `${endpoint}#${page}`;
+  const allKey = `${endpoint}#all`;
 
   useEffect(() => {
+    if (filtering) return;
     let alive = true;
-    api(url)
-      .then((res: { items?: T[]; total?: number } | null) => {
-        if (!alive) return;
-        const items = res?.items ?? [];
-        setState({ key: url, items, total: res?.total ?? items.length, error: false });
-      })
+    fetchPage<T>(endpoint, page * PAGE_SIZE)
+      .then(r => { if (alive) setPaged({ key: pageKey, ...r, error: false }); })
       .catch(err => {
-        console.error(`Failed to fetch ${url}:`, err);
-        if (alive) setState(s => ({ ...s, key: url, error: true }));
+        console.error(`Failed to fetch ${endpoint}:`, err);
+        if (alive) setPaged(s => ({ ...s, key: pageKey, error: true }));
       });
     return () => { alive = false; };
-  }, [url]);
+  }, [endpoint, page, pageKey, filtering]);
 
-  const loading = state.key !== url;
-  const pages = Math.max(1, Math.ceil(state.total / PAGE_SIZE));
-  return { items: state.items, total: state.total, error: !loading && state.error, loading, page, pages, setPage };
+  useEffect(() => {
+    if (!filtering || all.key === allKey) return;
+    let alive = true;
+    (async () => {
+      const first = await fetchPage<T>(endpoint, 0);
+      const pages = Math.min(MAX_PAGES, Math.ceil(first.total / PAGE_SIZE));
+      const rest = await Promise.all(
+        Array.from({ length: Math.max(0, pages - 1) }, (_, i) => fetchPage<T>(endpoint, (i + 1) * PAGE_SIZE)),
+      );
+      return { items: [first, ...rest].flatMap(r => r.items), total: first.total };
+    })()
+      .then(r => { if (alive) setAll({ key: allKey, ...r, error: false }); })
+      .catch(err => {
+        console.error(`Failed to fetch all of ${endpoint}:`, err);
+        if (alive) setAll(s => ({ ...s, key: allKey, error: true }));
+      });
+    return () => { alive = false; };
+  }, [endpoint, allKey, all.key, filtering]);
+
+  const matches = useMemo(
+    () => (filtering ? all.items.filter(item => test(item, q, tier)) : []),
+    [filtering, all.items, q, tier, test],
+  );
+
+  const setQuery = (v: string) => { setQueryState(v); setPage(0); };
+  const setTier = (v: TierFilterValue) => { setTierState(v); setPage(0); };
+  const common = { page, setPage, query, setQuery, tier, setTier, filtering };
+
+  if (filtering) {
+    const loading = all.key !== allKey;
+    return {
+      ...common,
+      items: matches.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
+      total: matches.length,
+      loading,
+      error: !loading && all.error,
+      pages: Math.max(1, Math.ceil(matches.length / PAGE_SIZE)),
+    };
+  }
+  const loading = paged.key !== pageKey;
+  return {
+    ...common,
+    items: paged.items,
+    total: paged.total,
+    loading,
+    error: !loading && paged.error,
+    pages: Math.max(1, Math.ceil(paged.total / PAGE_SIZE)),
+  };
 }
 
 /** "28 Oct 2026, 14:32" (waktu lokal). Backend kadang mengirim tahun berawalan "+00". */
@@ -58,7 +123,7 @@ export function formatWhen(value?: string): string {
     : d.toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-/* ---------- Filter tier ---------- */
+/* ---------- Pencarian & filter tier ---------- */
 
 export type TierFilterValue = 'all' | 'low' | 'intermediate' | 'high';
 const FILTERS: { id: TierFilterValue; label: string }[] = [
@@ -71,26 +136,63 @@ const FILTERS: { id: TierFilterValue; label: string }[] = [
 export const matchesTier = (tier: string | null | undefined, filter: TierFilterValue) =>
   filter === 'all' || (!!tier && /high|inter|low|medium|moderate/i.test(tier) && normalizeTier(tier) === filter);
 
-export function TierFilter({ value, onChange }: { value: TierFilterValue; onChange: (v: TierFilterValue) => void }) {
-  const index = FILTERS.findIndex(f => f.id === value);
+/** Cocok kalau salah satu teks catatan memuat kata kunci (huruf kecil) */
+export const matchesQuery = (query: string, parts: (string | null | undefined)[]) =>
+  !query || parts.some(p => !!p && p.toLowerCase().includes(query));
+
+/** Kolom cari (kiri) + rel tier (kanan, sejajar bawah). Ponsel: cari selebar penuh, rel tier di bawahnya. */
+export function HistoryControls({ query, onQuery, tier, onTier, placeholder, summary }: {
+  query: string;
+  onQuery: (v: string) => void;
+  tier: TierFilterValue;
+  onTier: (v: TierFilterValue) => void;
+  placeholder: string;
+  /** Teks kecil di bawah (mis. jumlah hasil pencarian); kosong = tidak ditampilkan */
+  summary?: React.ReactNode;
+}) {
   return (
-    <div role="radiogroup" aria-label="Filter by risk" className="relative grid grid-cols-4 p-1 rounded-control bg-foreground/6 w-full sm:w-auto sm:min-w-[22rem]">
-      <span className="absolute inset-1 pointer-events-none">
-        <SlideIndicator index={index} count={FILTERS.length} className="inset-y-0 left-0 rounded-[calc(var(--radius-control)-4px)] bg-surface-white border border-foreground/15 shadow-sm" />
-      </span>
-      {FILTERS.map(f => (
-        <button
-          key={f.id}
-          type="button"
-          role="radio"
-          aria-checked={value === f.id}
-          onClick={() => onChange(f.id)}
-          className={`relative z-10 px-1.5 py-1.5 text-xs font-medium transition-colors ${value === f.id ? 'text-foreground' : 'text-foreground/60 hover:text-foreground'}`}
-        >
-          {f.label}
-        </button>
-      ))}
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-8">
+        <label className="relative flex-1 min-w-0">
+          <span className="sr-only">Search</span>
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/45 pointer-events-none" aria-hidden="true" />
+          <input
+            type="search"
+            value={query}
+            onChange={e => onQuery(e.target.value)}
+            placeholder={placeholder}
+            enterKeyHint="search"
+            className="w-full h-11 pl-10 pr-10 rounded-control border border-foreground/12 bg-surface-white/80 text-sm text-foreground placeholder:text-foreground/45
+              outline-none transition-[border-color,box-shadow] duration-200 focus:border-action/50 focus:ring-4 focus:ring-action/10
+              [&::-webkit-search-cancel-button]:appearance-none"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => onQuery('')}
+              aria-label="Clear search"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-chip text-foreground/50 hover:text-action hover:bg-action/10 transition-colors"
+            >
+              <X className="w-4 h-4" aria-hidden="true" />
+            </button>
+          )}
+        </label>
+        <div className="md:w-[26rem] shrink-0"><TierFilter value={tier} onChange={onTier} /></div>
+      </div>
+      <p className="text-sm text-foreground/70 empty:hidden" aria-live="polite">{summary}</p>
     </div>
+  );
+}
+
+/** Pilihan tier: rel tab yang sama dengan switch lain, titik warna tier di depan label. */
+export function TierFilter({ value, onChange }: { value: TierFilterValue; onChange: (v: TierFilterValue) => void }) {
+  return (
+    <TabRail
+      tabs={FILTERS.map(f => ({ id: f.id, label: f.label, dot: f.id === 'all' ? undefined : getTierCssVar(f.id) }))}
+      value={value}
+      onChange={id => onChange(id as TierFilterValue)}
+      label="Filter by risk"
+    />
   );
 }
 

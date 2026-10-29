@@ -14,18 +14,39 @@ import LabContainer from '../components/LabContainer';
 import PipelineMonitor, { RunningDetails } from './components/JobProgress';
 import { PageSkeleton } from '../components/Skeletons';
 import PipelineResult, { PipelineFailure, failureCopy } from './components/PipelineResult';
+import { invalidateHistory } from '@/lib/historyCache';
 
 const POLL_MS = 3000;                     // jangan lebih cepat: rate limit 2 req/s per user
 const POLL_TIMEOUT_MS = 10 * 60 * 1000;   // backend sendiri menyerah di 8 menit
 const BASE_PATH = '/lab/pipeline';
 
 type View = 'form' | 'running' | 'result' | 'failed' | 'error';
+
+/*
+ * Job yang sedang dilihat diingat per tab browser (sessionStorage). Kalau user pindah ke halaman lain
+ * lalu kembali lewat navbar (URL tanpa ?job=), simulasi yang berjalan atau hasilnya langsung tampil lagi.
+ * Hanya dilupakan saat user memulai simulasi baru / kembali ke form.
+ */
+const ACTIVE_KEY = 'pipeline-active-job';
+function readActive(): string | null {
+  try { return typeof window === 'undefined' ? null : sessionStorage.getItem(ACTIVE_KEY); } catch { return null; }
+}
+function writeActive(id: string | null) {
+  try {
+    if (id) sessionStorage.setItem(ACTIVE_KEY, id);
+    else sessionStorage.removeItem(ACTIVE_KEY);
+  } catch { /* storage diblokir: tetap jalan, hanya tidak diingat */ }
+}
+/** Job yang sudah selesai tidak berubah lagi: simpan di memori supaya kembali ke halaman ini tanpa request baru */
+const finishedJobs = new Map<string, PipelineJob>();
 type PollIssue = { jobId: string; kind: 'timeout' | 'fatal'; message: string };
 
 function PipelinePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const jobId = searchParams.get('job');
+  // Kembali dari halaman lain tanpa ?job=: lanjutkan job terakhir di tab ini
+  const resumeId = jobId ? null : readActive();
 
   const [db, setDb] = useState<DrugDb | null>(null);
   const [dbError, setDbError] = useState<string | null>(null);
@@ -43,11 +64,13 @@ function PipelinePageInner() {
 
 
   const goToJob = useCallback((id: string) => {
+    writeActive(id);
     router.replace(`${BASE_PATH}?job=${encodeURIComponent(id)}`, { scroll: false });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [router]);
 
   const goToForm = useCallback(() => {
+    writeActive(null);
     router.replace(BASE_PATH, { scroll: false });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [router]);
@@ -67,9 +90,15 @@ function PipelinePageInner() {
     return () => { alive = false; };
   }, []);
 
+  useEffect(() => {
+    if (resumeId) router.replace(`${BASE_PATH}?job=${encodeURIComponent(resumeId)}`, { scroll: false });
+    else if (jobId) writeActive(jobId); // job dibuka dari link (?job=): ingat juga
+  }, [jobId, resumeId, router]);
+
   /* ---------- Polling job aktif (setTimeout, bukan setInterval) ---------- */
   useEffect(() => {
     if (!jobId) return;
+    if (finishedJobs.has(jobId)) return; // sudah selesai: dibaca dari memori, tanpa polling
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let waiting = false; // true saat timer berikutnya sudah dijadwalkan
@@ -90,12 +119,17 @@ function PipelinePageInner() {
           setForm(formFromRequest(j.request));
           setFormEntry(e => ({ at: 'review', key: e.key + 1 }));
           setFormError(j.error);
+          writeActive(null);
           router.replace(BASE_PATH, { scroll: false });
           return;
         }
 
         setJob(j);
-        if (j.status === 'done' || j.status === 'failed') return; // berhenti polling
+        if (j.status === 'done' || j.status === 'failed') {
+          finishedJobs.set(j.id, j);
+          if (j.status === 'done') invalidateHistory(); // job selesai menyimpan prediksi & SHAP mean
+          return; // berhenti polling
+        }
       } catch (err) {
         if (cancelled) return;
         const { status } = readApiError(err);
@@ -198,9 +232,9 @@ function PipelinePageInner() {
   };
 
   /* ---------- View turunan dari URL + state ---------- */
-  const currentJob = job && job.id === jobId ? job : null;
+  const currentJob = job && job.id === jobId ? job : (jobId ? finishedJobs.get(jobId) ?? null : null);
   const issue = pollIssue && pollIssue.jobId === jobId ? pollIssue : null;
-  const view: View = !jobId ? 'form'
+  const view: View = !jobId ? (resumeId ? 'running' : 'form')
     : issue ? 'error'
     : !currentJob ? 'running'
     : currentJob.status === 'done' ? 'result'

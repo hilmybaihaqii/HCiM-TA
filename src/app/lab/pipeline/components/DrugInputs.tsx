@@ -178,7 +178,7 @@ export default function DrugInputs({ job, db, selected, onSelect, parts = 'all' 
                       className={`transition-colors odd:bg-[color-mix(in_srgb,var(--foreground)_3.5%,var(--background))]
                         ${onSelect ? 'cursor-pointer hover:bg-foreground/6' : ''} ${isSel ? 'shadow-[inset_0_0_0_9999px_rgb(184_84_92/0.07)]' : ''}`}
                     >
-                      <td className={`px-2 py-2.5 font-medium ${isSel ? 'text-accent' : 'text-foreground'}`}>{d.dose}× Cmax</td>
+                      <td className={`px-2 py-2.5 font-medium ${isSel ? 'text-action' : 'text-foreground'}`}>{d.dose}× Cmax</td>
                       <td className="px-2 py-2.5 text-right font-mono tabular-nums text-foreground">{fmt(d.conc_nM)} nM</td>
                       <td className="px-2 py-2.5 text-right font-mono tabular-nums text-foreground/70">{fmt(d.kept_beat)}</td>
                       <td className={`px-2 py-2.5 text-right font-mono tabular-nums ${d.flags?.EADs > 0 ? 'text-amber-700 font-semibold' : 'text-foreground/70'}`}>
