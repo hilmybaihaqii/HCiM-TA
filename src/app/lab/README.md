@@ -35,7 +35,12 @@ lab/
 │       └── …                    wizard (DrugParamsForm, ModeSelector), TraceChart
 ├── logs/                    Activity Logs: overview (figures + risk bar chart), Prediction & SHAP history
 │                            (components/history.tsx = search, tier filter, rows, pager)
-└── profile/
+├── profile/
+└── admin/                   Admin panel (role checked here and by the backend)
+    ├── layout.tsx           header, overview figures, one TabRail for the four lists
+    ├── AdminData.tsx        all accounts + list totals, loaded once and shared by the admin pages
+    ├── users/               accounts: search, filter, restore/deactivate (UserActionModal)
+    └── logs/                sign-in events, predictions, SHAP: same rows and details as Activity Logs
 ```
 
 API helpers live in `src/lib/` (`api.ts`, `pipeline.ts`, `predict.ts`, `tierColor.ts`, `biomarkerHighlight.ts`,
@@ -84,7 +89,7 @@ both Digital Lab and the per-dose results.
   | `rounded-full` | only the navbar, avatars, status dots, progress bars |
 
 - **Button colors (one function = one color):** red `bg-accent` only for the buttons that run the
-  model (Predict risk, Run full pipeline). `primaryBtn` (black) for every other main action,
+  model (Predict risk, Run full pipeline) and the one destructive action (Deactivate my account). `primaryBtn` (black) for every other main action,
   `secondaryBtn` (black outline) for second actions. Active tabs, doses and filters use `action` (black).
   Red elsewhere means risk or a strong change, never a plain selection.
 - **Tier colors:** `getTierColor(tier)` for Tailwind classes, `getTierCssVar(tier)` for SVG and inline styles.
@@ -98,8 +103,8 @@ both Digital Lab and the per-dose results.
 - **Status panel:** both pages use `StageMonitor`. Digital Lab: your biomarkers, risk model, main
   drivers. Full Pipeline: drug, queue, simulation, biomarkers, risk model. Each stage shows its real
   output once done.
-- **View switches & filters:** use `TabRail` (labels on a hairline with a sliding line; no numbers,
-  no counts). For swipeable slides, pass `railRef` and write `--rail-pos` from the scroll position, so
+- **View switches:** use `TabRail` (labels on a hairline with a sliding line; no numbers, no counts).
+  **Filters** sit behind the filter icon next to the search box (`FilterMenu` in logs/components/history.tsx). For swipeable slides, pass `railRef` and write `--rail-pos` from the scroll position, so
   the line follows the finger.
 - **Sliding indicators:** position from the index (`SlideIndicator`, `TabRail`) or from a measured element
   (navbar), animated with CSS transform. Not Framer `layoutId`, which jumps when content above changes height.

@@ -154,6 +154,11 @@ body::-webkit-scrollbar {
   display: none;
 }
 
+/* Splash pembuka yang sudah pernah tampil di tab ini: jangan sempat tergambar (lihat app/layout.tsx) */
+html[data-splash-seen] [data-splash] {
+  display: none !important;
+}
+
 @media (prefers-color-scheme: dark) {
   /* Bisa diisi nanti jika ingin menambahkan Dark Mode */
 }
@@ -192,4 +197,29 @@ body::-webkit-scrollbar {
   .cursor-pointer {
     cursor: none !important;
   }
+}
+/* 404: jarum kompas yang terus mencari arah (hanya transform, mulus) */
+@keyframes compass-search {
+  0% { transform: rotate(-20deg); }
+  18% { transform: rotate(55deg); }
+  34% { transform: rotate(10deg); }
+  52% { transform: rotate(160deg); }
+  68% { transform: rotate(120deg); }
+  84% { transform: rotate(250deg); }
+  100% { transform: rotate(340deg); }
+}
+.compass-needle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: compass-search 14s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
+}
+/* 404: garis putus-putus bergeser pelan setelah tergambar (seperti masih berjalan) */
+@keyframes lost-march {
+  to { stroke-dashoffset: -150; }
+}
+.lost-route {
+  animation: lost-march 12s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .compass-needle, .lost-route { animation: none !important; }
 }

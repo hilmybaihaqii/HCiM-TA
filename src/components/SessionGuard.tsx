@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { clearSessionFlag, setSessionFlag } from '@/lib/sessionFlag';
 
 export interface SessionUser {
   id: string;
@@ -52,6 +53,7 @@ export default function SessionGuard({ children, fallback }: {
         const data = await api('/auth/me');
 
         if (isMounted) {
+          setSessionFlag(); // halaman publik ditahan sampai logout (lihat proxy.ts)
           setUser(readUser(data));
         }
       } catch (error) {
@@ -62,6 +64,7 @@ export default function SessionGuard({ children, fallback }: {
         const authError = error as { status?: number };
 
         if (authError.status === 401 || authError.status === 403) {
+          clearSessionFlag();
           router.replace('/login');
           return;
         }
@@ -74,6 +77,7 @@ export default function SessionGuard({ children, fallback }: {
         }
 
         console.error('Session verification failed:', error);
+        clearSessionFlag();
         router.replace('/login');
       }
     };

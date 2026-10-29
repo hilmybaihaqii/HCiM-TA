@@ -6,13 +6,13 @@ import { isStrongChange } from '@/lib/biomarkerHighlight';
 import { VoteBar } from '../../components/report/RiskVerdict';
 import { SHORT_DESC } from '../../components/report/biomarkerText';
 import {
-  HistoryControls, HistoryMessage, HistoryRow, HistorySkeleton, Pager, TierText, TierFilterValue, ValueRows,
+  HistoryControls, HistoryMessage, HistoryRow, HistorySkeleton, Pager, TierFilter, TierText, TierFilterValue, ValueRows,
   formatWhen, matchesQuery, matchesTier, useHistory,
 } from './history';
 
 type Confidence = { confidence: number; label: string };
 
-interface PredictionLog {
+export interface PredictionLog {
   id: string;
   input: number[];
   predicted_tier: string;
@@ -31,7 +31,8 @@ function toConfidences(p: PredictionLog['probabilities']): Confidence[] {
 // Ponsel: waktu | hasil | panah. Desktop: + waktu proses.
 const ROW = 'grid grid-cols-[1fr_auto_1rem] sm:grid-cols-[13rem_1fr_6rem_1rem] items-center gap-3 sm:gap-4';
 
-function PredictionDetail({ log }: { log: PredictionLog }) {
+/** Detail satu prediksi: vote, 11 rasio yang dikirim, waktu proses. `owner` = pemilik (halaman admin). */
+export function PredictionDetail({ log, owner }: { log: PredictionLog; owner?: React.ReactNode }) {
   const confidences = toConfidences(log.probabilities);
   const known = /high|inter|low|medium|moderate/i.test(log.predicted_tier || '');
   const input = Array.isArray(log.input) ? log.input : [];
@@ -59,6 +60,7 @@ function PredictionDetail({ log }: { log: PredictionLog }) {
         <p className="text-sm text-foreground/70">No input values were stored for this prediction.</p>
       )}
       <dl className="flex flex-wrap justify-between gap-x-6 gap-y-1 text-xs text-foreground/60">
+        {owner && <div className="flex gap-2 min-w-0"><dt>User</dt><dd className="text-foreground/80 truncate">{owner}</dd></div>}
         <div className="flex gap-2"><dt>Processing time</dt><dd className="font-mono text-foreground/80">{log.latency_ms ?? '—'} ms</dd></div>
         <div className="flex gap-2 min-w-0"><dt>Record</dt><dd className="font-mono text-foreground/80 truncate">{log.id}</dd></div>
       </dl>
@@ -81,8 +83,7 @@ export default function PredictionHistory() {
       <HistoryControls
         query={h.query}
         onQuery={v => { setOpen(null); h.setQuery(v); }}
-        tier={h.tier}
-        onTier={v => { setOpen(null); h.setTier(v); }}
+        filter={<TierFilter value={h.filter} onChange={v => { setOpen(null); h.setFilter(v); }} />}
         placeholder="Search by record ID, date or result"
         summary={!loading && h.filtering ? `${total} matching ${total === 1 ? 'prediction' : 'predictions'}` : null}
       />
