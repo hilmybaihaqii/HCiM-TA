@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { SHORT_DESC } from '../../components/report/biomarkerText';
 import {
-  HistoryControls, HistoryMessage, HistoryRow, HistorySkeleton, Pager, TierText, TierFilterValue, ValueRows,
+  HistoryControls, HistoryMessage, HistoryRow, HistorySkeleton, Pager, TierFilter, TierText, TierFilterValue, ValueRows,
   formatWhen, matchesQuery, matchesTier, useHistory,
 } from './history';
 
@@ -14,7 +14,7 @@ interface Contribution {
   value?: number;
 }
 
-interface ShapLog {
+export interface ShapLog {
   id: string;
   /** Prediksi yang dijelaskan (kalau backend menyimpannya) */
   prediction_id?: string | null;
@@ -25,15 +25,16 @@ interface ShapLog {
 }
 
 const numFmt = new Intl.NumberFormat('en-US', { maximumSignificantDigits: 4 });
-const fmtShap = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toFixed(3)}`;
-const nameOf = (c: Contribution) => c.biomarker || c.feature || '—';
+export const fmtShap = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toFixed(3)}`;
+export const nameOf = (c: Contribution) => c.biomarker || c.feature || '—';
 
-const sortByInfluence = (list: Contribution[] = []) => [...list].sort((a, b) => Math.abs(b.shap ?? 0) - Math.abs(a.shap ?? 0));
+export const sortByInfluence = (list: Contribution[] = []) => [...list].sort((a, b) => Math.abs(b.shap ?? 0) - Math.abs(a.shap ?? 0));
 
 // Ponsel: waktu | kelas | panah. Desktop: + faktor utama.
 const ROW = 'grid grid-cols-[1fr_auto_1rem] sm:grid-cols-[13rem_9rem_1fr_1rem] items-center gap-3 sm:gap-4';
 
-function ShapDetail({ log }: { log: ShapLog }) {
+/** Detail satu analisis SHAP. `owner` = pemilik (halaman admin). */
+export function ShapDetail({ log, owner }: { log: ShapLog; owner?: React.ReactNode }) {
   const sorted = sortByInfluence(log.contributions);
   const maxAbs = Math.max(1e-9, ...sorted.map(c => Math.abs(c.shap ?? 0)));
   const tier = (log.predicted_class || '').toLowerCase();
@@ -65,6 +66,7 @@ function ShapDetail({ log }: { log: ShapLog }) {
         })}
       />
       <dl className="flex flex-wrap justify-between gap-x-6 gap-y-1 text-xs text-foreground/60">
+        {owner && <div className="flex gap-2 min-w-0"><dt>User</dt><dd className="text-foreground/80 truncate">{owner}</dd></div>}
         {log.prediction_id && (
           <div className="flex gap-2 min-w-0"><dt>Prediction</dt><dd className="font-mono text-foreground/80 truncate">{log.prediction_id}</dd></div>
         )}
@@ -92,8 +94,7 @@ export default function ShapHistory() {
       <HistoryControls
         query={h.query}
         onQuery={v => { setOpen(null); h.setQuery(v); }}
-        tier={h.tier}
-        onTier={v => { setOpen(null); h.setTier(v); }}
+        filter={<TierFilter value={h.filter} onChange={v => { setOpen(null); h.setFilter(v); }} />}
         placeholder="Search by record ID, prediction ID, date or main factor"
         summary={!loading && h.filtering ? `${total} matching ${total === 1 ? 'analysis' : 'analyses'}` : null}
       />

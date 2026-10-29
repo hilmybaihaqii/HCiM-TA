@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Search, SlidersHorizontal, X } from 'lucide-react';
 import { cachedGet } from '@/lib/historyCache';
 import { getTierCssVar, normalizeTier } from '@/lib/tierColor';
-import { TabRail, secondaryBtn } from '../../components/report/ui';
+import { secondaryBtn } from '../../components/report/ui';
 import { Bone } from '../../components/Skeletons';
 
 /*
@@ -27,24 +27,39 @@ const MAX_PAGES = 40;
 
 async function fetchPage<T>(endpoint: string, offset: number) {
   // Lewat cache: berpindah tab atau kembali ke halaman ini tidak meminta data yang sama lagi
-  const res = await cachedGet<{ items?: T[]; total?: number } | null>(`${endpoint}?limit=${PAGE_SIZE}&offset=${offset}`);
+  const sep = endpoint.includes('?') ? '&' : '?';
+  const res = await cachedGet<{ items?: T[]; total?: number } | null>(`${endpoint}${sep}limit=${PAGE_SIZE}&offset=${offset}`);
   const items = res?.items ?? [];
   return { items, total: res?.total ?? items.length };
 }
 
+/** Semua catatan sebuah endpoint (halaman demi halaman lewat cache), dibatasi MAX_PAGES */
+export async function fetchAllPages<T>(endpoint: string): Promise<{ items: T[]; total: number }> {
+  const first = await fetchPage<T>(endpoint, 0);
+  const pages = Math.min(MAX_PAGES, Math.ceil(first.total / PAGE_SIZE));
+  const rest = await Promise.all(
+    Array.from({ length: Math.max(0, pages - 1) }, (_, i) => fetchPage<T>(endpoint, (i + 1) * PAGE_SIZE)),
+  );
+  return { items: [first, ...rest].flatMap(r => r.items), total: first.total };
+}
+
 /**
- * Riwayat dengan pencarian & filter tier.
+ * Riwayat dengan pencarian & satu filter (default: tier; halaman admin memakai filter lain).
  * Tanpa pencarian/filter: satu halaman dari server per kali (limit/offset).
  * Dengan pencarian/filter: semua catatan dimuat sekali, lalu disaring & dibagi per halaman di browser,
  * jadi hasilnya mencakup seluruh riwayat, bukan hanya halaman yang sedang terbuka.
- * `test` harus fungsi tingkat modul (stabil).
+ * `test` harus fungsi tingkat modul (stabil). `allValue` = nilai filter yang berarti "semua".
  */
-export function useHistory<T>(endpoint: string, test: (item: T, query: string, tier: TierFilterValue) => boolean) {
+export function useHistory<T, F extends string = TierFilterValue>(
+  endpoint: string,
+  test: (item: T, query: string, filter: F) => boolean,
+  allValue = 'all' as F,
+) {
   const [page, setPage] = useState(0);
   const [query, setQueryState] = useState('');
-  const [tier, setTierState] = useState<TierFilterValue>('all');
+  const [filter, setFilterState] = useState<F>(allValue);
   const q = query.trim().toLowerCase();
-  const filtering = q !== '' || tier !== 'all';
+  const filtering = q !== '' || filter !== allValue;
 
   // `key` = request yang hasilnya sedang disimpan; loading = key belum sama dengan request saat ini
   const [paged, setPaged] = useState<Fetched<T>>({ key: '', items: [], total: 0, error: false });
@@ -67,14 +82,7 @@ export function useHistory<T>(endpoint: string, test: (item: T, query: string, t
   useEffect(() => {
     if (!filtering || all.key === allKey) return;
     let alive = true;
-    (async () => {
-      const first = await fetchPage<T>(endpoint, 0);
-      const pages = Math.min(MAX_PAGES, Math.ceil(first.total / PAGE_SIZE));
-      const rest = await Promise.all(
-        Array.from({ length: Math.max(0, pages - 1) }, (_, i) => fetchPage<T>(endpoint, (i + 1) * PAGE_SIZE)),
-      );
-      return { items: [first, ...rest].flatMap(r => r.items), total: first.total };
-    })()
+    fetchAllPages<T>(endpoint)
       .then(r => { if (alive) setAll({ key: allKey, ...r, error: false }); })
       .catch(err => {
         console.error(`Failed to fetch all of ${endpoint}:`, err);
@@ -84,13 +92,13 @@ export function useHistory<T>(endpoint: string, test: (item: T, query: string, t
   }, [endpoint, allKey, all.key, filtering]);
 
   const matches = useMemo(
-    () => (filtering ? all.items.filter(item => test(item, q, tier)) : []),
-    [filtering, all.items, q, tier, test],
+    () => (filtering ? all.items.filter(item => test(item, q, filter)) : []),
+    [filtering, all.items, q, filter, test],
   );
 
   const setQuery = (v: string) => { setQueryState(v); setPage(0); };
-  const setTier = (v: TierFilterValue) => { setTierState(v); setPage(0); };
-  const common = { page, setPage, query, setQuery, tier, setTier, filtering };
+  const setFilter = (v: F) => { setFilterState(v); setPage(0); };
+  const common = { page, setPage, query, setQuery, filter, setFilter, filtering };
 
   if (filtering) {
     const loading = all.key !== allKey;
@@ -127,7 +135,7 @@ export function formatWhen(value?: string): string {
 
 export type TierFilterValue = 'all' | 'low' | 'intermediate' | 'high';
 const FILTERS: { id: TierFilterValue; label: string }[] = [
-  { id: 'all', label: 'All' },
+  { id: 'all', label: 'All results' },
   { id: 'low', label: 'Low' },
   { id: 'intermediate', label: 'Intermediate' },
   { id: 'high', label: 'High' },
@@ -140,19 +148,19 @@ export const matchesTier = (tier: string | null | undefined, filter: TierFilterV
 export const matchesQuery = (query: string, parts: (string | null | undefined)[]) =>
   !query || parts.some(p => !!p && p.toLowerCase().includes(query));
 
-/** Kolom cari (kiri) + rel tier (kanan, sejajar bawah). Ponsel: cari selebar penuh, rel tier di bawahnya. */
-export function HistoryControls({ query, onQuery, tier, onTier, placeholder, summary }: {
+/** Kolom cari + tombol filter (ikon) di sebelahnya; pilihan filter baru muncul saat tombol diklik. */
+export function HistoryControls({ query, onQuery, filter, placeholder, summary }: {
   query: string;
   onQuery: (v: string) => void;
-  tier: TierFilterValue;
-  onTier: (v: TierFilterValue) => void;
+  /** Tombol filter, mis. <TierFilter /> atau <FilterMenu /> */
+  filter: React.ReactNode;
   placeholder: string;
   /** Teks kecil di bawah (mis. jumlah hasil pencarian); kosong = tidak ditampilkan */
   summary?: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-8">
+      <div className="flex items-center gap-2">
         <label className="relative flex-1 min-w-0">
           <span className="sr-only">Search</span>
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/45 pointer-events-none" aria-hidden="true" />
@@ -177,20 +185,107 @@ export function HistoryControls({ query, onQuery, tier, onTier, placeholder, sum
             </button>
           )}
         </label>
-        <div className="md:w-[26rem] shrink-0"><TierFilter value={tier} onChange={onTier} /></div>
+        {filter}
       </div>
       <p className="text-sm text-foreground/70 empty:hidden" aria-live="polite">{summary}</p>
     </div>
   );
 }
 
-/** Pilihan tier: rel tab yang sama dengan switch lain, titik warna tier di depan label. */
+export type FilterOption<F extends string> = { id: F; label: string; dot?: string };
+
+/**
+ * Tombol filter berikon. Diklik: menu kecil berisi pilihan muncul di bawahnya (tidak ditampilkan
+ * terus-menerus). Saat filter aktif, tombol menjadi gelap dan menampilkan namanya.
+ * Menutup saat memilih, klik di luar, atau Escape.
+ */
+export function FilterMenu<F extends string>({ options, value, onChange, label, allValue = 'all' as F }: {
+  options: readonly FilterOption<F>[];
+  value: F;
+  onChange: (v: F) => void;
+  /** Judul menu & label aksesibilitas, mis. "Filter by risk" */
+  label: string;
+  allValue?: F;
+}) {
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const active = value !== allValue ? options.find(o => o.id === value) : undefined;
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => { if (!root.current?.contains(e.target as Node)) setOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={root} className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={active ? `${label}: ${active.label}` : label}
+        className={`h-11 inline-flex items-center gap-2 rounded-control border px-3.5 text-sm font-medium transition-colors duration-200
+          ${active
+            ? 'bg-action border-action text-surface-white'
+            : `bg-surface-white/80 border-foreground/12 text-foreground/70 hover:border-foreground/30 hover:text-foreground ${open ? 'border-foreground/30 text-foreground' : ''}`}`}
+      >
+        <SlidersHorizontal className="w-4 h-4" aria-hidden="true" />
+        {active && <span className="hidden xs:inline max-w-28 truncate">{active.label}</span>}
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            role="menu"
+            aria-label={label}
+            initial={{ opacity: 0, scale: 0.96, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.97, y: -4, transition: { duration: 0.12 } }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute right-0 top-full z-40 mt-2 w-60 origin-top-right rounded-card border border-foreground/10 bg-surface-white p-1.5 shadow-[0_18px_40px_-16px_rgba(0,0,0,0.22)]"
+          >
+            <p className="px-3 pt-2 pb-1.5 text-[11px] text-foreground/50">{label}</p>
+            {options.map(o => {
+              const checked = o.id === value;
+              return (
+                <button
+                  key={o.id}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={checked}
+                  onClick={() => { onChange(o.id); setOpen(false); }}
+                  className={`flex w-full items-center gap-2.5 rounded-chip px-3 py-2.5 text-left text-sm transition-colors duration-150
+                    ${checked ? 'bg-foreground/[0.06] text-foreground font-medium' : 'text-foreground/75 hover:bg-foreground/[0.04] hover:text-foreground'}`}
+                >
+                  <span className="flex h-2 w-2 shrink-0 items-center justify-center">
+                    {o.dot && <span className="h-2 w-2 rounded-full" style={{ background: o.dot }} />}
+                  </span>
+                  <span className="flex-1 truncate">{o.label}</span>
+                  {checked && <Check className="w-4 h-4 shrink-0" aria-hidden="true" />}
+                </button>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/** Filter tier: tombol filter dengan titik warna tier di depan tiap pilihan. */
 export function TierFilter({ value, onChange }: { value: TierFilterValue; onChange: (v: TierFilterValue) => void }) {
   return (
-    <TabRail
-      tabs={FILTERS.map(f => ({ id: f.id, label: f.label, dot: f.id === 'all' ? undefined : getTierCssVar(f.id) }))}
+    <FilterMenu
+      options={FILTERS.map(f => ({ id: f.id, label: f.label, dot: f.id === 'all' ? undefined : getTierCssVar(f.id) }))}
       value={value}
-      onChange={id => onChange(id as TierFilterValue)}
+      onChange={onChange}
       label="Filter by risk"
     />
   );

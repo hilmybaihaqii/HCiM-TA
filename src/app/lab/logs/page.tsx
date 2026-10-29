@@ -10,7 +10,7 @@ import RiskBars from "./components/RiskBars";
 import LabPageHeader from "../components/LabPageHeader";
 import LabContainer from "../components/LabContainer";
 import { Bone } from "../components/Skeletons";
-import { SectionHead, TabRail } from "../components/report/ui";
+import { Figure, SectionHead, TabRail } from "../components/report/ui";
 
 interface SummaryResponse {
   total_predictions: number;
@@ -24,16 +24,6 @@ const TIERS = ["high", "intermediate", "low"] as const;
 function tierCount(summary: SummaryResponse | null, tier: string): number {
   const key = Object.keys(summary?.tier_counts ?? {}).find(k => k.toLowerCase() === tier);
   return key ? summary!.tier_counts[key] : 0;
-}
-
-/** Satu angka ringkasan: label kecil di atas, angka besar di bawah */
-function Figure({ label, children, word = false }: { label: string; children: React.ReactNode; word?: boolean }) {
-  return (
-    <div className="flex flex-col items-center md:items-start gap-1.5 px-2 md:px-0 md:pr-6 min-w-0">
-      <dt className="text-xs text-foreground/60 truncate max-w-full">{label}</dt>
-      <dd className={`font-medium tracking-tight tabular-nums text-foreground ${word ? "text-base leading-6 md:text-2xl md:leading-9" : "text-2xl md:text-4xl leading-none"}`}>{children}</dd>
-    </div>
-  );
 }
 
 type Tab = "predictions" | "shap";

@@ -114,3 +114,20 @@ export function TabRail({ tabs, value, onChange, label, railRef, panelPrefix }: 
     </div>
   );
 }
+
+/** Satu angka ringkasan: label kecil di atas, angka besar di bawah, catatan kecil opsional */
+export function Figure({ label, children, word = false, note }: {
+  label: string;
+  children: React.ReactNode;
+  /** Isi berupa kata (mis. tier), bukan angka: ukuran lebih kecil supaya muat */
+  word?: boolean;
+  note?: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center md:items-start gap-1.5 px-2 md:px-0 md:pr-6 min-w-0">
+      <dt className="text-xs text-foreground/60 truncate max-w-full">{label}</dt>
+      <dd className={`font-medium tracking-tight tabular-nums text-foreground ${word ? 'text-base leading-6 md:text-2xl md:leading-9' : 'text-2xl md:text-4xl leading-none'}`}>{children}</dd>
+      {note && <dd className="text-xs text-foreground/55 truncate max-w-full">{note}</dd>}
+    </div>
+  );
+}

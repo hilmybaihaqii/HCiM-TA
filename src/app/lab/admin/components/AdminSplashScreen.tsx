@@ -3,43 +3,47 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface AdminSplashScreenProps {
-  isVisible: boolean;
-  authChecked: boolean;
-}
+const EASE = [0.16, 1, 0.3, 1] as const;
 
-export default function AdminSplashScreen({ isVisible, authChecked }: AdminSplashScreenProps) {
+/**
+ * Sambutan "Welcome, Admin." setiap kali panel admin dibuka (penanda area khusus admin).
+ * Hanya dirender untuk akun admin; status berubah jadi "verified" setelah backend memastikan role-nya.
+ * Animasi memakai opacity & transform saja (tanpa blur/width) supaya mulus di ponsel.
+ */
+export default function AdminSplashScreen({ isVisible, verified }: { isVisible: boolean; verified: boolean }) {
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence>
       {isVisible && (
         <motion.div
           key="admin-splash"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0, filter: 'blur(10px)', scale: 1.05 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-background pointer-events-auto"
+          exit={{ opacity: 0, scale: 1.03 }}
+          transition={{ duration: 0.8, ease: EASE }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-background px-6 will-change-[opacity,transform]"
+          role="status"
         >
-          <motion.div 
-            initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
-            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.2, ease: EASE }}
             className="flex flex-col items-center"
           >
-            {/* Teks statis, 1 warna, elegan tanpa ikon tambahan */}
             <h1 className="text-4xl md:text-5xl font-serif tracking-tight text-foreground">
               Welcome, Admin.
             </h1>
-            
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: "100%" }}
-              transition={{ duration: 1.5, delay: 0.4, ease: "easeInOut" }}
-              className="h-px bg-foreground/20 mt-8"
-            />
-            
-            <p className="text-[10px] font-mono text-muted uppercase tracking-widest mt-4 animate-pulse">
-              {authChecked ? "Clearance Verified. Initializing Module..." : "Verifying System Clearance..."}
+
+            <div className="mt-8 h-px w-full min-w-48 overflow-hidden">
+              <motion.div
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ duration: 1.5, delay: 0.4, ease: [0.65, 0, 0.35, 1] }}
+                className="h-full origin-left bg-foreground/20"
+              />
+            </div>
+
+            <p className="mt-4 text-[10px] font-mono uppercase tracking-widest text-muted animate-pulse">
+              {verified ? 'Admin access verified' : 'Verifying admin access'}
             </p>
           </motion.div>
         </motion.div>

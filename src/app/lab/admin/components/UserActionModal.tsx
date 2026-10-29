@@ -1,124 +1,70 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Ban, RotateCcw, Trash2, AlertTriangle } from 'lucide-react';
+import { primaryBtn, secondaryBtn } from '../../components/report/ui';
 
-export type ActionType = 'delete' | 'deactivate' | 'activate';
+export type ActionType = 'deactivate' | 'activate';
 
-interface UserActionModalProps {
+const COPY: Record<ActionType, { title: string; body: (name: string) => string; confirm: string; busy: string }> = {
+  deactivate: {
+    title: 'Deactivate this account?',
+    body: name => `${name} won't be able to sign in. The account is kept, so you can restore it at any time.`,
+    confirm: 'Deactivate',
+    busy: 'Deactivating…',
+  },
+  activate: {
+    title: 'Restore this account?',
+    body: name => `${name} will be able to sign in again and see their history.`,
+    confirm: 'Restore',
+    busy: 'Restoring…',
+  },
+};
+
+/** Konfirmasi sebelum mengubah status akun. Esc atau klik di luar untuk batal. */
+export default function UserActionModal({ isOpen, action, userName, isProcessing, onClose, onConfirm }: {
   isOpen: boolean;
   action: ActionType | null;
   userName: string;
   isProcessing: boolean;
   onClose: () => void;
   onConfirm: () => void;
-}
+}) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !isProcessing) onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [isOpen, isProcessing, onClose]);
 
-export default function UserActionModal({ 
-  isOpen, 
-  action, 
-  userName, 
-  isProcessing, 
-  onClose, 
-  onConfirm 
-}: UserActionModalProps) {
-  // Fungsi helper untuk menentukan UI berdasarkan aksi
-  const getModalConfig = () => {
-    switch (action) {
-      case 'delete':
-        return {
-          icon: <Trash2 className="w-5 h-5 text-rose-500" />,
-          colorClass: 'bg-rose-500/10 border-rose-500/20',
-          btnClass: 'bg-rose-600 hover:bg-rose-700',
-          title: 'Confirm Deletion',
-          desc: 'delete the account for',
-          warning: 'This action will remove the user from the system.'
-        };
-      case 'deactivate':
-        return {
-          icon: <Ban className="w-5 h-5 text-amber-500" />,
-          colorClass: 'bg-amber-500/10 border-amber-500/20',
-          btnClass: 'bg-amber-600 hover:bg-amber-700',
-          title: 'Confirm Deactivation',
-          desc: 'suspend access for',
-          warning: 'User will be restricted from logging in.'
-        };
-      case 'activate':
-        return {
-          icon: <RotateCcw className="w-5 h-5 text-emerald-500" />,
-          colorClass: 'bg-emerald-500/10 border-emerald-500/20',
-          btnClass: 'bg-emerald-600 hover:bg-emerald-700',
-          title: 'Confirm Activation',
-          desc: 'restore access for',
-          warning: 'User will regain full access to the system.'
-        };
-      default:
-        return null;
-    }
-  };
-
-  const config = getModalConfig();
+  const copy = action ? COPY[action] : null;
 
   return (
     <AnimatePresence>
-      {isOpen && action && config && (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-200 flex items-center justify-center p-4 bg-background/60 backdrop-blur-sm"
+      {isOpen && copy && (
+        <motion.div
+          key="backdrop"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          onClick={() => !isProcessing && onClose()}
+          className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-foreground/30 backdrop-blur-[2px] px-4
+            pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]"
         >
-          <div 
-            className="absolute inset-0 cursor-pointer" 
-            onClick={() => !isProcessing && onClose()} 
-          />
-          
-          <motion.div 
-            initial={{ scale: 0.95, y: 20, opacity: 0 }}
-            animate={{ scale: 1, y: 0, opacity: 1 }}
-            exit={{ scale: 0.95, y: 20, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="relative w-full max-w-90 bg-surface-white/90 backdrop-blur-2xl border border-foreground/10 shadow-[0_30px_80px_rgba(0,0,0,0.1)] rounded-sheet p-6 overflow-hidden"
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="user-action-title"
+            initial={{ opacity: 0, y: 16, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8, scale: 0.98 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            onClick={e => e.stopPropagation()}
+            className="w-full max-w-md rounded-sheet bg-surface-white p-6 sm:p-8 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.25)]"
           >
-            <div className="mb-6 text-center flex flex-col items-center">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 border ${config.colorClass}`}>
-                {action === 'delete' && <AlertTriangle className="w-5 h-5 text-rose-500 absolute -top-1 -right-1 opacity-50" />}
-                {config.icon}
-              </div>
-              
-              <h3 className="text-lg font-medium text-foreground tracking-tight mb-1">
-                {config.title}
-              </h3>
-              
-              <p className="text-xs text-muted leading-relaxed px-2 mt-2">
-                Are you sure you want to {config.desc} <br/>
-                <span className="font-semibold text-foreground">{userName}</span>?
-              </p>
-
-              <p className={`text-[10px] font-mono mt-4 px-3 py-1.5 rounded border uppercase tracking-widest ${config.colorClass}`}>
-                {config.warning}
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <button 
-                onClick={onConfirm}
-                disabled={isProcessing}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-full text-white text-xs font-semibold tracking-wide hover:scale-[1.02] transition-all duration-300 shadow-sm disabled:opacity-70 disabled:hover:scale-100 ${config.btnClass}`}
-              >
-                {isProcessing ? (
-                  <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                ) : (
-                  `Yes, ${action.charAt(0).toUpperCase() + action.slice(1)}`
-                )}
-              </button>
-              <button 
-                onClick={onClose}
-                disabled={isProcessing}
-                className="w-full py-3 rounded-full border border-foreground/10 bg-transparent text-foreground text-xs font-semibold tracking-wide hover:bg-foreground/5 transition-colors disabled:opacity-50"
-              >
-                Cancel
+            <h2 id="user-action-title" className="text-xl font-medium tracking-tight text-foreground">{copy.title}</h2>
+            <p className="mt-3 text-sm leading-relaxed text-foreground/70">{copy.body(userName)}</p>
+            <div className="mt-8 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+              <button type="button" onClick={onClose} disabled={isProcessing} className={`${secondaryBtn} disabled:opacity-40`}>Cancel</button>
+              <button type="button" onClick={onConfirm} disabled={isProcessing} className={primaryBtn}>
+                {isProcessing ? copy.busy : copy.confirm}
               </button>
             </div>
           </motion.div>

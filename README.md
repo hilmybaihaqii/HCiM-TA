@@ -67,12 +67,14 @@ Drug data                Heart-cell simulation           Risk model             
 | `/lab` | **Digital Lab.** Enter 11 biomarker ratios from your own simulation and get the risk and its main drivers directly. |
 | `/lab/logs` | **Activity Logs.** Overview of past results (counts and a risk bar chart), with searchable and filterable prediction and SHAP history. |
 | `/lab/profile` | Profile, password change and account deletion. |
-| `/lab/admin` | **Admin only.** User management and logs of sign-ins, predictions and SHAP analyses. |
+| `/lab/admin` | **Admin only.** Platform overview, account management (search, filter, deactivate, restore) and every sign-in event, prediction and SHAP analysis, searchable by person. |
 
 Other lab behaviour:
 
 - Every prediction is followed by its SHAP analysis automatically, so the prediction and SHAP history
   stay one-to-one.
+- While you are signed in, the public site and the sign-in pages send you back to the lab until you
+  log out (`src/proxy.ts`).
 - A running prediction or simulation survives switching tabs inside the lab. It is cleared only by
   **New prediction** / **New simulation**, or on logout.
 - Biomarker ratios are marked red only for a meaningful change: qNet below 0.9, APD50 or APD90 above

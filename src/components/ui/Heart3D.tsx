@@ -96,7 +96,10 @@ function Model({ isMobile, show, onLoaded }: { isMobile: boolean; show: boolean;
   const posY = isMobile ? -0.85 : -0.8;
 
   useEffect(() => onLoaded(), [scene, onLoaded]);
-  useFrame((_, delta) => {
+  useFrame((_, rawDelta) => {
+    // Batasi delta: frame pertama setelah splash (frameloop "demand" -> "always") bisa membawa jeda
+    // beberapa detik, yang membuat putaran melompat dan animasi muncul terlewat.
+    const delta = Math.min(rawDelta, 1 / 30);
     const g = spin.current;
     if (!g) return;
     g.rotation.y += delta * SPIN_SPEED;
@@ -156,7 +159,9 @@ export default function Heart3D() {
       <Canvas
         camera={{ position: [0, 0, 4], fov: 45 }}
         dpr={isMobile ? [1, 1.5] : [1, 2]}
-        frameloop={inView ? 'always' : 'never'}
+        // Selama splash: 'demand' (model dimuat & shader dikompilasi sekali, lalu diam) supaya animasi splash
+        // tidak berebut GPU. Setelah splash selesai baru render terus, dan berhenti saat hero tidak terlihat.
+        frameloop={!inView ? 'never' : splashDone ? 'always' : 'demand'}
         // Ukur dari offsetWidth/Height (abaikan transform leluhur) supaya ukuran canvas selalu pas.
         resize={{ offsetSize: true }}
         gl={{ powerPreference: 'high-performance' }}

@@ -32,7 +32,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${figtree.variable} font-sans`}>
+    // suppressHydrationWarning: skrip di bawah boleh menambah atribut data-splash-seen sebelum React hidup
+    <html lang="en" className={`${figtree.variable} font-sans`} suppressHydrationWarning>
+      <head>
+        {/* Sebelum halaman tergambar: kalau splash sudah pernah tampil di tab ini, sembunyikan lapisannya
+            yang ikut dirender server, supaya tidak berkedip sesaat sebelum React menghapusnya. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: "try{if(sessionStorage.getItem('hasSeenSplash')==='true')document.documentElement.setAttribute('data-splash-seen','')}catch(e){}",
+          }}
+        />
+      </head>
       <body className="antialiased bg-white text-black">
         <SplashProvider>
           <SplashScreen />

@@ -1,114 +1,145 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Users, Activity, BrainCircuit, Network, ShieldAlert } from 'lucide-react';
+import { api } from '@/lib/api';
 import { useSessionUser } from '@/components/SessionGuard';
-import AdminSplashScreen from './components/AdminSplashScreen';
 import LabContainer from '../components/LabContainer';
+import LabPageHeader from '../components/LabPageHeader';
+import { Bone } from '../components/Skeletons';
+import { Figure, SectionHead, TabRail } from '../components/report/ui';
+import { AdminDataProvider, isAdminRole, isDeactivated, useAdminData } from './AdminData';
+import AdminSplashScreen from './components/AdminSplashScreen';
 
-const SPLASH_MS = 2200;
-const SPLASH_SEEN_KEY = 'adminSplashSeen';
+/*
+ * Panel admin: header & ringkasan sama bentuknya dengan halaman lab lain, lalu satu rel tab
+ * untuk empat daftar (akun, sign-in, prediksi, SHAP). Semua angka dari API admin.
+ */
 
-/** Splash "Welcome, Admin." cukup sekali per sesi browser, bukan tiap kali masuk panel admin. */
-function readSplashSeen(): boolean {
-  try {
-    return sessionStorage.getItem(SPLASH_SEEN_KEY) === '1';
-  } catch {
-    return true;
-  }
+const SECTIONS = [
+  { id: '/lab/admin/users', label: 'Accounts' },
+  { id: '/lab/admin/logs/activity', label: 'Sign-ins' },
+  { id: '/lab/admin/logs/prediction', label: 'Predictions' },
+  { id: '/lab/admin/logs/shap', label: 'SHAP' },
+];
+
+const fmt = (n?: number) => (typeof n === 'number' ? n.toLocaleString('en-US') : '—');
+
+function Overview() {
+  const { users, totals, loading } = useAdminData();
+  const deactivated = users.filter(isDeactivated).length;
+  const admins = users.filter(u => isAdminRole(u)).length;
+
+  return (
+    <section aria-labelledby="admin-overview" className="w-full">
+      <SectionHead id="admin-overview" title="Overview" meta="Whole platform" />
+      <div className="mt-6 pt-6 border-t border-foreground/10 min-h-24">
+        {loading ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-y-8" aria-hidden="true">
+            {[0, 1, 2, 3].map(i => (
+              <div key={i} className="flex flex-col items-center md:items-start gap-2">
+                <Bone className="h-3 w-16" />
+                <Bone className="h-8 w-14" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <motion.dl
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-y-8 md:divide-x md:divide-foreground/10 [&>div]:md:pl-6 [&>div:first-child]:md:pl-0"
+          >
+            <Figure label="Accounts" note={`${fmt(deactivated)} deactivated · ${fmt(admins)} admin`}>{fmt(totals.users)}</Figure>
+            <Figure label="Sign-in events">{fmt(totals.events)}</Figure>
+            <Figure label="Predictions">{fmt(totals.predictions)}</Figure>
+            <Figure label="SHAP analyses">{fmt(totals.shap)}</Figure>
+          </motion.dl>
+        )}
+      </div>
+    </section>
+  );
 }
 
-const adminNavItems = [
-  { name: 'Users', path: '/lab/admin/users', icon: Users },
-  { name: 'Activity', path: '/lab/admin/logs/activity', icon: Activity },
-  { name: 'Predictions', path: '/lab/admin/logs/prediction', icon: BrainCircuit },
-  { name: 'SHAP Data', path: '/lab/admin/logs/shap', icon: Network },
-];
+/** Lama minimal sambutan "Welcome, Admin." (sama dengan versi awal) */
+const SPLASH_MS = 2200;
+
+/** Role dari /auth/me (bisa polos atau dibungkus { items: [...] }) */
+const roleOf = (raw: unknown) =>
+  String(((raw as { items?: { role?: string }[] } | null)?.items?.[0] ?? (raw as { role?: string } | null))?.role ?? '').toLowerCase();
+
+function AdminShell({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const active = SECTIONS.find(s => pathname.startsWith(s.id))?.id ?? SECTIONS[0].id;
+
+  return (
+    <LabContainer className="flex flex-col gap-12 md:gap-16">
+      <LabPageHeader
+        eyebrow="Admin"
+        title="Accounts"
+        accent="and activity."
+        description="Manage who can sign in, and review every sign-in, prediction and SHAP analysis on Cardivex."
+      />
+
+      <Overview />
+
+      <section aria-label="Records" className="w-full">
+        <TabRail tabs={SECTIONS} value={active} onChange={path => router.push(path)} label="Admin section" />
+        <motion.div
+          key={active}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          className="pt-6"
+        >
+          {children}
+        </motion.div>
+      </section>
+    </LabContainer>
+  );
+}
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const pathname = usePathname();
-
-  // Sesi sudah dicek SessionGuard di layout /lab; di sini tinggal cek role
-  const isAuthorized = useSessionUser().role === 'admin';
-  // Area lab hanya dirender di client (SessionGuard), jadi sessionStorage aman dibaca saat init
-  const [showSplash, setShowSplash] = useState(() => isAuthorized && !readSplashSeen());
-
-  useEffect(() => {
-    if (!isAuthorized) router.replace('/lab');
-  }, [isAuthorized, router]);
+  const isAdmin = useSessionUser().role === 'admin';
+  // Ketat: setiap kali panel admin dibuka, role dicek ulang ke backend sebelum data admin dimuat.
+  // User biasa langsung dikembalikan ke /lab tanpa melihat splash atau data apa pun.
+  const [verified, setVerified] = useState(false);
+  // Splash muncul setiap kali panel admin dibuka (layout ini dipasang ulang saat masuk dari halaman lab
+  // lain), tapi tidak saat berpindah tab di dalam panel admin.
+  const [minElapsed, setMinElapsed] = useState(false);
 
   useEffect(() => {
-    if (!showSplash) return;
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-      try { sessionStorage.setItem(SPLASH_SEEN_KEY, '1'); } catch { /* storage diblokir: abaikan */ }
-    }, SPLASH_MS);
-    return () => clearTimeout(timer);
-  }, [showSplash]);
+    if (!isAdmin) {
+      router.replace('/lab');
+      return;
+    }
+    let alive = true;
+    api('/auth/me')
+      .then(raw => {
+        if (!alive) return;
+        if (roleOf(raw) === 'admin') setVerified(true);
+        else router.replace('/lab');
+      })
+      .catch(() => { if (alive) router.replace('/lab'); });
+    const t = setTimeout(() => setMinElapsed(true), SPLASH_MS);
+    return () => { alive = false; clearTimeout(t); };
+  }, [isAdmin, router]);
+
+  if (!isAdmin) {
+    return (
+      <LabContainer>
+        <p className="py-24 text-center text-sm text-foreground/70">This area is for administrators. Taking you back to the lab…</p>
+      </LabContainer>
+    );
+  }
 
   return (
     <>
-      {/* =========================================================
-          KOMPONEN SPLASH SCREEN TERPISAH
-          ========================================================= */}
-      <AdminSplashScreen isVisible={showSplash} authChecked />
-
-      {/* =========================================================
-          FALLBACK JIKA AKSES DITOLAK
-          ========================================================= */}
-      {!showSplash && !isAuthorized && (
-        <div className="fixed inset-0 z-9000 flex flex-col items-center justify-center gap-4 text-rose-500 bg-background px-4 text-center">
-          <ShieldAlert className="w-12 h-12" />
-          <span className="text-sm font-mono uppercase tracking-widest">Unauthorized Access</span>
-        </div>
-      )}
-
-      {/* =========================================================
-          KONTEN ADMIN UTAMA
-          ========================================================= */}
-      {!showSplash && isAuthorized && (
-        <LabContainer>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="mb-8 border-b border-foreground/10 pb-6 flex flex-col gap-6"
-          >
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-medium tracking-tight text-foreground mb-2">Admin Control Panel</h1>
-              <p className="text-[10px] sm:text-xs text-muted font-mono uppercase tracking-widest">System Management & Log Analysis</p>
-            </div>
-
-            {/* -mx-4 px-4: nav bisa di-scroll edge-to-edge di mobile, konsisten
-                dengan pola scroll container di halaman-halaman admin lainnya */}
-            <div className="flex items-center gap-2 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 pb-2 scrollbar-hide">
-              {adminNavItems.map((item) => {
-                const isActive = pathname.startsWith(item.path);
-                const Icon = item.icon;
-                return (
-                  <Link key={item.path} href={item.path} className="relative outline-none shrink-0">
-                    <div className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors duration-300 ${isActive ? 'text-background bg-foreground' : 'text-muted hover:bg-foreground/5 hover:text-foreground'}`}>
-                      <Icon className="w-4 h-4 shrink-0" />
-                      <span>{item.name}</span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-          >
-            {children}
-          </motion.div>
-        </LabContainer>
+      <AdminSplashScreen isVisible={!verified || !minElapsed} verified={verified} />
+      {verified && (
+        <AdminDataProvider>
+          <AdminShell>{children}</AdminShell>
+        </AdminDataProvider>
       )}
     </>
   );

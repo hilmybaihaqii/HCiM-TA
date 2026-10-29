@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FlaskConical, ActivitySquare, User, LogOut, ChevronDown, Shield, MonitorPlay, Workflow } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useSessionUser } from '@/components/SessionGuard';
+import { clearSessionFlag } from '@/lib/sessionFlag';
 
 export default function LabNavbar() {
   const pathname = usePathname();
@@ -87,6 +88,7 @@ export default function LabNavbar() {
           .filter(k => k === 'digital-lab-report' || k.startsWith('pipeline-'))
           .forEach(k => sessionStorage.removeItem(k));
       } catch { /* storage diblokir: tidak ada yang perlu dihapus */ }
+      clearSessionFlag(); // halaman publik bisa dibuka lagi
       window.location.href = '/login';
     }
   };
