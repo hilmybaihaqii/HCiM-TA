@@ -247,3 +247,9 @@ export function AuthDone({ title, children, action }: { title: string; children:
 }
 
 export const authLink = 'font-medium text-white underline-offset-4 hover:underline';
+
+/** Isi panel putih halaman login (juga dipakai saat kembali dari Google) */
+export const LOGIN_ASIDE = {
+  title: <>Welcome<br />back.</>,
+  text: 'Your simulations, predictions and SHAP analyses are saved to your account, right where you left them.',
+};

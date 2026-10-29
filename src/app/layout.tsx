@@ -39,7 +39,7 @@ export default function RootLayout({
             yang ikut dirender server, supaya tidak berkedip sesaat sebelum React menghapusnya. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: "try{if(sessionStorage.getItem('hasSeenSplash')==='true')document.documentElement.setAttribute('data-splash-seen','')}catch(e){}",
+            __html: "try{if(sessionStorage.getItem('hasSeenSplash')==='true'||/[?&]login=success/.test(location.search))document.documentElement.setAttribute('data-splash-seen','')}catch(e){}",
           }}
         />
       </head>

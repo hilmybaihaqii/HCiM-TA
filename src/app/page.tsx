@@ -3,6 +3,7 @@
 import React, { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthWaiting } from "@/components/auth/SignedInNotice";
+import { AuthShell, LOGIN_ASIDE } from "@/components/auth/AuthShell";
 
 import HomeLayout from "@/components/layout/HomeLayout";
 import HeroSection from "@/components/section/HomeSection/HeroSection";
@@ -22,8 +23,15 @@ function HomeContent() {
       router.replace("/login?login=success");
     }
   }, [isLoginSuccess, router]);
-  // Kembali dari Google: halaman login yang memeriksa sesi & menyapa user
-  if (isLoginSuccess) return <AuthWaiting label="Finishing your Google sign-in…" />;
+  // Kembali dari Google: tampilan sama persis dengan halaman login yang memeriksa sesi & menyapa user,
+  // jadi perpindahan ke /login?login=success tidak terlihat sebagai halaman lain.
+  if (isLoginSuccess) {
+    return (
+      <AuthShell aside={LOGIN_ASIDE}>
+        <AuthWaiting google label="Verifying your Google sign-in" />
+      </AuthShell>
+    );
+  }
 
 
   return (
