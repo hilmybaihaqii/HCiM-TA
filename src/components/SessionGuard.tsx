@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { clearSessionFlag, setSessionFlag } from '@/lib/sessionFlag';
+import OpeningLab, { useOpeningLab } from './OpeningLab';
 
 export interface SessionUser {
   id: string;
@@ -43,6 +44,8 @@ export default function SessionGuard({ children, fallback }: {
 }) {
   const router = useRouter();
   const [user, setUser] = useState<SessionUser | null>(null);
+  // Baru login: tampilkan "Please wait" sebentar (sekaligus menutupi pengecekan sesi)
+  const opening = useOpeningLab();
 
   useEffect(() => {
     let isMounted = true;
@@ -94,6 +97,7 @@ export default function SessionGuard({ children, fallback }: {
   }, [router]);
 
  // Selama sesi masih dicek, jangan render halaman Lab (cegah kedipan/bocor data)
+  if (opening) return <OpeningLab />;
   if (!user) {
     if (fallback) {
       return <div className="fixed inset-0 z-9999 bg-background overflow-hidden">{fallback}</div>;

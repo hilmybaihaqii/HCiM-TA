@@ -9,9 +9,9 @@ import { setSessionFlag } from '@/lib/sessionFlag';
 import {
   AuthAlert, AuthButton, AuthDivider, AuthField, AuthHeading, AuthSecondaryButton, AuthShell, GoogleMark, LOGIN_ASIDE, Spinner, authLink,
 } from '@/components/auth/AuthShell';
-import SignedInNotice, { AuthWaiting } from '@/components/auth/SignedInNotice';
+import SignInCelebration, { AuthWaiting } from '@/components/auth/SignedInNotice';
+import { markOpeningLab } from '@/components/OpeningLab';
 
-const REDIRECT_S = 3;
 const DEACTIVATED = 'This account has been deactivated. Contact an administrator to restore it.';
 
 type Me = { display_name?: string; email?: string };
@@ -46,6 +46,7 @@ function LoginForm() {
     if (redirected.current) return;
     redirected.current = true;
     setSessionFlag();
+    markOpeningLab(); // lab menampilkan layar "Please wait" sebentar sebelum isinya muncul
     router.replace('/lab');
     router.refresh();
   }, [router]);
@@ -74,12 +75,6 @@ function LoginForm() {
       });
   }, [via]);
 
-  // Pindah otomatis ke lab setelah sapaan tampil sebentar
-  useEffect(() => {
-    if (session?.state !== 'ready') return;
-    const timer = setTimeout(openLab, REDIRECT_S * 1000);
-    return () => clearTimeout(timer);
-  }, [session?.state, openLab]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,18 +123,18 @@ function LoginForm() {
     window.location.href = `/api/auth/google?t=${Date.now()}`;
   };
 
-  // Cek sesi & sapaan tampil di panel yang sama dengan formulir (bukan layar penuh)
-  if (session?.state === 'checking') {
+  // Cek sesi -> animasi berhasil, di panel yang sama dengan formulir. Satu komponen untuk kedua tahap
+  // supaya lingkaran tidak mulai ulang; lab dibuka setelah animasinya selesai.
+  if (session && via) {
     return (
       <AuthShell aside={LOGIN_ASIDE}>
-        <AuthWaiting google={via === 'google'} label={via === 'google' ? 'Verifying your Google sign-in' : 'Confirming your email'} />
-      </AuthShell>
-    );
-  }
-  if (session?.state === 'ready' && via) {
-    return (
-      <AuthShell aside={LOGIN_ASIDE}>
-        <SignedInNotice via={via} name={session.me?.display_name} email={session.me?.email} seconds={REDIRECT_S} />
+        <SignInCelebration
+          via={via}
+          ready={session.state === 'ready'}
+          name={session.me?.display_name}
+          email={session.me?.email}
+          onDone={openLab}
+        />
       </AuthShell>
     );
   }
