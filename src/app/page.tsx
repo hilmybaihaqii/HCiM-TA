@@ -2,7 +2,7 @@
 
 import React, { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AuthWaiting } from "@/components/auth/SignedInNotice";
+import SignInCelebration from "@/components/auth/SignedInNotice";
 import { AuthShell, LOGIN_ASIDE } from "@/components/auth/AuthShell";
 
 import HomeLayout from "@/components/layout/HomeLayout";
@@ -28,7 +28,7 @@ function HomeContent() {
   if (isLoginSuccess) {
     return (
       <AuthShell aside={LOGIN_ASIDE}>
-        <AuthWaiting google label="Verifying your Google sign-in" />
+        <SignInCelebration via="google" ready={false} />
       </AuthShell>
     );
   }
