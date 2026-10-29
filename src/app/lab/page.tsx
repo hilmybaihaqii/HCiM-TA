@@ -73,7 +73,7 @@ function buildStages(r: Report | null): Stage[] {
       id: 'drivers',
       title: 'Main drivers',
       icon: ListChecks,
-      does: 'SHAP shows which biomarkers moved the model most. Runs when you ask for it.',
+      does: 'SHAP shows which biomarkers moved the model most.',
       output: top ? <>Strongest driver <span className="font-mono">{top.biomarker}</span></> : undefined,
     },
   ];
@@ -84,26 +84,33 @@ export default function DigitalLabPage() {
 
   const patch = (next: Partial<Report>) => setReport(r => (r ? { ...r, ...next } : r));
 
-  const handleSubmit = async (inputs: number[]) => {
-    setReport({ inputs, status: 'predicting' });
-    try {
-      const p = await predictRisk(inputs);
-      patch({ status: 'done', tier: p.tier, prediction: p.prediction, predictionId: p.predictionId });
-    } catch (err) {
-      console.error('Digital Lab prediction failed:', err);
-      patch({ status: 'error', error: predictErrorMessage(err) });
-    }
-  };
-
-  const handleExplain = async () => {
-    if (!report?.tier || report.explaining || report.shap) return;
+  const explain = async (inputs: number[], tier: string, predictionId?: string) => {
     patch({ explaining: true, shapError: undefined });
     try {
-      const shap = await explainRisk(report.inputs, report.tier, report.predictionId);
+      const shap = await explainRisk(inputs, tier, predictionId);
       patch({ explaining: false, shap });
     } catch (err) {
       patch({ explaining: false, shapError: predictErrorMessage(err) });
     }
+  };
+
+  // Tier dulu (langsung tampil), lalu SHAP otomatis: setiap prediksi tercatat bersama SHAP-nya
+  const handleSubmit = async (inputs: number[]) => {
+    setReport({ inputs, status: 'predicting' });
+    let p;
+    try {
+      p = await predictRisk(inputs);
+      patch({ status: 'done', tier: p.tier, prediction: p.prediction, predictionId: p.predictionId });
+    } catch (err) {
+      console.error('Digital Lab prediction failed:', err);
+      patch({ status: 'error', error: predictErrorMessage(err) });
+      return;
+    }
+    if (p.tier !== 'unknown') await explain(inputs, p.tier, p.predictionId);
+  };
+
+  const retryExplain = () => {
+    if (report?.tier && !report.explaining && !report.shap) void explain(report.inputs, report.tier, report.predictionId);
   };
 
   const showForm = !report || report.status === 'error';
@@ -176,7 +183,7 @@ export default function DigitalLabPage() {
               shap={report.shap}
               explaining={report.explaining}
               shapError={report.shapError}
-              onExplain={() => void handleExplain()}
+              onExplain={retryExplain}
             />
           </motion.div>
         )}

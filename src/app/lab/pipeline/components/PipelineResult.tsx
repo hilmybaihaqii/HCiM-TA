@@ -143,7 +143,7 @@ const DETAILS: { id: DetailId; label: string }[] = [
 export default function PipelineResult({ job, db, onRunAnother }: {
   job: PipelineJob; db: DrugDb | null; onRunAnother: () => void;
 }) {
-  const { options, results, run, explain } = useDosePredictions(job);
+  const { options, results, run } = useDosePredictions(job);
   const { apSeries, caSeries } = useTraceSeries(job);
   const [selected, setSelected] = useState<DoseKey>('mean');
   const [detail, setDetail] = useState<DetailId>('traces');
@@ -162,9 +162,10 @@ export default function PipelineResult({ job, db, onRunAnother }: {
   const selectedRun = perDose.find(d => d.dose === selected);
   const selectedRatios = selected === 'mean' ? job.ratios ?? [] : selectedRun?.ratios ?? [];
 
+  // Pilih dosis = prediksi + SHAP (kalau belum ada). Mean memakai hasil job; SHAP-nya dilengkapi kalau kosong.
   const select = (key: DoseKey) => {
     setSelected(key);
-    if (key !== 'mean') void run(key);
+    void run(key);
   };
 
   // Dosis dengan tier lebih berat dari rata-rata
@@ -238,7 +239,7 @@ export default function PipelineResult({ job, db, onRunAnother }: {
         shap={selectedResult?.shap}
         explaining={selectedResult?.status === 'explaining'}
         shapError={selectedResult?.shapError}
-        onExplain={() => void explain(selected)}
+        onExplain={() => void run(selected)}
       />
 
       {/* ---------- 4. Detail: satu pilihan, bukan banyak tab ---------- */}

@@ -99,46 +99,48 @@ export function useDosePredictions(job: PipelineJob) {
   // prediction_id per dosis, supaya explain tercatat pada prediksi yang sama di Activity Logs
   const predictionIds = useRef(new Map<string, string>());
 
-  /** Tier risiko untuk satu dosis (cepat). Tidak melakukan apa-apa kalau sudah ada/berjalan. */
-  const run = useCallback(async (key: DoseKey) => {
-    const id = doseId(key);
-    const option = options.find(o => doseId(o.key) === id);
-    if (!option?.ratios || inFlight.current.has(id) || results[id]?.tier) return;
-
-    inFlight.current.add(id);
-    patch(id, { status: 'predicting', error: undefined });
-    try {
-      const p = await predictRisk(option.ratios);
-      if (p.predictionId) predictionIds.current.set(id, p.predictionId);
-      patch(id, { status: 'done', tier: p.tier, prediction: p.prediction });
-    } catch (err) {
-      patch(id, { status: 'error', error: predictErrorMessage(err) });
-    } finally {
-      inFlight.current.delete(id);
-    }
-  }, [options, results, patch]);
-
-  /**
-   * SHAP untuk dosis yang sudah punya tier. Sesuai panduan API: explain lebih lambat (beberapa detik),
-   * jadi hanya dijalankan saat user memintanya.
-   */
-  const explain = useCallback(async (key: DoseKey) => {
-    const id = doseId(key);
-    const option = options.find(o => doseId(o.key) === id);
-    const tier = results[id]?.tier;
-    if (!option?.ratios || !tier || results[id]?.shap || inFlight.current.has(id)) return;
-
-    inFlight.current.add(id);
+  /** SHAP untuk satu dosis yang sudah punya tier; dicatat pada prediction_id yang sama di Activity Logs. */
+  const explainWith = useCallback(async (id: string, ratios: number[], tier: string) => {
     patch(id, { status: 'explaining', shapError: undefined });
     try {
-      const shap = await explainRisk(option.ratios, tier, predictionIds.current.get(id));
+      const shap = await explainRisk(ratios, tier, predictionIds.current.get(id));
       patch(id, { status: 'done', shap });
     } catch (err) {
       patch(id, { status: 'done', shapError: predictErrorMessage(err) });
+    }
+  }, [patch]);
+
+  /**
+   * Prediksi satu dosis: tier dulu (cepat, langsung tampil), lalu SHAP otomatis.
+   * Setiap prediksi selalu punya SHAP-nya, jadi riwayat Prediction & SHAP di Activity Logs seimbang.
+   * Dosis yang sudah punya tier tapi belum punya SHAP (mis. dari sesi lama) langsung dilengkapi.
+   */
+  const run = useCallback(async (key: DoseKey) => {
+    const id = doseId(key);
+    const option = options.find(o => doseId(o.key) === id);
+    const current = results[id];
+    if (!option?.ratios || inFlight.current.has(id) || current?.shap) return;
+
+    inFlight.current.add(id);
+    try {
+      let tier = current?.tier;
+      if (!tier) {
+        patch(id, { status: 'predicting', error: undefined });
+        try {
+          const p = await predictRisk(option.ratios);
+          if (p.predictionId) predictionIds.current.set(id, p.predictionId);
+          tier = p.tier;
+          patch(id, { status: 'done', tier: p.tier, prediction: p.prediction });
+        } catch (err) {
+          patch(id, { status: 'error', error: predictErrorMessage(err) });
+          return;
+        }
+      }
+      if (tier && tier !== 'unknown') await explainWith(id, option.ratios, tier);
     } finally {
       inFlight.current.delete(id);
     }
-  }, [options, results, patch]);
+  }, [options, results, patch, explainWith]);
 
-  return { options, results, run, explain };
+  return { options, results, run };
 }
