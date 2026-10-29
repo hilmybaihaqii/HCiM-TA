@@ -64,7 +64,7 @@ export default function RiskDonut({ slices, centerLabel = "total" }: { slices: R
           <span className="text-2xl font-semibold tabular-nums text-foreground leading-none">
             {current ? current.count : total}
           </span>
-          <span className="mt-1 text-[9px] uppercase tracking-widest text-muted">
+          <span className="mt-1 text-[9px] uppercase tracking-widest text-foreground/70">
             {current ? `${current.label} · ${pct(current.count)}%` : centerLabel}
           </span>
         </div>
@@ -82,7 +82,7 @@ export default function RiskDonut({ slices, centerLabel = "total" }: { slices: R
               className={`flex w-full items-center justify-between gap-4 rounded-chip px-1.5 py-0.5 text-xs transition-colors hover:bg-foreground/4
                 ${active && active !== s.key ? "opacity-50" : ""}`}
             >
-              <span className="flex items-center gap-2 text-muted">
+              <span className="flex items-center gap-2 text-foreground/70">
                 <span className="h-2 w-2 rounded-full shrink-0" style={{ background: s.color }} />
                 {s.label}
               </span>

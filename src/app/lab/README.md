@@ -32,7 +32,7 @@ lab/
 │       ├── SimulationPanel.tsx  traces, per-dose biomarker matrix, warnings, method note
 │       ├── DrugInputs.tsx       drug parameters (Cmax, hERG, IC50/Hill) + per-dose run table
 │       └── …                    wizard (DrugParamsForm, ModeSelector), TraceChart
-├── logs/                    Activity Logs (history tables, risk donut)
+├── logs/                    Activity Logs: overview donut, Prediction & SHAP history (components/history.tsx = shared rows, filter, pager)
 └── profile/
 ```
 
@@ -46,8 +46,11 @@ both Digital Lab and the per-dose results.
   No hand-written protocol numbers (beat counts, cycle length, run time) and no made-up advice.
 - Confidence is the vote share of the 400-tree forest (multiples of 1/400). Show it as votes, never
   rounded percentages, so 399/400 does not read as 100%.
-- Per-dose results: `predict` runs when a dose is picked; `explain` (SHAP, slower) only when the
-  user asks for the main drivers, as the API guide recommends.
+- Every prediction is followed by `explain` (SHAP) automatically, with the same `prediction_id`, in
+  Digital Lab and for each dose in Full Pipeline. The tier shows first; SHAP fills in a few seconds
+  later. This keeps Prediction and SHAP history in Activity Logs one-to-one.
+- The 11 biomarkers are two swipeable slides: "Main drivers" (SHAP order) first, then "Change vs
+  drug-free" (without drug, with drug, change).
 - Reference text (`SHORT_DESC`, `BIOMARKER_INFO`) explains what a biomarker is; it never states a
   result.
 

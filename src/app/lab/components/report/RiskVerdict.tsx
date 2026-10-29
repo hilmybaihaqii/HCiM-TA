@@ -21,7 +21,8 @@ const fmtPct = (c: number) => {
   return `${Number.isInteger(p) ? p : p.toFixed(1)}%`;
 };
 
-function VoteBar({ prediction }: { prediction: PredictionOutput }) {
+/** Vote pohon per tier. Juga dipakai riwayat prediksi (cukup confidences + label). */
+export function VoteBar({ prediction }: { prediction: Pick<PredictionOutput, 'confidences' | 'predictedLabel'> }) {
   const values = TIERS.map(t =>
     prediction.confidences.find(c => /high|inter|low|medium|moderate/i.test(c.label) && normalizeTier(c.label) === t)?.confidence ?? 0,
   );
