@@ -127,7 +127,7 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<AuthWaiting label="Loading…" />}>
+    <Suspense fallback={<AuthShell aside={{ title: <>Almost<br />done.</>, text: 'Choose a new password, then sign in with it on any device.' }} close="/login"><AuthWaiting label="Loading…" /></AuthShell>}>
       <ResetPasswordForm />
     </Suspense>
   );

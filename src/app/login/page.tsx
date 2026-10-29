@@ -7,7 +7,7 @@ import { motion, useAnimation } from 'framer-motion';
 import { api } from '@/lib/api';
 import { setSessionFlag } from '@/lib/sessionFlag';
 import {
-  AuthAlert, AuthButton, AuthDivider, AuthField, AuthHeading, AuthSecondaryButton, AuthShell, GoogleMark, Spinner, authLink,
+  AuthAlert, AuthButton, AuthDivider, AuthField, AuthHeading, AuthSecondaryButton, AuthShell, GoogleMark, LOGIN_ASIDE, Spinner, authLink,
 } from '@/components/auth/AuthShell';
 import SignedInNotice, { AuthWaiting } from '@/components/auth/SignedInNotice';
 
@@ -22,8 +22,11 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Kembali dari Google (?login=success) atau dari link konfirmasi email (?verified=1)
-  const via = searchParams.get('login') === 'success' ? 'google' : searchParams.get('verified') === '1' ? 'email' : null;
+  // Kembali dari Google (?login=success) atau dari link konfirmasi email (?verified=1).
+  // Dibaca SEKALI saat halaman dibuka: URL dibersihkan di bawah, dan Next.js ikut memperbarui
+  // searchParams. Kalau dihitung ulang tiap render, pengecekan sesi ikut dibatalkan di tengah jalan.
+  const [via] = useState<'google' | 'email' | null>(() =>
+    searchParams.get('login') === 'success' ? 'google' : searchParams.get('verified') === '1' ? 'email' : null);
   const [session, setSession] = useState<{ state: 'checking' | 'ready'; me?: Me } | null>(via ? { state: 'checking' } : null);
 
   const [email, setEmail] = useState('');
@@ -52,22 +55,23 @@ function LoginForm() {
     if (searchParams.get('status') || searchParams.get('error')) window.history.replaceState(null, '', '/login');
   }, [searchParams]);
 
-  // Setelah Google / konfirmasi email: pastikan sesi benar-benar ada sebelum masuk
+  // Setelah Google / konfirmasi email: pastikan sesi benar-benar ada sebelum masuk.
+  // Sama seperti alur lama yang terbukti jalan: dijalankan sekali dan hasilnya tidak pernah dibatalkan
+  // (membersihkan URL di bawah tidak boleh menghentikan pengecekan ini).
+  const checked = useRef(false);
   useEffect(() => {
-    if (!via) return;
-    let alive = true;
+    if (!via || checked.current) return;
+    checked.current = true;
     window.history.replaceState(null, '', '/login');
     api('/auth/me')
-      .then(raw => { if (alive) setSession({ state: 'ready', me: readMe(raw) }); })
+      .then(raw => setSession({ state: 'ready', me: readMe(raw) }))
       .catch(() => {
         api('/auth/logout', { method: 'POST' }).catch(() => {});
-        if (!alive) return;
         setSession(null);
         setErrorMsg(via === 'google'
           ? 'Google sign-in did not finish. Please try again.'
           : 'Your email is confirmed. Sign in to continue.');
       });
-    return () => { alive = false; };
   }, [via]);
 
   // Pindah otomatis ke lab setelah sapaan tampil sebentar
@@ -124,11 +128,20 @@ function LoginForm() {
     window.location.href = `/api/auth/google?t=${Date.now()}`;
   };
 
+  // Cek sesi & sapaan tampil di panel yang sama dengan formulir (bukan layar penuh)
   if (session?.state === 'checking') {
-    return <AuthWaiting label={via === 'google' ? 'Finishing your Google sign-in…' : 'Confirming your email…'} />;
+    return (
+      <AuthShell aside={LOGIN_ASIDE}>
+        <AuthWaiting google={via === 'google'} label={via === 'google' ? 'Verifying your Google sign-in' : 'Confirming your email'} />
+      </AuthShell>
+    );
   }
   if (session?.state === 'ready' && via) {
-    return <SignedInNotice via={via} name={session.me?.display_name} email={session.me?.email} seconds={REDIRECT_S} onOpen={openLab} />;
+    return (
+      <AuthShell aside={LOGIN_ASIDE}>
+        <SignedInNotice via={via} name={session.me?.display_name} email={session.me?.email} seconds={REDIRECT_S} />
+      </AuthShell>
+    );
   }
 
   const busy = isLoading || googleLoading;
@@ -139,7 +152,7 @@ function LoginForm() {
 
   return (
     <AuthShell
-      aside={{ title: <>Welcome<br />back.</>, text: 'Your simulations, predictions and SHAP analyses are saved to your account, right where you left them.' }}
+      aside={LOGIN_ASIDE}
       footer={<>New to Cardivex? <Link href="/register" className={authLink}>Create an account</Link></>}
     >
       <AuthHeading title="Sign in">Use the email and password you registered with, or continue with Google.</AuthHeading>
@@ -185,7 +198,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<AuthWaiting label="Loading…" />}>
+    <Suspense fallback={<AuthShell aside={LOGIN_ASIDE}><AuthWaiting label="Loading…" /></AuthShell>}>
       <LoginForm />
     </Suspense>
   );
