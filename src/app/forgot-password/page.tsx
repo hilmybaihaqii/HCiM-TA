@@ -41,25 +41,10 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <main className="fixed inset-0 z-50 w-full h-screen flex bg-background font-sans overflow-hidden">
+    <main className="fixed inset-0 z-50 w-full h-screen flex bg-black font-sans overflow-hidden">
 
-      {/* PANEL KIRI (Branding & Ambient Animation) */}
-      <div className="hidden lg:flex flex-col justify-between w-1/2 h-full bg-background p-12 relative overflow-hidden">
-
-        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-          <motion.div
-            animate={{ scale: [1, 1.1, 1], x: [0, 20, 0], y: [0, -30, 0] }} transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute -top-40 -left-40 w-96 h-96 bg-amber/20 rounded-full blur-3xl"
-          />
-          <motion.div
-            animate={{ scale: [1, 1.1, 1], x: [0, -30, 0], y: [0, 40, 0] }} transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute bottom-20 -right-20 w-80 h-80 bg-accent/20 rounded-full blur-3xl"
-          />
-          <motion.div
-            animate={{ scale: [1, 1.15, 1], x: [0, 15, 0], y: [0, 20, 0] }} transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-            className="absolute top-1/3 right-1/4 w-64 h-64 bg-teal/15 rounded-full blur-3xl"
-          />
-        </div>
+      {/* PANEL KIRI (Branding) */}
+      <div className="hidden lg:flex flex-col justify-between w-1/2 h-full bg-white p-12 relative overflow-hidden">
 
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1 }}>
           <Link href="/" className="relative z-10 text-2xl font-bold tracking-tight text-foreground hover:opacity-70 transition-opacity">
@@ -83,7 +68,7 @@ export default function ForgotPasswordPage() {
       </div>
 
       {/* PANEL KANAN (Form Forgot Password) */}
-      <div className="w-full lg:w-1/2 h-full bg-primary relative flex flex-col items-center justify-center p-6 md:p-12 overflow-y-auto">
+      <div className="w-full lg:w-1/2 h-full bg-black relative flex flex-col items-center justify-center p-6 md:p-12 overflow-y-auto">
 
         <Link href="/" className="lg:hidden absolute top-6 left-6 z-40 text-lg font-bold tracking-tight text-white hover:opacity-70 transition-opacity">
           cardivex<span className="text-accent">.</span>
