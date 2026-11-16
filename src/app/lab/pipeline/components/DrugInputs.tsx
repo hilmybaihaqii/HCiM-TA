@@ -2,10 +2,9 @@
 
 import React from 'react';
 import {
-  DrugDb, HERG_KEYS, HergKey, IC50_CHANNELS, Ic50Key, PipelineJob, formatDrugName, isTrainingDrug,
+  DrugDb, HERG_KEYS, HergKey, IC50_CHANNELS, Ic50Key, PipelineJob, formatDrugName, isTrainingDrug, type DoseKey,
 } from '@/lib/pipeline';
 import { getTierColor } from '@/lib/tierColor';
-import type { DoseKey } from '../useDosePredictions';
 
 const HERG_UNIT: Partial<Record<HergKey, string>> = { Vhalf: 'mV' };
 

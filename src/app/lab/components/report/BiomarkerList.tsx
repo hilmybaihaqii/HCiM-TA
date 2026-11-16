@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { FEATURES, formatChange, ratioChange } from '@/lib/pipeline';
@@ -126,7 +127,7 @@ const SLIDES = [
   { id: 'change', label: 'Drug effect' },
 ] as const;
 
-export default function BiomarkerList({ ratios, control, drug, tier, shap, explaining = false, shapError, onExplain }: {
+export default function BiomarkerList({ ratios, control, drug, tier, shap, explaining = false, shapError, onExplain, driversNote, meta, emptyDriversMessage }: {
   ratios: (number | null)[];
   /** Nilai mentah sel tanpa obat (Full Pipeline) */
   control?: Record<string, number | null>;
@@ -139,6 +140,12 @@ export default function BiomarkerList({ ratios, control, drug, tier, shap, expla
   shapError?: string;
   /** Muat ulang SHAP (dipakai kalau gagal atau belum ada) */
   onExplain?: () => void;
+  /** Catatan khusus asal SHAP (mis. Full Pipeline yang berbasis mean) */
+  driversNote?: React.ReactNode;
+  /** Teks meta pada judul bagian */
+  meta?: React.ReactNode;
+  /** Pesan statis jika SHAP kosong/tidak tersedia (mis. Full Pipeline tanpa retry client-side) */
+  emptyDriversMessage?: React.ReactNode;
 }) {
   const [open, setOpen] = useState<string | null>(null);
   const [slide, setSlide] = useState(0);
@@ -274,7 +281,13 @@ export default function BiomarkerList({ ratios, control, drug, tier, shap, expla
     driversBody = (
       <div className="py-12 flex flex-col items-center gap-4 text-center">
         <p className="text-sm text-foreground/70 max-w-md text-balance">
-          {shapError ? `Could not load the main drivers. ${shapError}` : 'The main drivers for this result are not loaded yet.'}
+          {emptyDriversMessage ?? (
+            shapError
+              ? `Could not load the main drivers. ${shapError}`
+              : onExplain
+              ? 'The main drivers for this result are not loaded yet.'
+              : 'The driver analysis is not available for this simulation run.'
+          )}
         </p>
         {onExplain && knownTier && (
           <button type="button" onClick={onExplain} className={secondaryBtn}>{shapError ? 'Try again' : 'Load main drivers'}</button>
@@ -340,7 +353,7 @@ export default function BiomarkerList({ ratios, control, drug, tier, shap, expla
 
   return (
     <section aria-labelledby="biomarkers-heading">
-      <SectionHead id="biomarkers-heading" title="11 biomarkers" meta={<span className="sm:hidden">Swipe to switch</span>} />
+      <SectionHead id="biomarkers-heading" title="11 biomarkers" meta={meta ?? <span className="sm:hidden">Swipe to switch</span>} />
 
       <div className="mt-5">
         <TabRail
@@ -363,14 +376,21 @@ export default function BiomarkerList({ ratios, control, drug, tier, shap, expla
         <div id="slide-drivers" role="tabpanel" inert={slide !== 0} className="w-full shrink-0 snap-start snap-always">
           <p className="mb-4 text-sm text-foreground/70 leading-relaxed">
             Which biomarkers moved the risk model most, from SHAP. Bars to the right pushed it toward this result.{' '}
-            <span className="text-foreground/70" style={tierColor ? { color: tierColor } : undefined}>●</span> marks the top three.
+            <span className="text-foreground/70" style={tierColor ? { color: tierColor } : undefined}>●</span> marks the top three.{' '}
+            <Link href="/lab/guide#shap" className="underline underline-offset-2 hover:text-action transition-colors text-xs font-medium">
+              How to read SHAP ↗
+            </Link>
+            {driversNote && <span className="block mt-1 text-xs text-foreground/60">{driversNote}</span>}
           </p>
           {driversBody}
         </div>
         <div id="slide-change" role="tabpanel" inert={slide !== 1} className="w-full shrink-0 snap-start snap-always">
           <p className="mb-4 text-sm text-foreground/70 leading-relaxed">
             How far each biomarker moved from the drug-free cell, largest first. <span className="text-accent">Red</span>: qNet
-            below 0.9, APD50 or APD90 above 1.1, or any other biomarker that moved more than 10%.
+            below 0.9, APD50 or APD90 above 1.1, or any other biomarker that moved more than 10%.{' '}
+            <Link href="/lab/guide#ratios" className="underline underline-offset-2 hover:text-action transition-colors text-xs font-medium">
+              How to read ratios ↗
+            </Link>
           </p>
           {changeBody}
         </div>
