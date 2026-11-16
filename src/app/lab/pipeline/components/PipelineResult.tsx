@@ -3,10 +3,11 @@
 import React, { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
-import { DrugDb, PipelineJob, describeFailure, formatDrugName, joinList } from '@/lib/pipeline';
-import { getTierColor, normalizeTier } from '@/lib/tierColor';
-import { DoseKey, DoseOption, DoseResult, doseId, useDosePredictions } from '../useDosePredictions';
-import HeartbeatLoader from '../../components/report/HeartbeatLoader';
+import {
+  DoseKey, DrugDb, FEATURES, PipelineJob, describeFailure, doseId, formatChange, formatDrugName, joinList, ratioChange,
+} from '@/lib/pipeline';
+import { getTierColor } from '@/lib/tierColor';
+import { parsePredictResponse, type ShapData } from '@/lib/predict';
 import RiskVerdict from '../../components/report/RiskVerdict';
 import BiomarkerList from '../../components/report/BiomarkerList';
 import { SectionHead, SlideIndicator, TabRail, primaryBtn, textLink } from '../../components/report/ui';
@@ -15,54 +16,21 @@ import { BiomarkerMatrix, MethodNote, TracesSection, doseSeriesLabel, useTraceSe
 
 /*
  * Halaman hasil Full Pipeline, dibaca dari atas seperti laporan singkat:
- * 1. vonis dosis terpilih  2. strip dosis  3. 11 biomarker  4. satu pilihan detail.
- * Semua angka dari API (job, predict, explain). Tanpa kartu bertumpuk; pemisah cukup garis tipis.
+ * 1. vonis hasil run (mean ratios)  2. strip dosis  3. 11 biomarker dosis terpilih  4. satu pilihan detail.
+ * Prediksi risiko & SHAP hanya berjalan sekali per run atas rata-rata biomarker.
  */
 
-const SEVERITY = { low: 1, intermediate: 2, high: 3 } as const;
-const severity = (tier?: string) => (tier && tier !== 'unknown' ? SEVERITY[normalizeTier(tier)] : 0);
-
-const doseLabel = (key: DoseKey) => (key === 'mean' ? 'Mean' : `${key}× Cmax`);
-
-/* =========================================================
-   1. VONIS (atau loader / error untuk dosis yang sedang dihitung)
-   ========================================================= */
-function Verdict({ option, result, onRetry }: { option: DoseOption; result?: DoseResult; onRetry: () => void }) {
-  if (!option.ratios && option.key !== 'mean') {
-    return (
-      <p className="text-center text-base text-foreground/70 max-w-xl mx-auto leading-relaxed text-balance">
-        The simulation returned no value for some biomarkers at {doseLabel(option.key)}, so the risk model was not run
-        for this dose.
-      </p>
-    );
-  }
-  if (result?.status === 'error') {
-    return (
-      <div className="text-center">
-        <p className="text-base text-foreground max-w-xl mx-auto leading-relaxed text-balance">{result.error}</p>
-        <button type="button" onClick={onRetry} className={`${primaryBtn} mt-6`}>Try again</button>
-      </div>
-    );
-  }
-  if (!result?.tier || result.status === 'predicting' || result.status === 'idle') {
-    return (
-      <HeartbeatLoader
-        eyebrow={doseLabel(option.key)}
-        title="Checking the risk"
-        detail={`The model is reading the 11 biomarkers at ${option.key === 'mean' ? 'the mean of all doses' : doseLabel(option.key)}.`}
-        steps={[{ label: 'Risk group', state: 'active' }]}
-      />
-    );
-  }
-  return <RiskVerdict tier={result.tier} prediction={result.prediction} />;
-}
+export type DoseOption = {
+  key: DoseKey;
+  label: string;
+  ratios: (number | null)[] | null;
+};
 
 /* =========================================================
    2. STRIP DOSIS: kolom selebar layar, penanda bergeser mulus
    ========================================================= */
-function DoseStrip({ options, results, selected, onSelect, eadsByDose }: {
+function DoseStrip({ options, selected, onSelect, eadsByDose }: {
   options: DoseOption[];
-  results: Record<string, DoseResult>;
   selected: DoseKey;
   onSelect: (key: DoseKey) => void;
   eadsByDose: Map<number, number>;
@@ -77,10 +45,7 @@ function DoseStrip({ options, results, selected, onSelect, eadsByDose }: {
     >
       <SlideIndicator index={index} count={options.length} className="left-0 -bottom-px h-0.5 px-3 before:block before:h-full before:rounded-full before:bg-action" />
       {options.map(o => {
-        const r = results[doseId(o.key)];
         const isSel = doseId(o.key) === doseId(selected);
-        const unavailable = !o.ratios && o.key !== 'mean';
-        const tier = r?.tier && r.tier !== 'unknown' ? r.tier : null;
         const eads = o.key === 'mean' ? 0 : eadsByDose.get(o.key) ?? 0;
         return (
           <button
@@ -97,11 +62,6 @@ function DoseStrip({ options, results, selected, onSelect, eadsByDose }: {
                 <span title="Early afterdepolarizations at this dose" className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-amber-500 align-middle" />
               )}
             </span>
-            <span className={`block mt-1 text-xs capitalize ${tier ? getTierColor(tier).text : ''}`}>
-              {unavailable ? 'n/a' : r?.status === 'predicting' ? (
-                <motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.2, repeat: Infinity }}>checking</motion.span>
-              ) : r?.status === 'error' ? 'failed' : tier ?? '—'}
-            </span>
           </button>
         );
       })}
@@ -110,22 +70,95 @@ function DoseStrip({ options, results, selected, onSelect, eadsByDose }: {
 }
 
 /* =========================================================
-   CATATAN SIMULASI: temuan dirangkai jadi satu kalimat
+   CATATAN SIMULASI: temuan simulasi (EADs, gagal, divergensi)
    ========================================================= */
-function simFinding(job: PipelineJob): React.ReactNode | null {
+function simFindings(job: PipelineJob): React.ReactNode | null {
   const perDose = [...(job.sim_result?.per_dose ?? [])].sort((a, b) => a.dose - b.dose);
   const eads = perDose.filter(d => (d.flags?.EADs ?? 0) > 0).map(d => d.dose);
-  const failed = perDose.filter(d => (d.flags?.noDepols ?? 0) + (d.flags?.noRepols ?? 0) > 0).map(d => d.dose);
+  const noRepols = perDose.filter(d => (d.flags?.noRepols ?? 0) > 0).map(d => d.dose);
+  const noDepols = perDose.filter(d => (d.flags?.noDepols ?? 0) > 0).map(d => d.dose);
   const anyEads = eads.length > 0 || (job.sim_result?.flags?.EADs ?? 0) > 0;
-  if (!anyEads && !failed.length) return null;
-  // Hanya istilah kuncinya yang diberi warna
+  const anyNoRepols = noRepols.length > 0;
+  const anyNoDepols = noDepols.length > 0;
+
+  // Cek divergensi biomarker antar dosis
+  let maxSpread = 0;
+  let divergentBm: { key: string; min: number; max: number; minDose: number; maxDose: number } | null = null;
+  if (perDose.length > 1) {
+    for (let i = 0; i < FEATURES.length; i++) {
+      const key = FEATURES[i];
+      let minVal = Infinity;
+      let maxVal = -Infinity;
+      let minD = 0;
+      let maxD = 0;
+      for (const d of perDose) {
+        const r = d.ratios?.[i];
+        if (typeof r === 'number' && Number.isFinite(r)) {
+          if (r < minVal) { minVal = r; minD = d.dose; }
+          if (r > maxVal) { maxVal = r; maxD = d.dose; }
+        }
+      }
+      if (minVal !== Infinity && maxVal !== -Infinity) {
+        const spread = maxVal - minVal;
+        if (spread > maxSpread) {
+          maxSpread = spread;
+          divergentBm = { key, min: minVal, max: maxVal, minDose: minD, maxDose: maxD };
+        }
+      }
+    }
+  }
+
+  const flags: React.ReactNode[] = [];
+  if (anyEads) {
+    flags.push(
+      <span key="eads">
+        <span className="text-amber-700 font-medium">extra beats during recovery (EADs)</span>
+        {eads.length > 0 && <> at {joinList(eads)}× Cmax</>}
+      </span>,
+    );
+  }
+  if (anyNoRepols) {
+    flags.push(
+      <span key="norepols">
+        <span className="text-amber-700 font-medium">repolarization failures</span> at {joinList(noRepols)}× Cmax
+      </span>,
+    );
+  }
+  if (anyNoDepols) {
+    flags.push(
+      <span key="nodepols">
+        <span className="text-amber-700 font-medium">depolarization failures</span> at {joinList(noDepols)}× Cmax
+      </span>,
+    );
+  }
+
+  if (flags.length > 0) {
+    return (
+      <>
+        Simulation flags: {flags.map((p, i) => (
+          <React.Fragment key={i}>
+            {i > 0 && (i === flags.length - 1 ? ' and ' : ', ')}
+            {p}
+          </React.Fragment>
+        ))}
+        . Select a dose above to inspect its action potential traces and biomarker values.
+      </>
+    );
+  }
+
+  if (divergentBm && maxSpread >= 0.15) {
+    const minChg = formatChange(ratioChange(divergentBm.min));
+    const maxChg = formatChange(ratioChange(divergentBm.max));
+    return (
+      <>
+        Biomarker response across doses varied most in <span className="font-mono text-foreground">{divergentBm.key}</span> ({minChg} at {divergentBm.minDose}× to {maxChg} at {divergentBm.maxDose}× Cmax), with no early afterdepolarizations. Select a dose above to inspect traces and biomarkers.
+      </>
+    );
+  }
+
   return (
     <>
-      The simulated cell also showed
-      {anyEads && <> <span className="text-amber-700">extra beats during recovery (EADs)</span>{eads.length > 0 && <> at {joinList(eads)}× Cmax</>}</>}
-      {anyEads && failed.length > 0 && ', and'}
-      {failed.length > 0 && <> <span className="text-amber-700">beats that failed</span> at {joinList(failed)}× Cmax</>}
-      .
+      All {perDose.length || 4} doses simulated with stable repolarization. Select a dose above to inspect its action potential traces and biomarker values.
     </>
   );
 }
@@ -143,36 +176,42 @@ const DETAILS: { id: DetailId; label: string }[] = [
 export default function PipelineResult({ job, db, onRunAnother }: {
   job: PipelineJob; db: DrugDb | null; onRunAnother: () => void;
 }) {
-  const { options, results, run } = useDosePredictions(job);
   const { apSeries, caSeries } = useTraceSeries(job);
   const [selected, setSelected] = useState<DoseKey>('mean');
   const [detail, setDetail] = useState<DetailId>('traces');
 
   const perDose = useMemo(() => job.sim_result?.per_dose ?? [], [job.sim_result]);
   const eadsByDose = useMemo(() => new Map(perDose.map(d => [d.dose, d.flags?.EADs ?? 0])), [perDose]);
-  const finding = useMemo(() => simFinding(job), [job]);
+  const finding = useMemo(() => simFindings(job), [job]);
   const doses = job.sim_result?.doses ?? job.sim_params?.doses ?? perDose.map(d => d.dose);
 
-  const mean = results.mean;
+  const options: DoseOption[] = useMemo(() => {
+    const runs = [...perDose].sort((a, b) => a.dose - b.dose);
+    return [
+      { key: 'mean' as const, label: 'Mean', ratios: job.ratios ?? null },
+      ...runs.map(d => ({ key: d.dose, label: `${d.dose}×`, ratios: d.ratios ?? null })),
+    ];
+  }, [job, perDose]);
+
+  // Run-level AI prediction & explanation dari payload job (dihitung sekali oleh backend atas mean ratios)
+  const rawPrediction = Array.isArray(job.prediction) ? job.prediction : null;
+  const runTier = rawPrediction
+    ? String((rawPrediction[0] as { label?: string } | undefined)?.label ?? 'unknown').toLowerCase()
+    : 'unknown';
+  const runPrediction = useMemo(() => (rawPrediction ? parsePredictResponse(rawPrediction) : null), [rawPrediction]);
+
+  const runShap = useMemo((): ShapData | null => {
+    const first = Array.isArray(job.explanation) ? (job.explanation[0] as Partial<ShapData> | undefined) : undefined;
+    return first && Array.isArray(first.contributions) && typeof first.base_value === 'number'
+      ? { predicted_class: runTier, base_value: first.base_value, contributions: first.contributions }
+      : null;
+  }, [job.explanation, runTier]);
+
   const drug = job.request?.drug ?? job.sim_params?.drug;
   const cipaRisk = drug ? db?.drugs[drug.toLowerCase()]?.cipa_risk : undefined;
 
-  const selectedOption = options.find(o => doseId(o.key) === doseId(selected)) ?? options[0];
-  const selectedResult = results[doseId(selected)];
   const selectedRun = perDose.find(d => d.dose === selected);
   const selectedRatios = selected === 'mean' ? job.ratios ?? [] : selectedRun?.ratios ?? [];
-
-  // Pilih dosis = prediksi + SHAP (kalau belum ada). Mean memakai hasil job; SHAP-nya dilengkapi kalau kosong.
-  const select = (key: DoseKey) => {
-    setSelected(key);
-    void run(key);
-  };
-
-  // Dosis dengan tier lebih berat dari rata-rata
-  const above = options
-    .filter(o => o.key !== 'mean' && severity(results[doseId(o.key)]?.tier) > severity(mean?.tier))
-    .map(o => ({ dose: o.key as number, tier: results[doseId(o.key)]!.tier! }));
-  const untested = options.some(o => o.key !== 'mean' && o.ratios && !results[doseId(o.key)]?.tier);
 
   return (
     // Satu kolom konten yang konsisten; di layar lebar baris tidak melebar berlebihan
@@ -193,53 +232,41 @@ export default function PipelineResult({ job, db, onRunAnother }: {
         </button>
       </div>
 
-      {/* ---------- 1. Vonis (key unik per bagian: jangan sama dengan key BiomarkerList) ---------- */}
-      <motion.div
-        key={`verdict-${doseId(selected)}`}
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-        className="min-h-[var(--verdict-h)] flex flex-col justify-center [--verdict-h:20rem] sm:[--verdict-h:18rem]"
-      >
-        <Verdict option={selectedOption} result={selectedResult} onRetry={() => void run(selected)} />
-      </motion.div>
+      {/* ---------- 1. Vonis hasil run (selalu dari mean ratios job, dirender sekali per run) ---------- */}
+      <div className="min-h-[var(--verdict-h)] flex flex-col justify-center [--verdict-h:20rem] sm:[--verdict-h:18rem]">
+        {rawPrediction ? (
+          <RiskVerdict tier={runTier} prediction={runPrediction} />
+        ) : (
+          <p className="text-center text-base text-foreground/70 max-w-xl mx-auto leading-relaxed text-balance">
+            The AI result for this run could not be read.
+          </p>
+        )}
+      </div>
 
       {/* ---------- 2. Dosis ---------- */}
       <section aria-labelledby="doses-heading">
-        <SectionHead id="doses-heading" title="Risk at each dose" meta={`${doses.length} doses simulated`} />
+        <SectionHead id="doses-heading" title="Simulated doses" meta={`${doses.length} doses simulated`} />
         <div className="mt-5">
-          <DoseStrip options={options} results={results} selected={selected} onSelect={select} eadsByDose={eadsByDose} />
+          <DoseStrip options={options} selected={selected} onSelect={setSelected} eadsByDose={eadsByDose} />
         </div>
-        {(above.length > 0 || untested || finding) && (
+        {finding && (
           <p className="mt-5 mx-auto max-w-2xl text-center text-sm text-foreground/70 leading-relaxed text-balance">
-            {above.length > 0 && mean?.tier ? (
-              <span className="text-foreground">
-                {above.map((a, i) => (
-                  <span key={a.dose}>
-                    {i > 0 && (i === above.length - 1 ? ' and ' : ', ')}
-                    {a.dose}× Cmax rates <span className={`font-medium ${getTierColor(a.tier).text}`}>{a.tier}</span>
-                  </span>
-                ))}
-                , higher than the mean.
-              </span>
-            ) : untested ? (
-              <>Tap a dose to see its risk on its own.</>
-            ) : null}
-            {finding && <> {finding}</>}
+            {finding}
           </p>
         )}
       </section>
 
       {/* ---------- 3. 11 biomarker dosis terpilih ---------- */}
       <BiomarkerList
-        key={`biomarkers-${doseId(selected)}`}
         ratios={selectedRatios}
         control={job.sim_result?.control_metrics}
         drug={selectedRun ? selectedRun.raw_metrics : job.sim_result?.raw_metrics}
-        tier={selectedResult?.tier}
-        shap={selectedResult?.shap}
-        explaining={selectedResult?.status === 'explaining'}
-        shapError={selectedResult?.shapError}
-        onExplain={() => void run(selected)}
+        tier={runTier}
+        shap={runShap}
+        explaining={false}
+        driversNote="Calculated for the overall run from the mean biomarker profile across simulated doses."
+        meta={selected === 'mean' ? 'Showing mean across doses' : `Showing ${selected}× Cmax`}
+        emptyDriversMessage="The driver analysis (SHAP) is not available for this simulation run."
       />
 
       {/* ---------- 4. Detail: satu pilihan, bukan banyak tab ---------- */}
@@ -262,15 +289,15 @@ export default function PipelineResult({ job, db, onRunAnother }: {
           )}
           {detail === 'doses' && (
             <div className="flex flex-col gap-12">
-              <BiomarkerMatrix job={job} selected={selected} onSelect={select} />
-              <DrugInputs job={job} db={db} selected={selected} onSelect={select} parts="doses" />
+              <BiomarkerMatrix job={job} selected={selected} onSelect={setSelected} />
+              <DrugInputs job={job} db={db} selected={selected} onSelect={setSelected} parts="doses" />
             </div>
           )}
           {detail === 'drug' && (
             <div className="flex flex-col gap-12">
               <DrugInputs job={job} db={db} selected={selected} parts="params" />
               <div className="border-t border-foreground/10 pt-10">
-                <MethodNote job={job} prediction={selectedResult?.prediction} />
+                <MethodNote job={job} prediction={runPrediction} />
               </div>
             </div>
           )}
