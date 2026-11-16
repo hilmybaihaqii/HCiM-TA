@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { getTierColor, getTierCssVar, normalizeTier } from '@/lib/tierColor';
 import type { PredictionOutput } from '@/lib/predict';
@@ -65,19 +66,34 @@ export function VoteBar({ prediction }: { prediction: Pick<PredictionOutput, 'co
 }
 
 /** Keluaran conformal dari model, ditulis apa adanya (tanpa saran buatan) */
-function ConformalFacts({ prediction }: { prediction: PredictionOutput }) {
+export function ConformalFacts({ prediction }: { prediction: PredictionOutput }) {
   const c = prediction.conformal;
-  const rows: { k: string; v: React.ReactNode }[] = [
-    { k: 'Recommended action', v: <span className={`capitalize font-medium ${getTierColor(c.recommendedAction).text}`}>{c.recommendedAction}</span> },
-    { k: 'Prediction set', v: <span className="capitalize">{c.predictionSet.length ? c.predictionSet.join(', ') : '—'}</span> },
-    ...(c.isAmbiguous ? [{ k: 'Ambiguous', v: 'Yes, more than one group' }] : []),
-    ...(c.outOfDistribution ? [{ k: 'Out of distribution', v: <span className="text-accent">Yes</span> }] : []),
+  const rows: { id: string; k: React.ReactNode; v: React.ReactNode }[] = [
+    { id: 'action', k: 'Recommended action', v: <span className={`capitalize font-medium ${getTierColor(c.recommendedAction).text}`}>{c.recommendedAction}</span> },
+    {
+      id: 'set',
+      k: (
+        <span className="inline-flex items-center gap-1.5">
+          <span>Prediction set</span>
+          <Link
+            href="/lab/guide#prediction-set"
+            className="text-xs text-muted hover:text-action underline underline-offset-2 transition-colors"
+            title="Read guide on prediction sets"
+          >
+            Guide ↗
+          </Link>
+        </span>
+      ),
+      v: <span className="capitalize">{c.predictionSet.length ? c.predictionSet.join(', ') : '—'}</span>,
+    },
+    ...(c.isAmbiguous ? [{ id: 'ambiguous', k: 'Ambiguous', v: 'Yes, more than one group' }] : []),
+    ...(c.outOfDistribution ? [{ id: 'ood', k: 'Out of distribution', v: <span className="text-accent">Yes</span> }] : []),
   ];
   return (
     <div className="w-full max-w-md mx-auto">
       <dl>
         {rows.map(r => (
-          <div key={r.k} className="flex items-baseline justify-between gap-6 px-3 py-2 rounded-chip odd:bg-[color-mix(in_srgb,var(--foreground)_3.5%,var(--background))] text-sm">
+          <div key={r.id} className="flex items-baseline justify-between gap-6 px-3 py-2 rounded-chip odd:bg-[color-mix(in_srgb,var(--foreground)_3.5%,var(--background))] text-sm">
             <dt className="text-foreground/70">{r.k}</dt>
             <dd className="text-right text-foreground">{r.v}</dd>
           </div>
@@ -89,11 +105,19 @@ function ConformalFacts({ prediction }: { prediction: PredictionOutput }) {
 }
 
 /** Vonis risiko: tier besar di tengah, vote pohon, lalu keluaran conformal. Dipakai Digital Lab & Full Pipeline. */
-export default function RiskVerdict({ tier, prediction }: { tier: string; prediction?: PredictionOutput | null }) {
+export default function RiskVerdict({
+  tier,
+  prediction,
+  compact = false,
+}: {
+  tier: string;
+  prediction?: PredictionOutput | null;
+  compact?: boolean;
+}) {
   const known = tier !== 'unknown';
   return (
-    <div className="flex flex-col items-center gap-8 md:gap-10">
-      <h2 className={`text-center text-5xl sm:text-6xl md:text-7xl font-medium tracking-tight capitalize ${known ? getTierColor(tier).text : 'text-foreground/70'}`}>
+    <div className={`flex flex-col items-center ${compact ? 'gap-6' : 'gap-8 md:gap-10'}`}>
+      <h2 className={`text-center font-medium tracking-tight capitalize ${compact ? 'text-3xl sm:text-4xl' : 'text-5xl sm:text-6xl md:text-7xl'} ${known ? getTierColor(tier).text : 'text-foreground/70'}`}>
         {known ? `${tier} risk` : 'No rating'}
       </h2>
       {prediction && known && <VoteBar prediction={prediction} />}

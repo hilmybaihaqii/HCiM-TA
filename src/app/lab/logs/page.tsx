@@ -4,13 +4,12 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { cachedGet } from "@/lib/historyCache";
 import { getTierColor, getTierCssVar } from "@/lib/tierColor";
-import PredictionHistory from "./components/PredictionHistory";
-import ShapHistory from "./components/ShapHistory";
+import RunHistory from "./components/RunHistory";
 import RiskBars from "./components/RiskBars";
 import LabPageHeader from "../components/LabPageHeader";
 import LabContainer from "../components/LabContainer";
 import { Bone } from "../components/Skeletons";
-import { Figure, SectionHead, TabRail } from "../components/report/ui";
+import { Figure, SectionHead } from "../components/report/ui";
 
 interface SummaryResponse {
   total_predictions: number;
@@ -26,10 +25,7 @@ function tierCount(summary: SummaryResponse | null, tier: string): number {
   return key ? summary!.tier_counts[key] : 0;
 }
 
-type Tab = "predictions" | "shap";
-
 export default function LogsPage() {
-  const [tab, setTab] = useState<Tab>("predictions");
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [summaryFailed, setSummaryFailed] = useState(false);
 
@@ -103,29 +99,12 @@ export default function LogsPage() {
           </div>
         </section>
 
-        {/* ---------- Riwayat: satu rel tab, satu daftar ---------- */}
-        <section aria-label="Records" className="w-full">
-          <TabRail
-            tabs={[
-              { id: "predictions", label: "Predictions" },
-              { id: "shap", label: "SHAP analyses" },
-            ]}
-            value={tab}
-            onChange={id => setTab(id as Tab)}
-            label="Record type"
-            panelPrefix="records"
-          />
-
-          <motion.div
-            key={tab}
-            id={`records-${tab}`}
-            role="tabpanel"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="pt-6"
-          >
-            {tab === "predictions" ? <PredictionHistory /> : <ShapHistory />}
-          </motion.div>
+        {/* ---------- Riwayat: satu daftar run ---------- */}
+        <section aria-labelledby="runs-heading" className="w-full">
+          <SectionHead id="runs-heading" title="Activity records" meta="One record per run" />
+          <div className="mt-6 pt-2">
+            <RunHistory />
+          </div>
         </section>
       </LabContainer>
     </div>
