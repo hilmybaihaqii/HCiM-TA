@@ -26,7 +26,6 @@ lab/
 ├── pipeline/                Full Pipeline: drug data → heart-cell simulation → risk model
 │   ├── page.tsx             state machine (form / running / result), polling, ?job= resume
 │   ├── form.ts              form state, validation, request building
-│   ├── useDosePredictions.ts  risk per dose (mean from the job, 1–4× on demand), module store per job
 │   └── components/
 │       ├── JobProgress.tsx      PipelineMonitor (5 real stages) + RunningDetails
 │       ├── PipelineResult.tsx   result: verdict, dose strip, 11 biomarkers, one 3-way detail switch
@@ -46,7 +45,7 @@ lab/
 API helpers live in `src/lib/` (`api.ts`, `pipeline.ts`, `predict.ts`, `tierColor.ts`, `biomarkerHighlight.ts`,
 `historyCache.ts`).
 `predict.ts` holds the risk model calls (predict + explain, retry on transient errors only) used by
-both Digital Lab and the per-dose results.
+Digital Lab. Full Pipeline reads the run-level prediction and SHAP directly from the simulation job.
 
 ## Data rules (risk reports)
 
@@ -54,9 +53,9 @@ both Digital Lab and the per-dose results.
   No hand-written protocol numbers (beat counts, cycle length, run time) and no made-up advice.
 - Confidence is the vote share of the 400-tree forest (multiples of 1/400). Show it as votes, never
   rounded percentages, so 399/400 does not read as 100%.
-- Every prediction is followed by `explain` (SHAP) automatically, with the same `prediction_id`, in
-  Digital Lab and for each dose in Full Pipeline. The tier shows first; SHAP fills in a few seconds
-  later. This keeps Prediction and SHAP history in Activity Logs one-to-one.
+- In Digital Lab, every prediction is followed by `explain` (SHAP) automatically with the same `prediction_id`.
+  In Full Pipeline, the backend executes predict and explain once on the mean biomarker vector and includes
+  them directly in the job response. This keeps Prediction and SHAP history in Activity Logs one-to-one.
 - The 11 biomarkers are two swipeable slides: "Main drivers" (SHAP order) first, then "Drug effect"
   (without drug, with drug, change).
 - Red on a biomarker ratio comes only from `isStrongChange()` (`lib/biomarkerHighlight.ts`): qNet below

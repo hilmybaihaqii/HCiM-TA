@@ -129,6 +129,9 @@ export default function Heart3D() {
   const wrapRef = useRef<HTMLDivElement>(null);
 
   const handleLoaded = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      (window as unknown as { __heartInteractiveTime?: number }).__heartInteractiveTime = performance.now();
+    }
     setPageReady(true);
     setReady(true);
   }, [setPageReady]);

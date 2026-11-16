@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { SHORT_DESC } from '../../components/report/biomarkerText';
 import {
   HistoryControls, HistoryMessage, HistoryRow, HistorySkeleton, Pager, TierFilter, TierText, TierFilterValue, ValueRows,
   formatWhen, matchesQuery, matchesTier, useHistory,
 } from './history';
 
-interface Contribution {
+export interface Contribution {
   feature?: string;
   biomarker?: string;
   shap?: number;
@@ -34,7 +35,7 @@ export const sortByInfluence = (list: Contribution[] = []) => [...list].sort((a,
 const ROW = 'grid grid-cols-[1fr_auto_1rem] sm:grid-cols-[13rem_9rem_1fr_1rem] items-center gap-3 sm:gap-4';
 
 /** Detail satu analisis SHAP. `owner` = pemilik (halaman admin). */
-export function ShapDetail({ log, owner }: { log: ShapLog; owner?: React.ReactNode }) {
+export function ShapDetail({ log, owner, note }: { log: ShapLog; owner?: React.ReactNode; note?: React.ReactNode }) {
   const sorted = sortByInfluence(log.contributions);
   const maxAbs = Math.max(1e-9, ...sorted.map(c => Math.abs(c.shap ?? 0)));
   const tier = (log.predicted_class || '').toLowerCase();
@@ -46,10 +47,14 @@ export function ShapDetail({ log, owner }: { log: ShapLog; owner?: React.ReactNo
       {/* Satu baris: kiri penjelasan singkat, kanan nilai dasar */}
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 text-sm">
         <p className="text-foreground/70">
-          How much each biomarker pushed the model toward <span className="capitalize text-foreground">{tier || 'this result'}</span> (+) or away from it (−).
+          How much each biomarker pushed the model toward <span className="capitalize text-foreground">{tier || 'this result'}</span> (+) or away from it (−).{' '}
+          <Link href="/lab/guide#shap" className="underline underline-offset-2 hover:text-action transition-colors text-xs font-medium">
+            SHAP guide ↗
+          </Link>
         </p>
         <p className="text-foreground/60 text-xs">Base value <span className="font-mono text-foreground/80">{Number.isFinite(log.base_value) ? log.base_value.toFixed(4) : '—'}</span></p>
       </div>
+      {note && <p className="text-xs text-foreground/60 -mt-2">{note}</p>}
       <ValueRows
         headers={['Biomarker', 'Push on the model', 'SHAP', 'Value']}
         rows={sorted.map((c, i) => {
