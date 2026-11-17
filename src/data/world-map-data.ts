@@ -19,7 +19,7 @@ export type NodeKey =
   | "jakarta"
   | "london"
   | "boston"
-  | "tokyo"
+  | "seoul"
   | "sydney"
   | "capetown";
 
@@ -30,7 +30,7 @@ export const NODES: Record<NodeKey, { x: number; y: number; label: string }> = {
   jakarta: { x: 788.5, y: 280.7, label: "Indonesia" },
   london: { x: 499.7, y: 124.8, label: "United Kingdom" },
   boston: { x: 308.1, y: 149.5, label: "United States" },
-  tokyo: { x: 877.1, y: 167.6, label: "south korea" },
+  seoul: { x: 842.9, y: 162.5, label: "South Korea" },
   sydney: { x: 908.3, y: 355.3, label: "Australia" },
   capetown: { x: 549.7, y: 355.5, label: "South Africa" },
 };
@@ -39,7 +39,7 @@ export const NODES: Record<NodeKey, { x: number; y: number; label: string }> = {
 export const ROUTES: NodeKey[] = [
   "london",
   "boston",
-  "tokyo",
+  "seoul",
   "sydney",
   "capetown",
 ];
@@ -71,7 +71,6 @@ export const AMBIENT_NODES: { x: number; y: number }[] = [
   { x: 601.6, y: 113.4 }, // Moscow
   { x: 771.4, y: 226.8 }, // Bangkok
   { x: 780.3, y: 260.3 }, // Singapore
-  { x: 842.9, y: 162.5 }, // Seoul
   { x: 828.0, y: 179.6 }, // Shanghai
   { x: 826.7, y: 224.5 }, // Manila
   { x: 787.9, y: 234.7 }, // Ho Chi Minh City

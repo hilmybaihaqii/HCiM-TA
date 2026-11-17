@@ -17,6 +17,13 @@
   --accent-teal-dark: #0F6252;
   --accent-amber: #D98B1E;      /* Intermediate Risk — lebih jenuh & tegas */
   --accent-amber-dark: #A66A14;
+
+  /* === Aksi: tombol & pilihan aktif di area /lab ===
+     Hitam charcoal (sama dengan teks). Merah aksen hanya untuk tombol yang menjalankan model
+     (Predict risk, Run full pipeline) dan untuk tanda risiko / perubahan kuat.
+     action-dark = warna hover (sedikit lebih terang supaya terasa). */
+  --action: #2A2A2A;
+  --action-dark: #4A4442;
 }
 
 @theme inline {
@@ -34,13 +41,68 @@
   --color-teal-dark: var(--accent-teal-dark);
   --color-amber: var(--accent-amber);
   --color-amber-dark: var(--accent-amber-dark);
+  --color-action: var(--action);
+  --color-action-dark: var(--action-dark);
 
   --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Tambahkan ini untuk mengaktifkan smooth scroll secara global */
+/* === Skala radius area /lab ===
+   Pakai nama, bukan angka, supaya semua kotak konsisten:
+   rounded-sheet   panel / lembar utama
+   rounded-card    kartu di dalam panel, dropdown, tooltip
+   rounded-control tombol & input
+   rounded-chip    elemen mikro (tag kecil, latar hover)
+   rounded-full    hanya navbar, avatar, titik, bar progres */
+@theme {
+  --radius-sheet: 1.5rem;
+  --radius-card: 1rem;
+  --radius-control: 0.75rem;
+  --radius-chip: 0.375rem;
+
+  /* Breakpoint ekstra untuk ponsel lebar (480px): dipakai grid biomarker */
+  --breakpoint-xs: 30rem;
+}
+
+/* Sembunyikan scrollbar tapi area tetap bisa di-scroll (tab bar, nav horizontal) */
+@utility scrollbar-hide {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Tambahkan ini untuk mengaktifkan smooth scroll secara global.
+   Warna latar html = warna halaman, supaya area overscroll / di balik toolbar Safari tidak putih. */
 html {
   scroll-behavior: smooth;
+  background-color: var(--background);
+}
+
+/* iOS Safari men-zoom otomatis saat input < 16px difokus. Di layar sentuh, paksa minimal 16px. */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+}
+
+/* Lenis (scroll halus di landing page) — lihat components/SmoothScroll.tsx.
+   scroll-behavior bawaan harus mati supaya tidak bertabrakan dengan Lenis. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+html.lenis {
+  scroll-behavior: auto !important;
+}
+.lenis:not(.lenis-autoToggle).lenis-stopped {
+  overflow: clip;
+}
+.lenis [data-lenis-prevent],
+.lenis [data-lenis-prevent-wheel] {
+  overscroll-behavior: contain;
 }
 
 body {
@@ -52,10 +114,12 @@ body {
   overflow-x: hidden;
 }
 
-/* Kustomisasi Scrollbar */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #d1d5db transparent;
+/* Kustomisasi Scrollbar. Di layer base supaya utility (mis. scrollbar-hide) bisa menimpanya. */
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+  }
 }
 
 ::-webkit-scrollbar {
@@ -77,6 +141,22 @@ body {
 /* Menggunakan warna accent untuk hover scrollbar */
 ::-webkit-scrollbar-thumb:hover {
   background-color: var(--accent-red);
+}
+
+/* Scrollbar halaman disembunyikan (Chrome, Edge, Safari, Firefox); halaman tetap bisa di-scroll.
+   Area scroll di dalam halaman (tabel, menu) tetap memakai scrollbar tipis di atas. */
+html,
+body {
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+
+/* Splash pembuka yang sudah pernah tampil di tab ini: jangan sempat tergambar (lihat app/layout.tsx) */
+html[data-splash-seen] [data-splash] {
+  display: none !important;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -117,4 +197,29 @@ body {
   .cursor-pointer {
     cursor: none !important;
   }
+}
+/* 404: jarum kompas yang terus mencari arah (hanya transform, mulus) */
+@keyframes compass-search {
+  0% { transform: rotate(-20deg); }
+  18% { transform: rotate(55deg); }
+  34% { transform: rotate(10deg); }
+  52% { transform: rotate(160deg); }
+  68% { transform: rotate(120deg); }
+  84% { transform: rotate(250deg); }
+  100% { transform: rotate(340deg); }
+}
+.compass-needle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: compass-search 14s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
+}
+/* 404: garis putus-putus bergeser pelan setelah tergambar (seperti masih berjalan) */
+@keyframes lost-march {
+  to { stroke-dashoffset: -150; }
+}
+.lost-route {
+  animation: lost-march 12s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .compass-needle, .lost-route { animation: none !important; }
 }

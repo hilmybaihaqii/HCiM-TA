@@ -3,9 +3,11 @@
 import React, { useRef, useEffect } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+import { usePathname } from "next/navigation";
 import { useSplash } from "./SplashProvider";
 
-gsap.ticker.lagSmoothing(0);
+// Catatan: lagSmoothing(0) sengaja tidak dipakai. Dengan bawaan GSAP, jeda sesaat (mis. saat model 3D
+// dimuat di belakang) tidak membuat animasi melompat untuk "mengejar" waktu.
 
 const Chars = React.memo(
   ({ text, accentLastChar = false }: { text: string; accentLastChar?: boolean }) => (
@@ -23,8 +25,20 @@ const Chars = React.memo(
 );
 Chars.displayName = "Chars";
 
+/**
+ * Splash pembuka hanya untuk halaman utama (/), sekali per tab. Halaman lain (login setelah logout,
+ * link reset password dari email, lab) tidak pernah memutarnya. Intro dipisah ke komponen sendiri
+ * supaya timeline GSAP-nya tidak pernah dibuat di halaman yang tidak menampilkannya.
+ */
 export default function SplashScreen() {
-  const { pageReady, splashDone, setSplashDone, setSplashStarted } = useSplash();
+  const pathname = usePathname();
+  const { splashDone } = useSplash();
+  if (pathname !== "/" || splashDone) return null;
+  return <SplashIntro />;
+}
+
+function SplashIntro() {
+  const { pageReady, setSplashDone, setSplashStarted } = useSplash();
 
   const minTimeElapsedRef = useRef(false);
   const pageReadyRef = useRef(pageReady);
@@ -262,7 +276,7 @@ export default function SplashScreen() {
       tl.to(
         overlayRef.current,
         {
-          clipPath: "inset(0% 0% 100% 0%)",
+          yPercent: -100,
           duration: 1.2,
           ease: "expo.inOut",
         },
@@ -272,20 +286,19 @@ export default function SplashScreen() {
     { scope: containerRef },
   );
 
-  if (splashDone) return null;
-
   return (
-    <div ref={containerRef}>
+    <div ref={containerRef} data-splash>
       <div
         ref={overlayRef}
-        className="fixed inset-0 z-9999 flex flex-col items-center justify-center w-screen h-screen overflow-hidden bg-[#FAFAFA] text-black font-sans"
-        style={{ clipPath: "inset(0% 0% 0% 0%)", willChange: "clip-path" }}
+        className="fixed inset-0 z-9999 flex flex-col items-center justify-center overflow-hidden bg-[#FAFAFA] text-black font-sans"
+        style={{ willChange: "transform" }}
       >
-        {/* Ambient color blobs — warna senada dengan landing page (crimson/teal/amber) */}
+        {/* Ambient color blobs — warna senada dengan landing page (crimson/teal/amber).
+            Gradien radial, bukan filter blur: blur besar yang bergerak dicat ulang tiap frame (penyebab patah-patah). */}
         <div className="splash-glow absolute inset-0 z-0 opacity-0 pointer-events-none overflow-hidden">
-          <div className="blob-drift absolute -top-[12%] -left-[10%] w-[42vw] h-[42vw] max-w-130 max-h-130 rounded-full bg-accent/20 blur-[100px] animate-[blob-drift-1_9s_ease-in-out_infinite]" />
-          <div className="blob-drift absolute -bottom-[15%] -right-[8%] w-[38vw] h-[38vw] max-w-120 max-h-120 rounded-full bg-teal/20 blur-[100px] animate-[blob-drift-2_11s_ease-in-out_-3s_infinite]" />
-          <div className="blob-drift absolute top-[38%] right-[12%] w-[24vw] h-[24vw] max-w-80 max-h-80 rounded-full bg-amber/18 blur-[90px] animate-[blob-drift-3_7s_ease-in-out_-2s_infinite]" />
+          <div className="blob-drift absolute -top-[22%] -left-[20%] w-[62vw] h-[62vw] max-w-190 max-h-190 will-change-transform animate-[blob-drift-1_9s_ease-in-out_infinite]" style={{ background: "radial-gradient(closest-side, rgba(184,84,92,0.20), rgba(184,84,92,0))" }} />
+          <div className="blob-drift absolute -bottom-[25%] -right-[18%] w-[58vw] h-[58vw] max-w-180 max-h-180 will-change-transform animate-[blob-drift-2_11s_ease-in-out_-3s_infinite]" style={{ background: "radial-gradient(closest-side, rgba(22,133,111,0.18), rgba(22,133,111,0))" }} />
+          <div className="blob-drift absolute top-[28%] right-[4%] w-[40vw] h-[40vw] max-w-120 max-h-120 will-change-transform animate-[blob-drift-3_7s_ease-in-out_-2s_infinite]" style={{ background: "radial-gradient(closest-side, rgba(217,139,30,0.16), rgba(217,139,30,0))" }} />
         </div>
 
         <div
@@ -351,7 +364,7 @@ export default function SplashScreen() {
           ref={visualWrapRef}
           className="invisible absolute z-10 w-44 h-24 md:w-72 md:h-36 flex items-center justify-center"
         >
-          <div className="absolute w-32 h-32 md:w-48 md:h-48 rounded-full bg-accent/15 blur-[50px]" />
+          <div className="absolute w-48 h-48 md:w-72 md:h-72" style={{ background: "radial-gradient(closest-side, rgba(184,84,92,0.16), rgba(184,84,92,0))" }} />
           <svg viewBox="0 0 100 50" className="relative w-full h-full overflow-visible">
             <path
               className="sci-ecg"

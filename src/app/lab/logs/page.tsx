@@ -1,10 +1,16 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { api } from "@/lib/api";
 import { motion } from "framer-motion";
-import PredictionsTable from "./components/PredictionTable";
-import ShapTable from "./components/ShapTable";
+import { cachedGet } from "@/lib/historyCache";
+import { getTierColor, getTierCssVar } from "@/lib/tierColor";
+import PredictionHistory from "./components/PredictionHistory";
+import ShapHistory from "./components/ShapHistory";
+import RiskBars from "./components/RiskBars";
+import LabPageHeader from "../components/LabPageHeader";
+import LabContainer from "../components/LabContainer";
+import { Bone } from "../components/Skeletons";
+import { Figure, SectionHead, TabRail } from "../components/report/ui";
 
 interface SummaryResponse {
   total_predictions: number;
@@ -12,135 +18,116 @@ interface SummaryResponse {
   tier_counts: Record<string, number>;
 }
 
+const TIERS = ["high", "intermediate", "low"] as const;
+
+/** Jumlah per tier dari summary; key bisa beda huruf besar/kecil */
+function tierCount(summary: SummaryResponse | null, tier: string): number {
+  const key = Object.keys(summary?.tier_counts ?? {}).find(k => k.toLowerCase() === tier);
+  return key ? summary!.tier_counts[key] : 0;
+}
+
+type Tab = "predictions" | "shap";
+
 export default function LogsPage() {
-  const [activeTab, setActiveTab] = useState<"predictions" | "shap">(
-    "predictions",
-  );
+  const [tab, setTab] = useState<Tab>("predictions");
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
+  const [summaryFailed, setSummaryFailed] = useState(false);
 
   useEffect(() => {
-    api("/api/history/summary")
-      .then((res) => setSummary(res as SummaryResponse))
-      .catch(() => console.error("Failed to fetch summary data."));
+    cachedGet<SummaryResponse>("/api/history/summary")
+      .then(res => setSummary(res))
+      .catch(err => {
+        console.error("Failed to fetch summary data.", err);
+        setSummaryFailed(true);
+      });
   }, []);
 
-  // Membantu membaca key JSON dengan aman (menghindari error jika undefined atau beda casing)
-  const getCount = (key: string) => {
-    if (!summary?.tier_counts) return 0;
-    // Mencari key yang cocok secara case-insensitive
-    const foundKey = Object.keys(summary.tier_counts).find(
-      (k) => k.toLowerCase() === key.toLowerCase(),
-    );
-    return foundKey ? summary.tier_counts[foundKey] : 0;
-  };
+  const counts = TIERS.map(t => ({ tier: t, count: tierCount(summary, t) }));
+  const top = [...counts].sort((a, b) => b.count - a.count)[0];
 
   return (
-    <div className="w-full flex flex-col text-foreground pt-28 pb-20 min-h-screen">
-      <div className="w-full max-w-7xl mx-auto px-6 md:px-12">
-        {/* Header & Dashboard Stats */}
-        <div className="mb-12 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
-          <div className="max-w-xl">
-            <h1 className="text-3xl font-medium tracking-tight mb-2">
-              History & Records
-            </h1>
-            <p className="text-sm text-muted leading-relaxed">
-              Review your past predictions, understand the model&apos;s
-              decision-making process, and monitor the distribution of your
-              cardiovascular toxicity risks.
-            </p>
-          </div>
+    <div className="w-full flex flex-col text-foreground">
+      <LabContainer className="flex flex-col gap-12 md:gap-16">
+        <LabPageHeader
+          eyebrow="Activity logs"
+          title="History"
+          accent="and records."
+          description="Your past predictions, the factors behind them, and how the risk results are spread."
+        />
 
-          {summary && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex flex-wrap sm:flex-nowrap gap-3 sm:gap-4"
-            >
-              {/* Card 1: Total Predictions */}
-              <div className="bg-surface-white/60 border border-foreground/10 p-4 sm:p-5 rounded-2xl flex flex-col items-center justify-center flex-1 min-w-27.5">
-                <span className="text-3xl font-bold text-foreground">
-                  {summary.total_predictions}
-                </span>
-                <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted mt-1 text-center">
-                  Total Info
-                </span>
-              </div>
-
-              {/* Card 2: Risk Distribution (High, Intermediate, Low) */}
-              <div className="bg-surface-white/60 border border-foreground/10 p-4 sm:p-5 rounded-2xl flex flex-col justify-center flex-2 min-w-45">
-                <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted text-center mb-3">
-                  Risk Distribution
-                </span>
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="flex items-center gap-2 text-muted">
-                      <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"></span>
-                      High Risk
-                    </span>
-                    <span className="font-mono font-medium">
-                      {getCount("High")}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="flex items-center gap-2 text-muted">
-                      <span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
-                      Intermediate
-                    </span>
-                    <span className="font-mono font-medium">
-                      {getCount("Intermediate")}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="flex items-center gap-2 text-muted">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                      Low Risk
-                    </span>
-                    <span className="font-mono font-medium">
-                      {getCount("Low")}
-                    </span>
-                  </div>
+        {/* ---------- Ringkasan: tiga angka di kiri, bar chart risiko di kanan (ponsel: bertumpuk) ---------- */}
+        <section aria-labelledby="summary-heading" className="w-full">
+          <SectionHead id="summary-heading" title="Overview" meta="All your records" />
+          <div className="mt-6 pt-6 border-t border-foreground/10 min-h-36">
+            {summary ? (
+              <motion.div
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                className="grid grid-cols-1 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] items-center gap-8 md:gap-12"
+              >
+                <dl className="grid grid-cols-3 divide-x divide-foreground/10 md:divide-x-0">
+                  <Figure label="Predictions">{summary.total_predictions}</Figure>
+                  <Figure label="SHAP analyses">{summary.total_explanations}</Figure>
+                  <Figure label="Most common" word>
+                    {top && top.count > 0
+                      ? <span className={`capitalize ${getTierColor(top.tier).text}`}>{top.tier}</span>
+                      : "—"}
+                  </Figure>
+                </dl>
+                <div className="md:pl-12 md:border-l md:border-foreground/10">
+                  <p className="mb-2 px-2 text-xs text-foreground/60">Risk results</p>
+                  <RiskBars
+                    slices={counts.map(c => ({ key: c.tier, label: c.tier[0].toUpperCase() + c.tier.slice(1), count: c.count, color: getTierCssVar(c.tier) }))}
+                  />
+                </div>
+              </motion.div>
+            ) : summaryFailed ? (
+              <p role="alert" className="py-10 text-center text-sm text-foreground/70">
+                Could not load the overview. Your history below is still available.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] items-center gap-8 md:gap-12" aria-hidden="true">
+                <div className="grid grid-cols-3 gap-4">
+                  {[0, 1, 2].map(i => (
+                    <div key={i} className="flex flex-col items-center md:items-start gap-2">
+                      <Bone className="h-3 w-16" />
+                      <Bone className="h-8 w-14" />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-col gap-4 md:pl-12">
+                  {[0, 1, 2].map(i => <Bone key={i} className="h-5 w-full rounded-full" />)}
                 </div>
               </div>
+            )}
+          </div>
+        </section>
 
-              {/* Card 3: Total SHAP */}
-              <div className="bg-surface-white/60 border border-foreground/10 p-4 sm:p-5 rounded-2xl flex flex-col items-center justify-center flex-1 min-w-27.5">
-                <span className="text-3xl font-bold text-foreground">
-                  {summary.total_explanations}
-                </span>
-                <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted mt-1 text-center">
-                  Analyses
-                </span>
-              </div>
-            </motion.div>
-          )}
-        </div>
+        {/* ---------- Riwayat: satu rel tab, satu daftar ---------- */}
+        <section aria-label="Records" className="w-full">
+          <TabRail
+            tabs={[
+              { id: "predictions", label: "Predictions" },
+              { id: "shap", label: "SHAP analyses" },
+            ]}
+            value={tab}
+            onChange={id => setTab(id as Tab)}
+            label="Record type"
+            panelPrefix="records"
+          />
 
-        {/* Minimalist Tabs */}
-        <div className="flex gap-6 mb-8 border-b border-foreground/10">
-          <button
-            onClick={() => setActiveTab("predictions")}
-            className={`pb-3 text-sm font-medium transition-colors border-b-2 outline-none ${activeTab === "predictions" ? "border-foreground text-foreground" : "border-transparent text-muted hover:text-foreground"}`}
+          <motion.div
+            key={tab}
+            id={`records-${tab}`}
+            role="tabpanel"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className="pt-6"
           >
-            Prediction History
-          </button>
-          <button
-            onClick={() => setActiveTab("shap")}
-            className={`pb-3 text-sm font-medium transition-colors border-b-2 outline-none ${activeTab === "shap" ? "border-foreground text-foreground" : "border-transparent text-muted hover:text-foreground"}`}
-          >
-            SHAP History
-          </button>
-        </div>
-
-        {/* Content Area */}
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          {activeTab === "predictions" ? <PredictionsTable /> : <ShapTable />}
-        </motion.div>
-      </div>
+            {tab === "predictions" ? <PredictionHistory /> : <ShapHistory />}
+          </motion.div>
+        </section>
+      </LabContainer>
     </div>
   );
 }

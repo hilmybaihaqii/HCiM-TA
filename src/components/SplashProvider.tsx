@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { usePathname } from 'next/navigation';
 
 interface SplashContextType {
   pageReady: boolean;
@@ -13,57 +14,62 @@ interface SplashContextType {
 
 const SplashContext = createContext<SplashContextType | undefined>(undefined);
 
+const SEEN_KEY = 'hasSeenSplash';
+const noop = () => () => {};
+
+/** Splash sudah pernah tampil di tab ini (dibaca dari sessionStorage, aman saat render server) */
+function useSeenSplash() {
+  return useSyncExternalStore(
+    noop,
+    () => { try { return sessionStorage.getItem(SEEN_KEY) === 'true'; } catch { return false; } },
+    () => false,
+  );
+}
+
+/** Dokumen selesai dimuat (event "load") */
+function useWindowLoaded() {
+  return useSyncExternalStore(
+    cb => { window.addEventListener('load', cb); return () => window.removeEventListener('load', cb); },
+    () => document.readyState === 'complete',
+    () => false,
+  );
+}
+
 export function SplashProvider({ children }: { children: React.ReactNode }) {
-  const [pageReady, setPageReady] = useState(false);
-  const [splashDone, setSplashDone] = useState(false);
+  // Splash hanya diputar di halaman utama; di halaman lain dianggap sudah selesai (navbar dll. langsung tampil)
+  const offHome = usePathname() !== '/';
+  const seen = useSeenSplash();
+  const loaded = useWindowLoaded();
+  const [readyFlag, setPageReady] = useState(false);
+  const [doneFlag, setDoneFlag] = useState(false);
   const [splashStarted, setSplashStarted] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
 
-  // 1. Cek sessionStorage saat komponen dimount
+  // Pengaman: jangan menahan splash lebih dari 8 detik walau aset belum selesai
   useEffect(() => {
-    const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
-    if (hasSeenSplash === 'true') {
-      setSplashDone(true); // Jika sudah pernah lihat, langsung tandai selesai
-    }
-
-    const handleLoad = () => setPageReady(true);
-    if (document.readyState === 'complete') {
-      setPageReady(true);
-    } else {
-      window.addEventListener('load', handleLoad);
-    }
-
-    const fallbackTimeout = setTimeout(() => {
-      setPageReady(true);
-    }, 8000);
-
-    return () => {
-      window.removeEventListener('load', handleLoad);
-      clearTimeout(fallbackTimeout);
-    };
+    const t = setTimeout(() => setTimedOut(true), 8000);
+    return () => clearTimeout(t);
   }, []);
 
-  // 2. Buat custom fungsi untuk setSplashDone agar otomatis simpan ke sessionStorage
-  const handleSetSplashDone = (v: boolean) => {
-    setSplashDone(v);
-    if (v === true) {
-      sessionStorage.setItem('hasSeenSplash', 'true');
+  // Selesai: simpan ke sessionStorage supaya splash tidak diulang di tab yang sama
+  const setSplashDone = useCallback((v: boolean) => {
+    setDoneFlag(v);
+    if (v) {
+      try { sessionStorage.setItem(SEEN_KEY, 'true'); } catch { /* storage diblokir: abaikan */ }
     }
-  };
+  }, []);
 
-  return (
-    <SplashContext.Provider
-      value={{ 
-        pageReady, 
-        setPageReady, 
-        splashDone, 
-        setSplashDone: handleSetSplashDone, // Gunakan custom fungsi di sini
-        splashStarted, 
-        setSplashStarted 
-      }}
-    >
-      {children}
-    </SplashContext.Provider>
-  );
+  const value = useMemo<SplashContextType>(() => ({
+    pageReady: readyFlag || loaded || timedOut,
+    setPageReady,
+    splashDone: doneFlag || seen || offHome,
+    setSplashDone,
+    // Tanpa splash (sudah pernah tampil / bukan halaman utama) konten landing langsung boleh mulai
+    splashStarted: splashStarted || doneFlag || seen || offHome,
+    setSplashStarted,
+  }), [readyFlag, loaded, timedOut, doneFlag, seen, offHome, setSplashDone, splashStarted]);
+
+  return <SplashContext.Provider value={value}>{children}</SplashContext.Provider>;
 }
 
 export function useSplash() {

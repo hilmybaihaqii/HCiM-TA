@@ -1,6 +1,8 @@
 import React from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SmoothScroll from "@/components/SmoothScroll";
+import BackToTop from "@/components/ui/BackToTop";
 
 export default function HomeLayout({
   children,
@@ -21,9 +23,11 @@ export default function HomeLayout({
         <div className="absolute top-[98%] left-[15%] w-[26vw] h-[26vw] max-w-85 max-h-85 rounded-full bg-teal/18 blur-[80px]" />
       </div>
 
+      <SmoothScroll />
       <Navbar />
       <main className="relative z-10 flex flex-col w-full">{children}</main>
       <Footer />
+      <BackToTop />
     </div>
   );
 }

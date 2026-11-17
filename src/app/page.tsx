@@ -2,8 +2,8 @@
 
 import React, { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import SignInCelebration from "@/components/auth/SignedInNotice";
+import { AuthShell, LOGIN_ASIDE } from "@/components/auth/AuthShell";
 
 import HomeLayout from "@/components/layout/HomeLayout";
 import HeroSection from "@/components/section/HomeSection/HeroSection";
@@ -20,34 +20,16 @@ function HomeContent() {
 
   useEffect(() => {
     if (isLoginSuccess) {
-      router.push("/login?login=success");
+      router.replace("/login?login=success");
     }
   }, [isLoginSuccess, router]);
+  // Kembali dari Google: tampilan sama persis dengan halaman login yang memeriksa sesi & menyapa user,
+  // jadi perpindahan ke /login?login=success tidak terlihat sebagai halaman lain.
   if (isLoginSuccess) {
     return (
-      <div className="fixed inset-0 z-100 flex h-screen w-full flex-col items-center justify-center bg-[#0A0A0A]">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col items-center gap-6"
-        >
-          <Loader2
-            className="w-7 h-7 text-white/80 animate-spin"
-            strokeWidth={1.5}
-          />
-
-          {/* Teks elegan, tidak terlalu "AI" */}
-          <div className="flex flex-col items-center gap-2">
-            <h2 className="text-base font-medium tracking-tight text-white">
-              Authentication Successful
-            </h2>
-            <p className="text-xs text-white/50 tracking-wide">
-              Redirecting, please wait...
-            </p>
-          </div>
-        </motion.div>
-      </div>
+      <AuthShell aside={LOGIN_ASIDE}>
+        <SignInCelebration via="google" ready={false} />
+      </AuthShell>
     );
   }
 

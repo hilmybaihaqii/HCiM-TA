@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { useSplash } from './SplashProvider';
+import { getLenis } from '@/lib/smoothScroll';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -21,13 +22,16 @@ export default function Navbar() {
       document.body.style.overflow = 'hidden';
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
       document.body.style.paddingRight = `${scrollbarWidth}px`;
+      getLenis()?.stop(); // scroll halus (landing page) juga dihentikan selama menu terbuka
     } else {
       document.body.style.overflow = 'unset';
       document.body.style.paddingRight = '0px';
+      getLenis()?.start();
     }
-    return () => { 
-      document.body.style.overflow = 'unset'; 
+    return () => {
+      document.body.style.overflow = 'unset';
       document.body.style.paddingRight = '0px';
+      getLenis()?.start();
     };
   }, [isMenuOpen]);
 
@@ -78,6 +82,7 @@ export default function Navbar() {
           <div className="flex items-center gap-5 md:gap-8">
             <Link
               href="/login"
+              prefetch={false}
               className="relative z-50 px-5 py-2 text-xs font-medium tracking-[0.15em] border border-accent bg-accent text-surface-white hover:bg-accent-dark hover:border-accent-dark transition-all duration-300 rounded-full hidden sm:block"
             >
               Get Started
@@ -110,6 +115,7 @@ export default function Navbar() {
             initial="closed"
             animate="open"
             exit="closed"
+            data-lenis-prevent
             className="fixed inset-0 z-40 bg-background overflow-y-auto"
           >
             <div className="relative z-10 flex flex-col max-w-7xl mx-auto w-full px-6 md:px-12 pt-28 pb-10 min-h-svh">
@@ -164,6 +170,7 @@ export default function Navbar() {
                 </span>
                 <Link
                   href="/login"
+                  prefetch={false}
                   onClick={() => setIsMenuOpen(false)}
                   className="flex sm:hidden items-center justify-center w-full py-3.5 text-[10px] font-medium uppercase tracking-widest text-surface-white bg-accent rounded-full"
                 >

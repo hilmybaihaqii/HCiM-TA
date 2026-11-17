@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Figtree } from "next/font/google";
 import SplashScreen from "@/components/SplashScreen";
 import { SplashProvider } from "@/components/SplashProvider";
@@ -17,13 +17,32 @@ export const metadata: Metadata = {
   description: "Animal-free cardiotoxicity prediction platform.",
 };
 
+// viewportFit "cover": halaman boleh mengisi area notch/home bar, jarak aman diatur lewat env(safe-area-inset-*).
+// themeColor: warna toolbar Safari/Chrome mobile sama dengan latar halaman.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#F6F4F3",
+};
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${figtree.variable} font-sans`}>
+    // suppressHydrationWarning: skrip di bawah boleh menambah atribut data-splash-seen sebelum React hidup
+    <html lang="en" className={`${figtree.variable} font-sans`} suppressHydrationWarning>
+      <head>
+        {/* Sebelum halaman tergambar: kalau splash sudah pernah tampil di tab ini, sembunyikan lapisannya
+            yang ikut dirender server, supaya tidak berkedip sesaat sebelum React menghapusnya. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: "try{if(sessionStorage.getItem('hasSeenSplash')==='true'||/[?&]login=success/.test(location.search))document.documentElement.setAttribute('data-splash-seen','')}catch(e){}",
+          }}
+        />
+      </head>
       <body className="antialiased bg-white text-black">
         <SplashProvider>
           <SplashScreen />

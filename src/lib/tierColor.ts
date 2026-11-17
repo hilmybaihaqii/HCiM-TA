@@ -8,6 +8,8 @@ export interface TierColorClasses {
   bg: string;
   bgSoft: string;
   border: string;
+  /** Garis solid (mis. garis kiri pull-quote) */
+  borderStrong: string;
   dot: string;
   ring: string;
 }
@@ -19,6 +21,7 @@ const TIER_COLORS: Record<RiskTier, TierColorClasses> = {
     bg: 'bg-teal',
     bgSoft: 'bg-teal/15',
     border: 'border-teal/40',
+    borderStrong: 'border-teal',
     dot: 'bg-teal',
     ring: 'ring-teal/40',
   },
@@ -28,6 +31,7 @@ const TIER_COLORS: Record<RiskTier, TierColorClasses> = {
     bg: 'bg-amber',
     bgSoft: 'bg-amber/15',
     border: 'border-amber/40',
+    borderStrong: 'border-amber',
     dot: 'bg-amber',
     ring: 'ring-amber/40',
   },
@@ -37,6 +41,7 @@ const TIER_COLORS: Record<RiskTier, TierColorClasses> = {
     bg: 'bg-accent',
     bgSoft: 'bg-accent/15',
     border: 'border-accent/40',
+    borderStrong: 'border-accent',
     dot: 'bg-accent',
     ring: 'ring-accent/40',
   },
@@ -51,4 +56,15 @@ export function normalizeTier(tier: string): RiskTier {
 
 export function getTierColor(tier: string): TierColorClasses {
   return TIER_COLORS[normalizeTier(tier)];
+}
+
+const TIER_CSS_VAR: Record<RiskTier, string> = {
+  low: 'var(--accent-teal)',
+  intermediate: 'var(--accent-amber)',
+  high: 'var(--accent-red)',
+};
+
+/** Warna tier sebagai CSS variable, untuk SVG/inline style (chart, titik status). */
+export function getTierCssVar(tier: string): string {
+  return TIER_CSS_VAR[normalizeTier(tier)];
 }

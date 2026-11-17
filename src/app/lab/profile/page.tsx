@@ -1,150 +1,115 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
+import React, { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { api } from '@/lib/api';
+import { motion } from 'framer-motion';
+import { useSessionUser } from '@/components/SessionGuard';
+import LabPageHeader from '../components/LabPageHeader';
+import LabContainer from '../components/LabContainer';
+import { Bone, HeaderSkeleton } from '../components/Skeletons';
+import IdentityCard from './components/IdentityCard';
+import PasswordSection from './components/PasswordSection';
+import DeactivateSection from './components/DeactivateSection';
 
-import ProfileCard from './components/ProfileCard';
-import SecuritySettings from './components/SecuritySettings';
-import DangerZone from './components/DangerZone';
+/*
+ * Profil: kartu identitas & ringkasan aktivitas di kiri (menempel saat digulir di layar lebar),
+ * pengaturan di kanan sebagai baris berjudul yang dipisah garis tipis (bukan tab), supaya semua
+ * pilihan terlihat sekaligus.
+ */
 
-interface UserProfileData {
-  display_name?: string;
-  email?: string;
-  role?: string;
-}
+const EASE = [0.16, 1, 0.3, 1] as const;
 
-interface AuthMeResponse {
-  items?: UserProfileData[];
-  display_name?: string;
-  email?: string;
-  role?: string;
-}
-
-function ProfileOrchestrator() {
-  const searchParams = useSearchParams();
-
-  const [isLoading, setIsLoading] = useState(true);
-  const [profile, setProfile] = useState<{ name: string; email: string; role: string } | null>(null);
-
-  const [activeTab, setActiveTab] = useState<'security' | 'danger'>('security');
-  // Dihitung langsung saat inisialisasi (bukan lewat effect), karena searchParams
-  // sudah tersedia secara sinkron pas render pertama — gak perlu "menyusul" lewat effect.
-  const [initialPwdStep] = useState<'request' | 'form'>(() =>
-    searchParams.get('action') === 'change-password' ? 'form' : 'request'
+function SettingRow({ id, title, text, children, delay = 0 }: {
+  id: string;
+  title: string;
+  text: React.ReactNode;
+  children: React.ReactNode;
+  delay?: number;
+}) {
+  return (
+    <motion.section
+      aria-labelledby={id}
+      initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: EASE, delay }}
+      className="grid grid-cols-1 xl:grid-cols-[14rem_1fr] gap-5 xl:gap-10 border-t border-foreground/10 py-9 first:border-t-0 first:pt-0"
+    >
+      <div>
+        <h2 id={id} className="text-lg font-medium tracking-tight text-foreground">{title}</h2>
+        <p className="mt-1.5 text-sm leading-relaxed text-foreground/60">{text}</p>
+      </div>
+      <div className="min-w-0">{children}</div>
+    </motion.section>
   );
+}
 
-  useEffect(() => {
-    // Ambil data profil
-    api('/auth/me')
-      .then((res: unknown) => {
-        const rawData = res as AuthMeResponse;
-        const data = rawData?.items ? rawData.items[0] : rawData;
-
-        setProfile({
-          name: data?.display_name || 'Unknown',
-          email: data?.email || 'No email',
-          role: data?.role?.toLowerCase() || 'user'
-        });
-      })
-      .catch(() => console.warn("Failed to load profile data."))
-      .finally(() => setIsLoading(false));
-  }, []);
-
-  const canShowDangerZone = !isLoading && profile?.role !== 'admin';
+function ProfileContent() {
+  const user = useSessionUser();
+  const searchParams = useSearchParams();
+  // Dibuka dari link "?action=change-password": langsung ke langkah password baru
+  const [initialStep] = useState<'request' | 'form'>(() => (searchParams.get('action') === 'change-password' ? 'form' : 'request'));
+  const isAdmin = user.role === 'admin';
+  const email = user.email || 'your email';
 
   return (
-    <div className="w-full flex flex-col text-foreground overflow-x-hidden pt-20 sm:pt-24 md:pt-32 pb-16 sm:pb-20 min-h-screen">
-      {/* PENTING: max-width di sini disamakan (max-w-4xl) dengan max-width ProfileCard/tabs/content
-          di bawah. Sebelumnya wrapper ini pakai max-w-7xl sementara isinya max-w-4xl tanpa mx-auto
-          sendiri, jadi konten nempel ke kiri wrapper yang lebih lebar alih-alih ikut center. */}
-      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6">
+    <div className="w-full flex flex-col text-foreground">
+      <LabContainer className="flex flex-col gap-12 md:gap-16">
+        <LabPageHeader
+          eyebrow="Profile"
+          title="Your account"
+          accent="and sign-in."
+          description="Your details, your activity on Cardivex, and how you sign in."
+        />
 
-        <motion.h1
-          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
-          className="text-2xl sm:text-3xl font-medium tracking-tight text-foreground mb-6 sm:mb-8"
-        >
-          Profile Settings
-        </motion.h1>
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,24rem)_1fr] gap-12 lg:gap-16 items-start">
+          <div className="lg:sticky lg:top-28">
+            <IdentityCard user={user} />
+          </div>
 
-        {/* 1. Profile Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }}
-          className="mb-10 sm:mb-12"
-        >
-          <ProfileCard isLoading={isLoading} profile={profile} />
-        </motion.div>
-
-        {/* 2. Tabs Navigation dengan sliding underline */}
-        <motion.div
-          initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}
-          className="flex items-center gap-6 sm:gap-8 border-b border-foreground/10 mb-8 overflow-x-auto scrollbar-hide"
-        >
-          <button
-            onClick={() => setActiveTab('security')}
-            className={`relative pb-3 text-sm font-medium whitespace-nowrap transition-colors shrink-0 ${
-              activeTab === 'security' ? 'text-foreground' : 'text-muted hover:text-foreground'
-            }`}
-          >
-            Security & Password
-            {activeTab === 'security' && (
-              <motion.div
-                layoutId="profile-tab-underline"
-                className="absolute left-0 right-0 -bottom-px h-0.5 bg-foreground rounded-full"
-                transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-              />
-            )}
-          </button>
-
-          {canShowDangerZone && (
-            <button
-              onClick={() => setActiveTab('danger')}
-              className={`relative pb-3 text-sm font-medium whitespace-nowrap transition-colors shrink-0 ${
-                activeTab === 'danger' ? 'text-foreground' : 'text-muted hover:text-foreground'
-              }`}
+          <div>
+            <SettingRow
+              id="password-heading"
+              title="Password"
+              text="Changing it takes a code we email you, so only you can do it."
             >
-              Danger Zone
-              {activeTab === 'danger' && (
-                <motion.div
-                  layoutId="profile-tab-underline"
-                  className="absolute left-0 right-0 -bottom-px h-0.5 bg-foreground rounded-full"
-                  transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                />
-              )}
-            </button>
-          )}
-        </motion.div>
+              <PasswordSection email={email} initialStep={initialStep} />
+            </SettingRow>
 
-        {/* 3. Tab Content */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-          >
-            {activeTab === 'security' && <SecuritySettings initialStep={initialPwdStep} />}
-            {activeTab === 'danger' && canShowDangerZone && <DangerZone />}
-          </motion.div>
-        </AnimatePresence>
-
-      </div>
+            {isAdmin ? (
+              <SettingRow id="deactivate-heading" title="Deactivate account" text="Stop this account from signing in." delay={0.08}>
+                <p className="rounded-card bg-foreground/[0.04] px-4 py-3.5 text-sm leading-relaxed text-foreground/70">
+                  Administrator accounts can&apos;t be deactivated from the profile page.
+                </p>
+              </SettingRow>
+            ) : (
+              <SettingRow
+                id="deactivate-heading"
+                title="Deactivate account"
+                text="Stop this account from signing in. You can ask an administrator to restore it."
+                delay={0.08}
+              >
+                <DeactivateSection email={email} />
+              </SettingRow>
+            )}
+          </div>
+        </div>
+      </LabContainer>
     </div>
   );
 }
 
-// Dibungkus Suspense karena pakai useSearchParams()
+// Dibungkus Suspense karena memakai useSearchParams()
 export default function ProfilePage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-muted" />
-      </div>
+      <LabContainer className="flex flex-col gap-12">
+        <HeaderSkeleton />
+        <div className="grid grid-cols-1 lg:grid-cols-[24rem_1fr] gap-12">
+          <Bone className="h-72 rounded-sheet" />
+          <Bone className="h-72 rounded-sheet" />
+        </div>
+      </LabContainer>
     }>
-      <ProfileOrchestrator />
+      <ProfileContent />
     </Suspense>
   );
 }
