@@ -1,0 +1,104 @@
+.guide {
+  --guide-muted: #67615f;
+}
+
+.hero {
+  position: relative;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  border: 1px solid var(--border-color);
+  border-radius: 1.5rem;
+  background: radial-gradient(ellipse at 100% 0%, #b8545c12, transparent 65%), #ffffffc9;
+}
+
+.hero :global(header) { padding: 0; }
+.hero :global(header > div:last-child) { display: none; }
+.hero :global(header p) { color: var(--guide-muted); max-width: 27rem; }
+.heroFooter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .75rem 1.5rem;
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-color);
+  font-size: .8125rem;
+  color: var(--guide-muted);
+}
+.heroFooter span { display: inline-flex; align-items: center; gap: .5rem; }
+.heroFooter a { margin-left: auto; display: inline-flex; align-items: center; gap: .5rem; color: var(--foreground); font-weight: 600; }
+.layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 2rem; align-items: start; }
+.navigation { position: sticky; top: 7.5rem; max-height: calc(100dvh - 9rem); overflow-y: auto; }
+.navLabel { display: flex; align-items: center; gap: .625rem; padding: .5rem .75rem 1rem; font-size: .75rem; font-weight: 600; color: var(--guide-muted); }
+.chapterLink { display: flex; align-items: center; gap: .75rem; margin-bottom: .25rem; padding: .8rem .75rem; border: 1px solid transparent; border-radius: .75rem; font-size: .8125rem; line-height: 1.5; color: var(--guide-muted); transition: background .15s, color .15s; }
+.chapterLink:hover { background: #ffffffb3; color: var(--foreground); }
+.chapterLink[aria-current] { background: var(--foreground); color: white; }
+.chapterNumber { font-family: monospace; font-size: .6875rem; opacity: .7; }
+.navFooter { margin: 1.5rem .75rem 0; padding-top: 1.25rem; border-top: 1px solid var(--border-color); font-size: .75rem; color: var(--guide-muted); line-height: 1.7; }
+.navFooter a { display: flex; align-items: center; gap: .5rem; margin-top: .5rem; color: var(--foreground); font-weight: 600; }
+.mobileNavigation { display: none; }
+.content { min-width: 0; display: flex; flex-direction: column; gap: 1.5rem; }
+.content > section { padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid var(--border-color); border-radius: 1.25rem; background: #ffffffc9; scroll-margin-top: 7.5rem; }
+.sectionHeading { display: flex; align-items: flex-start; gap: 1rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border-color); }
+.sectionNumber { flex-shrink: 0; display: grid; place-items: center; width: 2.625rem; height: 2.625rem; border: 1px solid #b8545c26; border-radius: .875rem; background: #b8545c09; color: var(--accent-red-dark); font-family: monospace; font-size: .8125rem; }
+.sectionMeta { margin-bottom: .375rem; font-size: .75rem; line-height: 1.5; color: var(--guide-muted); }
+.sectionHeading h2 { font-size: clamp(1.2rem, 2vw, 1.5rem); line-height: 1.3; font-weight: 600; letter-spacing: -.035em; }
+.content p, .content li { line-height: 1.8; }
+.content h3 { line-height: 1.55; }
+.content :global(.text-muted) { color: var(--guide-muted); }
+.searchBar { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-top: 1.5rem; }
+.searchField { display: flex; align-items: center; gap: .625rem; flex: 1; min-width: 0; padding: .625rem .875rem; border: 1px solid var(--border-color); border-radius: .75rem; background: white; }
+.searchField:focus-within { outline: 2px solid var(--foreground); outline-offset: 2px; }
+.searchField svg { color: var(--guide-muted); flex-shrink: 0; }
+.searchField input { width: 100%; min-width: 0; outline: none; font-size: .875rem; }
+.searchField button { padding: .25rem; border-radius: .25rem; }
+.resultCount { color: var(--guide-muted); font-size: .75rem; white-space: nowrap; }
+.biomarkerTable { margin-top: 1rem; border: 1px solid var(--border-color); border-radius: .875rem; overflow: hidden; }
+.biomarkerTable table { width: 100%; text-align: left; font-size: .875rem; border-collapse: collapse; }
+.biomarkerTable th { padding: .875rem 1rem; background: #f6f4f3; color: var(--guide-muted); font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .045em; }
+.biomarkerTable td { padding: 1rem; vertical-align: top; border-top: 1px solid #e6e0dd99; }
+.biomarkerTable tbody tr:nth-child(even) { background: #f6f4f345; }
+.biomarkerTable tbody tr:hover { background: #f6f4f3b3; }
+.biomarkerTable th:last-child, .biomarkerTable td:last-child { text-align: right; }
+.biomarkerKey { font-family: monospace; font-weight: 600; white-space: nowrap; }
+.biomarkerName { font-weight: 600; line-height: 1.5; }
+.biomarkerDefinition { margin-top: .375rem; color: var(--guide-muted); line-height: 1.7; font-size: .8125rem; }
+.signal { color: #605956; font-size: .6875rem; line-height: 1.5; }
+.baseline { font-family: monospace; font-size: .8125rem; font-weight: 600; color: var(--accent-teal-dark); }
+.baseline[data-negative='true'] { color: #855311; }
+.mobileLabel { display: none; }
+.emptyState { padding: 2rem 1rem; text-align: center; font-size: .875rem; color: var(--guide-muted); }
+.emptyState button { display: block; margin: .75rem auto 0; text-decoration: underline; text-underline-offset: 4px; color: var(--foreground); }
+.guide a:focus-visible, .guide button:focus-visible, .guide summary:focus-visible { outline: 2px solid var(--foreground); outline-offset: 4px; border-radius: .375rem; }
+
+@media (max-width: 1023px) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+  .navigation { top: calc(5.5rem + env(safe-area-inset-top)); z-index: 20; overflow: visible; max-height: none; }
+  .desktopNavigation { display: none; }
+  .mobileNavigation { display: block; border: 1px solid var(--border-color); border-radius: .875rem; background: #faf8f7; box-shadow: 0 4px 16px #2a2a2a06; }
+  .mobileNavigation summary { display: flex; align-items: center; gap: .75rem; padding: 1rem; cursor: pointer; list-style: none; font-size: .8125rem; font-weight: 600; }
+  .mobileNavigation summary::-webkit-details-marker { display: none; }
+  .mobileNavigation summary span { flex: 1; }
+  .mobileNavigation[open] summary > svg:last-child { transform: rotate(180deg); }
+  .mobileNavigation nav { max-height: 55dvh; overflow-y: auto; padding: 0 .5rem .5rem; }
+  .content > section { scroll-margin-top: calc(10rem + env(safe-area-inset-top)); }
+}
+
+@media (max-width: 639px) {
+  .heroFooter a { margin-left: 0; }
+  .sectionHeading { gap: .75rem; }
+  .biomarkerTable thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .biomarkerTable table, .biomarkerTable tbody { display: block; }
+  .biomarkerTable tr { display: grid; grid-template-columns: 1fr 1fr; padding: 1rem; gap: .625rem; }
+  .biomarkerTable tr + tr { border-top: 1px solid var(--border-color); }
+  .biomarkerTable td { padding: 0; border: 0; }
+  .biomarkerTable td:first-child, .biomarkerTable td:nth-child(2) { grid-column: 1 / -1; }
+  .biomarkerTable td:last-child { display: flex; align-items: center; justify-content: flex-end; gap: .375rem; }
+  .mobileLabel { display: inline; color: var(--guide-muted); font-size: .6875rem; }
+  .searchBar { align-items: stretch; }
+  .searchField { flex-basis: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chapterLink { transition: none; }
+  :global(html):has(.guide) { scroll-behavior: auto; }
+}
