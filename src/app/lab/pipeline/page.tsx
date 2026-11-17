@@ -95,6 +95,20 @@ function PipelinePageInner() {
     else if (jobId) writeActive(jobId); // job dibuka dari link (?job=): ingat juga
   }, [jobId, resumeId, router]);
 
+  // Bersihkan cache lama pipeline-doses dan pipeline-run-traces dari sessionStorage
+  useEffect(() => {
+    try {
+      const staleKeys: string[] = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && (key.startsWith('pipeline-doses:') || key.startsWith('pipeline-run-traces:'))) {
+          staleKeys.push(key);
+        }
+      }
+      staleKeys.forEach(k => sessionStorage.removeItem(k));
+    } catch { /* storage diblokir / SSR: abaikan */ }
+  }, []);
+
   /* ---------- Polling job aktif (setTimeout, bukan setInterval) ---------- */
   useEffect(() => {
     if (!jobId) return;

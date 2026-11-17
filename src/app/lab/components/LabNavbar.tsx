@@ -4,7 +4,7 @@ import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FlaskConical, ActivitySquare, User, LogOut, ChevronDown, Shield, MonitorPlay, Workflow } from 'lucide-react';
+import { FlaskConical, ActivitySquare, User, LogOut, ChevronDown, Shield, MonitorPlay, Workflow, BookOpen } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useSessionUser } from '@/components/SessionGuard';
 import { clearSessionFlag } from '@/lib/sessionFlag';
@@ -42,6 +42,7 @@ export default function LabNavbar() {
     { name: 'Full Pipeline', path: '/lab/pipeline', icon: Workflow },
     { name: 'Digital Lab', path: '/lab', icon: FlaskConical },
     { name: 'Activity Logs', path: '/lab/logs', icon: ActivitySquare },
+    { name: 'Guide', path: '/lab/guide', icon: BookOpen },
   ];
 
   // Pil menu: posisi diukur dari tombol aktif lalu digeser dengan CSS transform.
