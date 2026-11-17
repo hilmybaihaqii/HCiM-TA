@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUpRight, BookOpen, ChevronDown } from 'lucide-react';
+import { ArrowUpRight, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import styles from './guide.module.css';
 
@@ -52,7 +52,7 @@ export default function GuideNavigation({ sections }: {
   return (
     <aside className={styles.navigation}>
       <div className={styles.desktopNavigation}>
-        <div className={styles.navLabel}><BookOpen size={16} aria-hidden="true" /> Guide Sections</div>
+        <div className={styles.navLabel}>Guide Sections</div>
         <nav aria-label="Table of contents">{links}</nav>
         <div className={styles.navFooter}>
           <span>Ready to explore your results?</span>
@@ -61,7 +61,6 @@ export default function GuideNavigation({ sections }: {
       </div>
       <details ref={mobileMenu} className={styles.mobileNavigation}>
         <summary>
-          <BookOpen size={17} aria-hidden="true" />
           <span>{sections.find(section => section.id === active)?.title}</span>
           <ChevronDown size={17} aria-hidden="true" />
         </summary>

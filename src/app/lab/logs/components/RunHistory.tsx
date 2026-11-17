@@ -16,6 +16,7 @@ import {
 } from '@/lib/pipeline';
 import { isStrongChange } from '@/lib/biomarkerHighlight';
 import { normalizeTier } from '@/lib/tierColor';
+import GuideLink from '../../components/GuideLink';
 import RiskVerdict from '../../components/report/RiskVerdict';
 import type { PredictionOutput } from '@/lib/predict';
 import { SHORT_DESC } from '../../components/report/biomarkerText';
@@ -423,11 +424,11 @@ export function RunDetail({ log, owner }: { log: RunLog; owner?: React.ReactNode
 
       {/* 3. Eleven biomarker ratios */}
       <div className="flex flex-col gap-3">
-        <div className="flex items-baseline justify-between gap-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
           <h3 className="text-sm font-semibold text-foreground">
             {isPipeline ? 'Mean biomarker ratios across doses' : 'Biomarker ratios'}
           </h3>
-          <span className="text-xs text-foreground/60">Relative to drug-free control</span>
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-x-4 gap-y-1"><span className="text-xs text-foreground/60">Relative to drug-free control</span><GuideLink topic="ratios" /></div>
         </div>
         {input.length > 0 ? (
           <ValueRows
@@ -448,9 +449,9 @@ export function RunDetail({ log, owner }: { log: RunLog; owner?: React.ReactNode
 
       {/* 4. SHAP driver analysis with base value */}
       <div className="flex flex-col gap-3">
-        <div className="flex items-baseline justify-between gap-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
           <h3 className="text-sm font-semibold text-foreground">SHAP driver analysis</h3>
-          <span className="text-xs text-foreground/60">Feature importance</span>
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-x-4 gap-y-1"><span className="text-xs text-foreground/60">Feature importance</span><GuideLink topic="shap" /></div>
         </div>
         {expl && expl.contributions && expl.contributions.length > 0 ? (
           <ShapDetail

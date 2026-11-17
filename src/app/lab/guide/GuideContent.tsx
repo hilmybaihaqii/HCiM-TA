@@ -7,22 +7,13 @@ import LabPageHeader from '../components/LabPageHeader';
 import GuideSectionHead from './GuideSectionHead';
 import GuideNavigation from './GuideNavigation';
 import styles from './guide.module.css';
+import visualStyles from './visual-guide.module.css';
+import GuideJourney from './GuideJourney';
 import { cachedGet } from '@/lib/historyCache';
 import {
-  Activity,
-  AlertCircle,
-  AlertTriangle,
   ArrowRight,
-  CheckCircle2,
-  BookOpen,
   Search,
   X,
-  Database,
-  Info,
-  Layers,
-  Scale,
-  ShieldAlert,
-  Sparkles,
 } from 'lucide-react';
 
 interface SummaryData {
@@ -146,7 +137,20 @@ const SECTIONS = [
   { id: 'history-retention', title: '7. History & Retention' },
 ];
 
-export default function GuideContent({ loadHistory = true }: { loadHistory?: boolean }) {
+export default function GuideContent({ loadHistory = true, visual = false }: { loadHistory?: boolean; visual?: boolean }) {
+  const [activeTopic, setActiveTopic] = useState(0);
+  const selectTopic = (index: number) => {
+    setActiveTopic(index);
+    setBiomarkerQuery('');
+  };
+  const turnPage = (index: number) => {
+    selectTopic(index);
+    requestAnimationFrame(() => {
+      const section = document.getElementById(SECTIONS[index].id);
+      section?.scrollIntoView({ behavior: 'instant', block: 'start' });
+      section?.focus({ preventScroll: true });
+    });
+  };
   const [biomarkerQuery, setBiomarkerQuery] = useState('');
   const normalizedQuery = biomarkerQuery.trim().toLowerCase();
   const visibleBiomarkers = BIOMARKER_DEFINITIONS.filter((biomarker) =>
@@ -195,19 +199,20 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
           />
 
           <div className={styles.heroFooter}>
-            <span><BookOpen size={16} aria-hidden="true" /> 7 guide sections</span>
-            <span><Activity size={16} aria-hidden="true" /> 11 biomarkers</span>
-            <a href="#biomarkers">Explore the guide <ArrowRight size={16} aria-hidden="true" /></a>
+            <span>7 guide sections</span>
+            <span>11 biomarkers</span>
+            <a href={visual ? `#${SECTIONS[activeTopic].id}` : "#biomarkers"}>Explore the guide <ArrowRight size={16} aria-hidden="true" /></a>
           </div>
         </div>
 
-        <div className={styles.layout}>
-          <GuideNavigation sections={SECTIONS} />
+        {visual && <GuideJourney sections={SECTIONS} active={activeTopic} onSelect={selectTopic} />}
+        <div className={visual ? visualStyles.visual : styles.layout}>
+          {!visual && <GuideNavigation sections={SECTIONS} />}
           <div className={styles.content}>
             {/* =========================================================
                 SECTION 1: THE ELEVEN BIOMARKERS
                 ========================================================= */}
-            <section id="biomarkers" aria-labelledby="heading-biomarkers" className="scroll-mt-28">
+            <section hidden={visual && SECTIONS[activeTopic].id !== 'biomarkers'} tabIndex={visual ? -1 : undefined} id="biomarkers" aria-labelledby="heading-biomarkers" className="scroll-mt-28">
               <GuideSectionHead
                 id="heading-biomarkers"
                 title="1. The Eleven Biomarkers"
@@ -278,16 +283,16 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
             {/* =========================================================
                 SECTION 2: HOW TO READ A RATIO AGAINST CONTROL
                 ========================================================= */}
-            <section id="ratios" aria-labelledby="heading-ratios" className="scroll-mt-28">
+            <section hidden={visual && SECTIONS[activeTopic].id !== 'ratios'} tabIndex={visual ? -1 : undefined} id="ratios" aria-labelledby="heading-ratios" className="scroll-mt-28">
               <GuideSectionHead
                 id="heading-ratios"
                 title="2. How to Read a Ratio Against Control"
                 meta="Understanding normalized drug effects"
               />
 
-              <div className="mt-5 p-5 md:p-6 rounded-card border border-accent/25 bg-accent/3 relative overflow-hidden">
+              <div className="mt-5 relative overflow-hidden border-t border-foreground/10 pt-5">
                 <div className="flex items-start gap-3.5">
-                  <AlertCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+
                   <div className="space-y-3 text-sm text-foreground/85 leading-relaxed">
                     <h3 className="font-semibold text-foreground text-base">
                       Every input is a ratio of the drugged cell to the drug-free control simulation, not an absolute value.
@@ -295,7 +300,7 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
                     <p>
                       Inputs are normalized against a drug-free baseline simulation run under the exact same pacing protocol:
                     </p>
-                    <div className="p-3 rounded-chip bg-surface-white/80 border border-foreground/10 font-mono text-sm text-foreground inline-block">
+                    <div className="font-mono text-sm text-foreground inline-block border-l-2 border-foreground/15 pl-4 py-1">
                       ratio = with_drug ÷ |without_drug|
                     </div>
                   </div>
@@ -304,7 +309,7 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
 
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Positive Biomarkers */}
-                <div className="p-5 rounded-card border border-foreground/10 bg-surface-white/50 flex flex-col gap-3">
+                <div className="flex flex-col gap-3 border-t border-foreground/10 pt-5">
                   <div className="flex items-center gap-2 font-medium text-foreground text-sm">
                     <span className="w-2 h-2 rounded-full bg-teal-500" />
                     <span>Nine Positive-Valued Biomarkers</span>
@@ -320,14 +325,14 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
                       <li><strong>Above 1.00:</strong> Larger than control.</li>
                       <li><strong>Below 1.00:</strong> Smaller than control.</li>
                     </ul>
-                    <div className="mt-2 p-3 rounded-chip bg-foreground/4 text-sm font-mono">
+                    <div className="mt-2 text-sm font-mono border-l-2 border-foreground/15 pl-4 py-1">
                       Worked example: APD90 of 1.038 is a 3.8% prolongation of repolarization.
                     </div>
                   </div>
                 </div>
 
                 {/* Negative Biomarkers */}
-                <div className="p-5 rounded-card border border-foreground/10 bg-surface-white/50 flex flex-col gap-3">
+                <div className="flex flex-col gap-3 border-t border-foreground/10 pt-5">
                   <div className="flex items-center gap-2 font-medium text-foreground text-sm">
                     <span className="w-2 h-2 rounded-full bg-amber-500" />
                     <span>Negative-Valued Biomarkers (vrest, max_dv)</span>
@@ -339,7 +344,7 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
                     <p>
                       Their unchanged value is <strong>-1.00</strong>, NOT 1.00.
                     </p>
-                    <div className="mt-2 p-3 rounded-chip bg-foreground/4 text-sm font-mono space-y-2">
+                    <div className="mt-2 text-sm font-mono space-y-2 border-l-2 border-foreground/15 pl-4 py-1">
                       <div>• A vrest ratio of -0.99999 means essentially no change.</div>
                       <div>• A max_dv ratio moving from -1.00 toward 0 means the magnitude of the repolarization rate shrank. For example, a max_dv ratio of -0.631 means the magnitude of the repolarization rate shrank by 36.9%.</div>
                     </div>
@@ -348,8 +353,8 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
               </div>
 
               {/* qNet CiPA Metric */}
-              <div className="mt-6 p-4 rounded-chip border border-foreground/10 bg-surface-white/60 flex items-start gap-3">
-                <Info className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+              <div className="mt-6 flex items-start gap-3 border-l-2 border-foreground/15 pl-4 py-1">
+
                 <div className="text-sm text-foreground/80 leading-relaxed">
                   <strong>qNet and Arrhythmia Risk:</strong> Reduced qNet is associated with higher TdP risk, since qNet is the CiPA risk metric.
                 </div>
@@ -359,7 +364,7 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
             {/* =========================================================
                 SECTION 3: READING THE SIMULATION GRAPHS
                 ========================================================= */}
-            <section id="simulation-graphs" aria-labelledby="heading-graphs" className="scroll-mt-28">
+            <section hidden={visual && SECTIONS[activeTopic].id !== 'simulation-graphs'} tabIndex={visual ? -1 : undefined} id="simulation-graphs" aria-labelledby="heading-graphs" className="scroll-mt-28">
               <GuideSectionHead
                 id="heading-graphs"
                 title="3. Reading the Simulation Graphs"
@@ -371,9 +376,9 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
               </p>
 
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-5 rounded-card border border-foreground/10 bg-surface-white/40 flex flex-col gap-3">
+                <div className="flex flex-col gap-3 border-t border-foreground/10 pt-5">
                   <h3 className="font-medium text-sm text-foreground flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-accent" />
+
                     <span>Drug Phenotypes on Waveforms</span>
                   </h3>
                   <ul className="space-y-2.5 text-sm text-foreground/80 leading-relaxed">
@@ -389,9 +394,9 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
                   </ul>
                 </div>
 
-                <div className="p-5 rounded-card border border-foreground/10 bg-surface-white/40 flex flex-col gap-3">
+                <div className="flex flex-col gap-3 border-t border-foreground/10 pt-5">
                   <h3 className="font-medium text-sm text-foreground flex items-center gap-2">
-                    <ShieldAlert className="w-4 h-4 text-accent" />
+
                     <span>Simulation Flags & Excluded Doses</span>
                   </h3>
                   <p className="text-sm text-foreground/80 leading-relaxed">
@@ -412,16 +417,16 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
             {/* =========================================================
                 SECTION 4: RISK PREDICTION AND PROBABILITIES
                 ========================================================= */}
-            <section id="risk-prediction" aria-labelledby="heading-risk" className="scroll-mt-28">
+            <section hidden={visual && SECTIONS[activeTopic].id !== 'risk-prediction'} tabIndex={visual ? -1 : undefined} id="risk-prediction" aria-labelledby="heading-risk" className="scroll-mt-28">
               <GuideSectionHead
                 id="heading-risk"
                 title="4. Risk Prediction and Probabilities"
                 meta="Mean dose vector & tree probabilities"
               />
 
-              <div className="mt-5 p-5 rounded-card border border-foreground/10 bg-surface-white/50 space-y-4">
+              <div className="mt-5 space-y-4 border-t border-foreground/10 pt-5">
                 <div className="flex items-start gap-3">
-                  <Scale className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+
                   <div className="space-y-2 text-sm text-foreground/85 leading-relaxed">
                     <h3 className="font-semibold text-foreground text-base">
                       One Risk Tier Per Run
@@ -448,7 +453,7 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
             {/* =========================================================
                 SECTION 5: THE PREDICTION SET (CONFORMAL PREDICTION)
                 ========================================================= */}
-            <section id="prediction-set" aria-labelledby="heading-set" className="scroll-mt-28">
+            <section hidden={visual && SECTIONS[activeTopic].id !== 'prediction-set'} tabIndex={visual ? -1 : undefined} id="prediction-set" aria-labelledby="heading-set" className="scroll-mt-28">
               <GuideSectionHead
                 id="heading-set"
                 title="5. The Prediction Set"
@@ -460,10 +465,10 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
 
               <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-5">
                 {/* Case 1: Single Tier */}
-                <div className="p-5 rounded-card border border-foreground/10 bg-surface-white/40 flex flex-col justify-between">
+                <div className="flex flex-col justify-between border-t border-foreground/10 pt-5">
                   <div className="space-y-2.5">
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium bg-teal-500/10 text-teal-700">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    <div className="inline-flex items-center gap-1.5 text-sm font-medium text-teal-700">
+
                       <span>Single Tier</span>
                     </div>
                     <h3 className="font-semibold text-sm text-foreground">Committed Tier</h3>
@@ -477,10 +482,10 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
                 </div>
 
                 {/* Case 2: Ambiguous */}
-                <div className="p-5 rounded-card border border-foreground/10 bg-surface-white/40 flex flex-col justify-between">
+                <div className="flex flex-col justify-between border-t border-foreground/10 pt-5">
                   <div className="space-y-2.5">
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium bg-amber-500/10 text-amber-700">
-                      <AlertTriangle className="w-3.5 h-3.5" />
+                    <div className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-700">
+
                       <span>Two or Three Tiers</span>
                     </div>
                     <h3 className="font-semibold text-sm text-foreground">Ambiguous Output</h3>
@@ -494,10 +499,10 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
                 </div>
 
                 {/* Case 3: Empty Set */}
-                <div className="p-5 rounded-card border border-accent/25 bg-accent/3 flex flex-col justify-between">
+                <div className="flex flex-col justify-between border-t border-foreground/10 pt-5">
                   <div className="space-y-2.5">
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium bg-accent/15 text-accent">
-                      <AlertCircle className="w-3.5 h-3.5" />
+                    <div className="inline-flex items-center gap-1.5 text-sm font-medium text-accent">
+
                       <span>Empty Set ([ ])</span>
                     </div>
                     <h3 className="font-semibold text-sm text-foreground">Out of Distribution</h3>
@@ -511,7 +516,7 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
                 </div>
               </div>
 
-              <div className="mt-5 p-4 rounded-chip border border-foreground/10 bg-surface-white/60 text-sm text-foreground/70 leading-relaxed space-y-1">
+              <div className="mt-5 text-sm text-foreground/70 leading-relaxed space-y-1 border-l-2 border-foreground/15 pl-4 py-1">
                 <p>
                   <strong>Conformal Parameters from Model:</strong> α = 2/13 (≈ {alphaVal.toFixed(4)}), providing {coveragePct}% nominal coverage
                   {qHatVal ? ` with non-conformity threshold q̂ = ${qHatVal}` : ''}.
@@ -525,7 +530,7 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
             {/* =========================================================
                 SECTION 6: SHAP (LOCAL VS. GLOBAL)
                 ========================================================= */}
-            <section id="shap" aria-labelledby="heading-shap" className="scroll-mt-28">
+            <section hidden={visual && SECTIONS[activeTopic].id !== 'shap'} tabIndex={visual ? -1 : undefined} id="shap" aria-labelledby="heading-shap" className="scroll-mt-28">
               <GuideSectionHead
                 id="heading-shap"
                 title="6. SHAP"
@@ -537,15 +542,15 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
               </p>
 
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-5 rounded-card border border-foreground/15 bg-surface-white/60 space-y-3">
+                <div className="space-y-3 border-t border-foreground/10 pt-5">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-accent" />
+
                     <h3 className="font-semibold text-sm text-foreground">Local (What the App Shows)</h3>
                   </div>
                   <p className="text-sm text-foreground/80 leading-relaxed">
                     Computed for one run, on its own input vector. The base value plus the eleven contributions equals the predicted probability of the predicted tier.
                   </p>
-                  <div className="p-3 rounded-chip bg-foreground/4 font-mono text-sm text-foreground">
+                  <div className="font-mono text-sm text-foreground border-l-2 border-foreground/15 pl-4 py-1">
                     Base Value + Sum(11 Contributions) = Predicted Probability
                   </div>
                   <ul className="text-sm text-foreground/75 space-y-1 pl-3 list-disc">
@@ -557,9 +562,9 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
                   </p>
                 </div>
 
-                <div className="p-5 rounded-card border border-foreground/10 bg-surface-white/30 space-y-3">
+                <div className="space-y-3 border-t border-foreground/10 pt-5">
                   <div className="flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-muted" />
+
                     <h3 className="font-semibold text-sm text-foreground">Global (What Appears in the Research Report)</h3>
                   </div>
                   <p className="text-sm text-foreground/80 leading-relaxed">
@@ -575,16 +580,16 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
             {/* =========================================================
                 SECTION 7: HISTORY AND RETENTION
                 ========================================================= */}
-            <section id="history-retention" aria-labelledby="heading-retention" className="scroll-mt-28">
+            <section hidden={visual && SECTIONS[activeTopic].id !== 'history-retention'} tabIndex={visual ? -1 : undefined} id="history-retention" aria-labelledby="heading-retention" className="scroll-mt-28">
               <GuideSectionHead
                 id="heading-retention"
                 title="7. History and Retention"
                 meta="Storage limits, trace reclamation & job caps"
               />
 
-              <div className="mt-5 p-5 md:p-6 rounded-card border border-foreground/10 bg-surface-white/50 space-y-4">
+              <div className="mt-5 space-y-4 border-t border-foreground/10 pt-5">
                 <div className="flex items-start gap-3.5">
-                  <Database className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+
                   <div className="space-y-2 text-sm text-foreground/85 leading-relaxed">
                     <h3 className="font-semibold text-foreground text-base">
                       What Activity Logs Keeps
@@ -606,7 +611,7 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
                 </div>
 
                 <div className="pt-4 border-t border-foreground/10 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm font-mono">
-                  <div className="p-3 rounded-chip bg-foreground/4">
+                  <div className="border-l-2 border-foreground/15 pl-4 py-1">
                     <div className="text-muted text-xs uppercase tracking-wider">Traces Retention</div>
                     <div className={`text-base font-semibold mt-0.5 ${typeof traceDays === 'number' ? 'text-accent' : 'text-foreground/60 text-sm'}`}>
                       {typeof traceDays === 'number' ? `${traceDays} days` : 'Policy unavailable'}
@@ -615,7 +620,7 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
                       {typeof traceDays === 'number' ? 'Waveforms reclaimed after retention period' : 'Awaiting retention policy from API'}
                     </div>
                   </div>
-                  <div className="p-3 rounded-chip bg-foreground/4">
+                  <div className="border-l-2 border-foreground/15 pl-4 py-1">
                     <div className="text-muted text-xs uppercase tracking-wider">Pipeline Storage Cap</div>
                     <div className={`text-base font-semibold mt-0.5 ${typeof maxJobs === 'number' ? 'text-foreground' : 'text-foreground/60 text-sm'}`}>
                       {typeof maxJobs === 'number' ? `${maxJobs} jobs` : 'Policy unavailable'}
@@ -624,7 +629,7 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
                       {typeof maxJobs === 'number' ? 'Active pipeline runs stored per user' : 'Awaiting job limit from API'}
                     </div>
                   </div>
-                  <div className="p-3 rounded-chip bg-foreground/4">
+                  <div className="border-l-2 border-foreground/15 pl-4 py-1">
                     <div className="text-muted text-xs uppercase tracking-wider">Activity Logs Records</div>
                     <div className="text-base font-semibold text-foreground mt-0.5">
                       {summary?.total_predictions != null
@@ -639,6 +644,13 @@ export default function GuideContent({ loadHistory = true }: { loadHistory?: boo
               </div>
             </section>
 
+            {visual && (
+              <div className={visualStyles.pager}>
+                <button type="button" disabled={activeTopic === 0} onClick={() => turnPage(activeTopic - 1)}>Previous topic</button>
+                <span>{activeTopic + 1} / {SECTIONS.length}</span>
+                <button type="button" disabled={activeTopic === SECTIONS.length - 1} onClick={() => turnPage(activeTopic + 1)}>Next topic</button>
+              </div>
+            )}
             {/* Footer Navigation Back to Lab */}
             <div className="pt-6 border-t border-foreground/10 flex flex-wrap items-center justify-between gap-4">
               <Link

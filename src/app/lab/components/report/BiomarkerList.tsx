@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { FEATURES, formatChange, ratioChange } from '@/lib/pipeline';
@@ -353,7 +352,7 @@ export default function BiomarkerList({ ratios, control, drug, tier, shap, expla
 
   return (
     <section aria-labelledby="biomarkers-heading">
-      <SectionHead id="biomarkers-heading" title="11 biomarkers" meta={meta ?? <span className="sm:hidden">Swipe to switch</span>} />
+      <SectionHead id="biomarkers-heading" title="11 biomarkers" guideTopic={slide === 0 ? "shap" : "ratios"} meta={meta ?? <span className="sm:hidden">Swipe to switch</span>} />
 
       <div className="mt-5">
         <TabRail
@@ -377,9 +376,7 @@ export default function BiomarkerList({ ratios, control, drug, tier, shap, expla
           <p className="mb-4 text-sm text-foreground/70 leading-relaxed">
             Which biomarkers moved the risk model most, from SHAP. Bars to the right pushed it toward this result.{' '}
             <span className="text-foreground/70" style={tierColor ? { color: tierColor } : undefined}>●</span> marks the top three.{' '}
-            <Link href="/lab/guide#shap" className="underline underline-offset-2 hover:text-action transition-colors text-xs font-medium">
-              How to read SHAP ↗
-            </Link>
+
             {driversNote && <span className="block mt-1 text-xs text-foreground/60">{driversNote}</span>}
           </p>
           {driversBody}
@@ -388,9 +385,7 @@ export default function BiomarkerList({ ratios, control, drug, tier, shap, expla
           <p className="mb-4 text-sm text-foreground/70 leading-relaxed">
             How far each biomarker moved from the drug-free cell, largest first. <span className="text-accent">Red</span>: qNet
             below 0.9, APD50 or APD90 above 1.1, or any other biomarker that moved more than 10%.{' '}
-            <Link href="/lab/guide#ratios" className="underline underline-offset-2 hover:text-action transition-colors text-xs font-medium">
-              How to read ratios ↗
-            </Link>
+
           </p>
           {changeBody}
         </div>

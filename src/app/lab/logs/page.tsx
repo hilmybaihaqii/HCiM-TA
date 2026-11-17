@@ -101,7 +101,7 @@ export default function LogsPage() {
 
         {/* ---------- Riwayat: satu daftar run ---------- */}
         <section aria-labelledby="runs-heading" className="w-full">
-          <SectionHead id="runs-heading" title="Activity records" meta="One record per run" />
+          <SectionHead id="runs-heading" title="Activity records" guideTopic="history-retention" meta="One record per run" />
           <div className="mt-6 pt-2">
             <RunHistory />
           </div>

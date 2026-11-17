@@ -1,4 +1,5 @@
 import React from 'react';
+import GuideLink, { type GuideTopic } from '../GuideLink';
 
 /*
  * Gaya dasar area lab. Satu fungsi = satu warna:
@@ -17,11 +18,24 @@ export const secondaryBtn = `inline-flex items-center justify-center gap-2 px-4 
 export const textLink = 'text-sm text-foreground/70 hover:text-action underline-offset-4 hover:underline transition-colors';
 
 /** Judul bagian: judul di kiri, keterangan di kanan, satu baris */
-export function SectionHead({ id, title, meta }: { id?: string; title: string; meta?: React.ReactNode }) {
+export function SectionHead({ id, title, meta, guideTopic }: { id?: string; title: string; meta?: React.ReactNode; guideTopic?: GuideTopic }) {
+  if (guideTopic) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <div className="min-w-0">
+          <h3 id={id} className="text-lg md:text-xl font-medium tracking-tight text-foreground">{title}</h3>
+          {meta && <div className="mt-1 text-xs text-foreground/60">{meta}</div>}
+        </div>
+        <GuideLink topic={guideTopic} />
+      </div>
+    );
+  }
   return (
-    <div className="flex items-baseline justify-between gap-6">
+    <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
       <h3 id={id} className="text-lg md:text-xl font-medium tracking-tight text-foreground">{title}</h3>
-      {meta && <span className="text-xs md:text-sm text-foreground/70 text-right">{meta}</span>}
+      <div className="ml-auto flex flex-wrap items-baseline justify-end gap-x-4 gap-y-1">
+        {meta && <span className="text-xs md:text-sm text-foreground/70 text-right">{meta}</span>}
+      </div>
     </div>
   );
 }
