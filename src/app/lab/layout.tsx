@@ -7,7 +7,7 @@ import { LabShellSkeleton } from './components/Skeletons';
 export default function LabLayout({ children }: { children: React.ReactNode }) {
   return (
     <SessionGuard fallback={<LabShellSkeleton />}>
-    <div className="relative min-h-dvh flex flex-col bg-background text-foreground font-sans selection:bg-accent selection:text-white overflow-x-hidden">
+    <div className="relative min-h-dvh flex flex-col bg-background text-foreground font-sans selection:bg-accent selection:text-white overflow-x-clip">
 
       {/* Ambient color layer — sama seperti splash screen & landing page,
           dipasang fixed supaya tetap terasa di seluruh sub-halaman /lab. */}
