@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import Link from 'next/link';
+import GuideLink from '../../components/GuideLink';
 import { FEATURES, PipelineJob, SimResult, Trace, joinList, type DoseKey } from '@/lib/pipeline';
 import { isStrongChange } from '@/lib/biomarkerHighlight';
 import { SHORT_DESC } from '../../components/report/biomarkerText';
@@ -88,6 +88,7 @@ export function TracesSection({ apSeries, caSeries, highlight = null }: {
 
   return (
     <div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><h3 className="text-sm font-medium">Simulation graphs</h3><GuideLink topic="simulation-graphs" /></div>
       {/* Satu baris kontrol: legend di kiri, rentang waktu di kanan */}
       {/* Ponsel: legend & rentang waktu rata tengah; desktop: kiri & kanan */}
       <div className="flex flex-wrap items-center justify-center sm:justify-between gap-x-6 gap-y-3 mb-6">
@@ -180,14 +181,15 @@ export function BiomarkerMatrix({ job, selected, onSelect }: {
 
   return (
     <div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-sm font-medium">Biomarker ratios by dose</h3>
+        <GuideLink topic="ratios" />
+      </div>
       <p className="text-sm text-foreground/70 max-w-3xl leading-relaxed">
         The first two columns are the raw values from the simulation. The dose columns are ratios to the drug-free
         cell (drug value ÷ |drug-free value|), and these are what the risk model reads. No change is 1, or −1 for
         biomarkers that are negative, such as vrest. Marked: qNet below 0.9, APD50 or APD90 above 1.1, and any
         other biomarker that moved more than 10%.{' '}
-        <Link href="/lab/guide#ratios" className="underline underline-offset-2 hover:text-action transition-colors text-xs font-medium">
-          Ratio guide ↗
-        </Link>
         {' '}{onSelect ? 'The highlighted column is the dose you are looking at; click a column header to switch.' : ''}
       </p>
 

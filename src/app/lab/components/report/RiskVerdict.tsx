@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
+import GuideLink from '../GuideLink';
 import { motion } from 'framer-motion';
 import { getTierColor, getTierCssVar, normalizeTier } from '@/lib/tierColor';
 import type { PredictionOutput } from '@/lib/predict';
@@ -72,18 +72,7 @@ export function ConformalFacts({ prediction }: { prediction: PredictionOutput })
     { id: 'action', k: 'Recommended action', v: <span className={`capitalize font-medium ${getTierColor(c.recommendedAction).text}`}>{c.recommendedAction}</span> },
     {
       id: 'set',
-      k: (
-        <span className="inline-flex items-center gap-1.5">
-          <span>Prediction set</span>
-          <Link
-            href="/lab/guide#prediction-set"
-            className="text-xs text-muted hover:text-action underline underline-offset-2 transition-colors"
-            title="Read guide on prediction sets"
-          >
-            Guide ↗
-          </Link>
-        </span>
-      ),
+      k: 'Prediction set',
       v: <span className="capitalize">{c.predictionSet.length ? c.predictionSet.join(', ') : '—'}</span>,
     },
     ...(c.isAmbiguous ? [{ id: 'ambiguous', k: 'Ambiguous', v: 'Yes, more than one group' }] : []),
@@ -122,6 +111,13 @@ export default function RiskVerdict({
       </h2>
       {prediction && known && <VoteBar prediction={prediction} />}
       {prediction && known && <ConformalFacts prediction={prediction} />}
+      <div className="w-full max-w-md border-t border-foreground/10 pt-3">
+        <p className="text-center text-[11px] uppercase tracking-wider text-foreground/50">Reading guides</p>
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1">
+          <GuideLink topic="risk-prediction" variant="text" label="Risk & probabilities" />
+          {prediction && known && <GuideLink topic="prediction-set" variant="text" label="Prediction set" />}
+        </div>
+      </div>
     </div>
   );
 }
