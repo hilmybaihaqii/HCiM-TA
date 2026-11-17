@@ -45,15 +45,12 @@ export default function LabNavbar() {
     { name: 'Guide', path: '/lab/guide', icon: BookOpen },
   ];
 
-  // Pil menu: posisi diukur dari tombol aktif lalu digeser dengan CSS transform.
-  // Tab yang diklik langsung jadi tujuan (tanpa menunggu halaman baru selesai dimuat), jadi pil
-  // bergerak sekali, mulus, di jalurnya. Sebelumnya layoutId Framer melompat saat isi halaman berganti.
+  // Pil mengikuti URL yang sudah aktif, termasuk navigasi dari bantuan dan Back/Forward.
+  // Posisi tetap dianimasikan dengan CSS transform tanpa menyimpan tab klik sebelumnya.
   const navRef = useRef<HTMLElement>(null);
   const linkRefs = useRef<(HTMLAnchorElement | null)[]>([]);
-  // Klik dicatat bersama path asalnya; begitu path berganti, catatan ini otomatis tidak dipakai lagi
-  const [clicked, setClicked] = useState<{ to: string; from: string | null } | null>(null);
   const [pill, setPill] = useState<{ x: number; w: number } | null>(null);
-  const activePath = clicked && clicked.from === pathname ? clicked.to : pathname;
+  const activePath = pathname;
   const activeIndex = navItems.findIndex(item => item.path === activePath);
 
   useLayoutEffect(() => {
@@ -142,7 +139,6 @@ export default function LabNavbar() {
                       ref={el => { linkRefs.current[i] = el; }}
                       href={item.path}
                       title={item.name}
-                      onClick={() => setClicked({ to: item.path, from: pathname })}
                       aria-current={pathname === item.path ? 'page' : undefined}
                       className={`relative z-10 px-3 py-2 md:px-4 md:py-1.5 rounded-full text-xs font-medium transition-colors duration-300 flex items-center justify-center gap-2 ${
                         isActive ? 'text-foreground' : 'text-foreground/60 hover:text-foreground'
