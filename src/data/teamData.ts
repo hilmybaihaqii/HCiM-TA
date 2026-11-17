@@ -86,7 +86,7 @@ export const TEAM_DATA: TeamMember[] = [
     institution: 'Kumoh National Institute of Technology',
     location: 'Gumi, Republic of Korea',
     email: 'adnanpramudito@kumoh.ac.kr',
-    image: '/pictures/team/Muhammad-Adnan-Pramudito.png',
+    image: '/pictures/team/Muhammad-Adnan-Pramudito.jpg',
     linkedin: '#',
   },
   {
