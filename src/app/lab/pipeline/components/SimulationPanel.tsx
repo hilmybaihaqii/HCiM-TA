@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { FEATURES, PipelineJob, SimResult, Trace, joinList } from '@/lib/pipeline';
+import Link from 'next/link';
+import { FEATURES, PipelineJob, SimResult, Trace, joinList, type DoseKey } from '@/lib/pipeline';
 import { isStrongChange } from '@/lib/biomarkerHighlight';
 import { SHORT_DESC } from '../../components/report/biomarkerText';
 import TraceChart, { Series } from './TraceChart';
-import type { DoseKey } from '../useDosePredictions';
-import type { PredictionOutput } from '@/lib/predict';
+import { parsePredictResponse, type PredictionOutput } from '@/lib/predict';
 
 // Palet sekuensial satu hue: makin gelap = dosis makin tinggi. Semua >= 3:1 terhadap surface
 // (dicek dengan validator dataviz). Kontrol: abu-abu netral + garis putus sebagai pembeda kedua.
@@ -184,8 +184,11 @@ export function BiomarkerMatrix({ job, selected, onSelect }: {
         The first two columns are the raw values from the simulation. The dose columns are ratios to the drug-free
         cell (drug value ÷ |drug-free value|), and these are what the risk model reads. No change is 1, or −1 for
         biomarkers that are negative, such as vrest. Marked: qNet below 0.9, APD50 or APD90 above 1.1, and any
-        other biomarker that moved more than 10%. The highlighted column is the dose you are
-        looking at{onSelect ? '; click a column header to switch' : ''}.
+        other biomarker that moved more than 10%.{' '}
+        <Link href="/lab/guide#ratios" className="underline underline-offset-2 hover:text-action transition-colors text-xs font-medium">
+          Ratio guide ↗
+        </Link>
+        {' '}{onSelect ? 'The highlighted column is the dose you are looking at; click a column header to switch.' : ''}
       </p>
 
       <div className="mt-6 overflow-x-auto -mx-2 overscroll-x-contain">
@@ -262,7 +265,8 @@ export function MethodNote({ job, prediction }: { job: PipelineJob; prediction?:
   const doses = r?.doses ?? job.sim_params?.doses ?? [];
   const conc = r ? (Array.isArray(r.conc_nM) ? r.conc_nM : [r.conc_nM]) : [];
   const seconds = typeof job.sim_latency_ms === 'number' ? (job.sim_latency_ms / 1000).toFixed(1) : null;
-  const c = prediction?.conformal;
+  const runPrediction = prediction ?? (Array.isArray(job.prediction) ? parsePredictResponse(job.prediction) : null);
+  const c = runPrediction?.conformal;
 
   const facts: { k: string; v: string }[] = [
     { k: 'Doses', v: doses.length ? `${joinList(doses)}× Cmax` : '—' },

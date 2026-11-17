@@ -13,6 +13,9 @@ export const TRAINING_DRUGS = new Set(["bepridil", "dofetilide", "quinidine", "s
 
 export const DEFAULT_DOSES = [1, 2, 3, 4];
 
+export type DoseKey = 'mean' | number;
+export const doseId = (key: DoseKey) => String(key);
+
 export const HERG_KEYS = ["Kmax", "Ku", "n", "halfmax", "Vhalf"] as const;
 export type HergKey = (typeof HERG_KEYS)[number];
 

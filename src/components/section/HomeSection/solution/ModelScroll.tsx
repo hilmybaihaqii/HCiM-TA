@@ -194,7 +194,7 @@ function ModeScene({ mode, index, progress, animated }: { mode: (typeof MODES)[n
           t={t}
           i={4}
           title="Risk level"
-          desc={mode.id === 'known' ? 'Vandetanib lands on High, with 99.8% of the vote.' : 'Your compound lands on Low, Intermediate or High.'}
+          desc={mode.id === 'known' ? 'Vandetanib lands on High, with 99.75% of the vote.' : 'Your compound lands on Low, Intermediate or High.'}
         >
           {(sp) => <RiskMeter mode={mode.id} sp={sp} />}
         </Row>
@@ -409,7 +409,7 @@ function TreesVisual({ mode, sp }: { mode: ModeId; sp: MotionValue<number> }) {
 
 /*
  * Tingkat risiko: meter tiga bagian yang sama untuk semua mode. Mode 01 memakai hasil nyata
- * vandetanib (penanda berhenti di High, 99.8%). Mode 02/03 belum punya obat tertentu, jadi
+ * vandetanib (penanda berhenti di High, 99.75%). Mode 02/03 belum punya obat tertentu, jadi
  * ketiga bagian menyala bergantian: hasilnya bergantung pada data pengguna.
  */
 const SEGMENTS = [
@@ -428,8 +428,8 @@ function RiskMeter({ mode, sp }: { mode: ModeId; sp: MotionValue<number> }) {
   const known = mode === 'known';
   const left = useTransform(sp, [0.05, 0.75], ['0%', '83.3%']);
   const markerOpacity = useTransform(sp, [0, 0.1], [0, 1]);
-  const pct = useTransform(sp, [0.1, 0.8], [0, 99.8]);
-  const label = useTransform(pct, (v) => `${v.toFixed(1)}%`);
+  const pct = useTransform(sp, [0.1, 0.8], [0, 99.75]);
+  const label = useTransform(pct, (v) => `${v.toFixed(2)}%`);
 
   return (
     <div className="w-full max-w-[16rem]">
