@@ -59,7 +59,7 @@ export default function IdentityCard({ user }: { user: SessionUser }) {
   return (
     <div className="flex flex-col gap-8">
       <motion.div
-        initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
         transition={{ duration: 0.7, ease: EASE }}
         className="relative overflow-hidden rounded-sheet bg-[#0A0A0A] p-6 sm:p-8 text-white shadow-[0_30px_60px_-30px_rgba(0,0,0,0.45)]"
       >
@@ -107,7 +107,7 @@ export default function IdentityCard({ user }: { user: SessionUser }) {
       </motion.div>
 
       <motion.section
-        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
         transition={{ duration: 0.6, ease: EASE, delay: 0.12 }}
         aria-labelledby="activity-heading"
       >

@@ -84,9 +84,9 @@ export default function ModeChooser() {
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={m.id}
-              initial={{ opacity: 0, y: 14, filter: 'blur(6px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, y: -14, filter: 'blur(6px)' }}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -14 }}
               transition={{ duration: 0.5, ease: EASE }}
             >
               <span className="block text-xl font-medium tracking-tight text-foreground md:text-2xl">{m.title}</span>

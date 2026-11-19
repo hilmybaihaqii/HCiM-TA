@@ -7,7 +7,7 @@ export default function GuidePreviewPage() {
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
-      <header className="fixed inset-x-4 top-4 z-50 mx-auto flex max-w-7xl items-center justify-between gap-4 rounded-full border border-foreground/10 bg-surface-white/95 px-5 py-4 shadow-sm backdrop-blur-xl md:inset-x-12 md:top-6">
+      <header className="fixed inset-x-4 top-4 z-50 mx-auto flex max-w-7xl items-center justify-between gap-4 rounded-full border border-foreground/10 bg-surface-white/95 px-5 py-4 shadow-sm backdrop-blur-md md:inset-x-12 md:top-6">
         <span className="text-sm font-medium">cardivex<span className="text-accent">.</span></span>
         <span className="text-right text-xs text-muted">Guide preview · No account data</span>
       </header>

@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChartColumn, FlaskConical, Gauge, HeartPulse, Hourglass } from 'lucide-react';
 import { DrugDb, JobStatus, PipelineJob, formatChange, formatDrugName, joinList, strongestChange } from '@/lib/pipeline';
 import { getTierColor } from '@/lib/tierColor';
 import HeartbeatLoader, { EcgTrace, type LoaderStep } from '../../components/report/HeartbeatLoader';
@@ -79,7 +78,6 @@ function buildStages(job: PipelineJob | null, doses: number[], db: DrugDb | null
     {
       id: 'drug',
       title: 'Drug',
-      icon: FlaskConical,
       does: 'Exposure (Cmax) plus hERG binding and ion-channel block.',
       output: job ? (
         <>
@@ -92,14 +90,12 @@ function buildStages(job: PipelineJob | null, doses: number[], db: DrugDb | null
     {
       id: 'queue',
       title: 'Queue',
-      icon: Hourglass,
       does: 'Waiting for the simulator to start this run.',
       output: job?.started_at ? 'Started' : undefined,
     },
     {
       id: 'simulation',
       title: 'Heart-cell simulation',
-      icon: HeartPulse,
       does: `Simulates the heart cell at ${joinList(doses)}× Cmax.`,
       live: <EcgTrace className="w-full max-w-56 h-10" />,
       output: r ? (
@@ -113,14 +109,12 @@ function buildStages(job: PipelineJob | null, doses: number[], db: DrugDb | null
     {
       id: 'biomarkers',
       title: '11 biomarkers',
-      icon: ChartColumn,
       does: 'Each one compared with the drug-free cell, per dose and as the mean.',
       output: shift ? <>Largest change <span className="font-mono">{shift.key} {formatChange(shift.change)}</span></> : undefined,
     },
     {
       id: 'risk',
       title: 'Risk model',
-      icon: Gauge,
       does: 'Classifies TdP risk as low, intermediate or high, with SHAP.',
       output: tier ? (
         <><span className={`capitalize ${getTierColor(tier).text}`}>{tier}</span> risk <span className="text-foreground/70">(mean)</span></>

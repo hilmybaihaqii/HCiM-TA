@@ -29,7 +29,7 @@ function SettingRow({ id, title, text, children, delay = 0 }: {
   return (
     <motion.section
       aria-labelledby={id}
-      initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }}
       transition={{ duration: 0.6, ease: EASE, delay }}
       className="grid grid-cols-1 xl:grid-cols-[14rem_1fr] gap-5 xl:gap-10 border-t border-foreground/10 py-9 first:border-t-0 first:pt-0"
     >

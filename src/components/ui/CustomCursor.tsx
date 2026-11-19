@@ -1,118 +1,108 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { motion, useMotionValue, useSpring } from "framer-motion";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+
+/*
+ * Kursor kustom (hanya perangkat dengan mouse). Ditulis tanpa state React & tanpa framer-motion:
+ * posisi diperbarui langsung lewat transform di requestAnimationFrame, dan loop berhenti sendiri
+ * saat cincin sudah menyusul titik. Tidak ada render ulang di setiap gerakan mouse.
+ */
+
+const FINE = "(pointer: fine)";
+const HOVER_SELECTOR = "a, button, [role='button'], label, select, summary, .cursor-pointer";
+
+function useFinePointer() {
+  return useSyncExternalStore(
+    (onChange) => {
+      const mql = window.matchMedia(FINE);
+      mql.addEventListener("change", onChange);
+      return () => mql.removeEventListener("change", onChange);
+    },
+    () => window.matchMedia(FINE).matches,
+    () => false,
+  );
+}
 
 export default function CustomCursor() {
-  const [isHovering, setIsHovering] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const fine = useFinePointer();
+  if (!fine) return null;
+  return <Cursor />;
+}
 
-  // Default ke true agar kursor tidak muncul sejenak di HP saat halaman pertama kali dimuat
-  const [isTouchDevice, setIsTouchDevice] = useState(true);
-
-  // Titik pusat mengikuti secara instan (0 delay untuk akurasi klik)
-  const mouseX = useMotionValue(-100);
-  const mouseY = useMotionValue(-100);
-
-  // Cincin luar mengikuti dengan fisika pegas (spring) yang sangat halus
-  const springConfig = { damping: 25, stiffness: 400, mass: 0.15 };
-  const smoothX = useSpring(mouseX, springConfig);
-  const smoothY = useSpring(mouseY, springConfig);
+function Cursor() {
+  const dot = useRef<HTMLDivElement>(null);
+  const ring = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // 1. SOLUSI ESLINT: Gunakan Timeout agar state tidak di-set secara sinkron
-    // yang menyebabkan cascading render.
-    const timer = setTimeout(() => {
-      const mediaQuery = window.matchMedia("(pointer: fine)");
-      setIsTouchDevice(!mediaQuery.matches);
-    }, 0);
+    const d = dot.current;
+    const r = ring.current;
+    if (!d || !r) return;
 
-    const moveCursor = (e: MouseEvent) => {
-      mouseX.set(e.clientX);
-      mouseY.set(e.clientY);
-      if (!isVisible) setIsVisible(true);
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const target = { x: -100, y: -100 };
+    const pos = { x: -100, y: -100 };
+    let raf = 0;
+    let shown = false;
+
+    const tick = () => {
+      // Cincin menyusul 30% jarak tiap frame; berhenti bila sudah < 0.1px
+      pos.x += (target.x - pos.x) * (reduced ? 1 : 0.3);
+      pos.y += (target.y - pos.y) * (reduced ? 1 : 0.3);
+      r.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0) translate(-50%, -50%)`;
+      raf = Math.abs(target.x - pos.x) + Math.abs(target.y - pos.y) > 0.1 ? requestAnimationFrame(tick) : 0;
     };
 
-    const handleMouseOver = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (
-        target.closest("a") ||
-        target.closest("button") ||
-        target.closest(".cursor-pointer")
-      ) {
-        setIsHovering(true);
-      } else {
-        setIsHovering(false);
-      }
+    const show = (v: boolean) => {
+      if (shown === v) return;
+      shown = v;
+      d.style.opacity = r.style.opacity = v ? "1" : "0";
     };
 
-    const handleMouseLeave = () => setIsVisible(false);
-    const handleMouseEnter = () => setIsVisible(true);
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse") return;
+      target.x = e.clientX;
+      target.y = e.clientY;
+      d.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0) translate(-50%, -50%)`;
+      if (!shown) { pos.x = target.x; pos.y = target.y; }
+      show(true);
+      if (!raf) raf = requestAnimationFrame(tick);
+    };
 
-    window.addEventListener("mousemove", moveCursor);
-    document.addEventListener("mouseover", handleMouseOver);
-    document.addEventListener("mouseleave", handleMouseLeave);
-    document.addEventListener("mouseenter", handleMouseEnter);
+    const onOver = (e: MouseEvent) => {
+      const hover = !!(e.target as Element | null)?.closest?.(HOVER_SELECTOR);
+      r.dataset.hover = d.dataset.hover = hover ? "1" : "0";
+    };
+    const onLeave = () => show(false);
 
+    window.addEventListener("pointermove", onMove, { passive: true });
+    document.addEventListener("mouseover", onOver, { passive: true });
+    document.documentElement.addEventListener("mouseleave", onLeave);
     return () => {
-      clearTimeout(timer); // Bersihkan timer
-      window.removeEventListener("mousemove", moveCursor);
-      document.removeEventListener("mouseover", handleMouseOver);
-      document.removeEventListener("mouseleave", handleMouseLeave);
-      document.removeEventListener("mouseenter", handleMouseEnter);
+      cancelAnimationFrame(raf);
+      window.removeEventListener("pointermove", onMove);
+      document.removeEventListener("mouseover", onOver);
+      document.documentElement.removeEventListener("mouseleave", onLeave);
     };
-  }, [mouseX, mouseY, isVisible]);
-
-  // Jika terdeteksi perangkat layar sentuh (HP/Tablet), jangan render kursor sama sekali
-  if (isTouchDevice) return null;
+  }, []);
 
   return (
     <>
-      {/* ELEMEN 1: Cincin / Lensa (Trailing Ring) */}
-      {/* 2. SOLUSI TAILWIND: Ubah z-[9998] menjadi z-9998 */}
-      <motion.div
-        className="fixed top-0 left-0 z-99998 pointer-events-none rounded-full flex items-center justify-center mix-blend-difference"
-        style={{
-          x: smoothX,
-          y: smoothY,
-          translateX: "-50%",
-          translateY: "-50%",
-          opacity: isVisible ? 1 : 0,
-        }}
-        animate={{
-          width: isHovering ? 80 : 36,
-          height: isHovering ? 80 : 36,
-          backgroundColor: isHovering
-            ? "rgba(255,255,255,1)"
-            : "rgba(255,255,255,0)",
-          border: isHovering
-            ? "0px solid rgba(255,255,255,0)"
-            : "1.5px solid rgba(255,255,255,1)",
-        }}
-        transition={{
-          width: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
-          height: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
-          backgroundColor: { duration: 0.2 },
-          border: { duration: 0.2 },
-        }}
+      {/* Cincin: membesar & terisi saat di atas elemen yang bisa diklik */}
+      <div
+        ref={ring}
+        aria-hidden="true"
+        data-hover="0"
+        className="pointer-events-none fixed left-0 top-0 z-99998 h-9 w-9 rounded-full border-[1.5px] border-white opacity-0 mix-blend-difference
+          transition-[width,height,background-color,border-width,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
+          data-[hover=1]:h-20 data-[hover=1]:w-20 data-[hover=1]:border-0 data-[hover=1]:bg-white"
       />
-
-      {/* ELEMEN 2: Titik Pusat (Core Dot) */}
-      {/* 2. SOLUSI TAILWIND: Ubah z-[9999] menjadi z-9999 */}
-      <motion.div
-        className="fixed top-0 left-0 z-99999 pointer-events-none rounded-full bg-white mix-blend-difference"
-        style={{
-          x: mouseX,
-          y: mouseY,
-          translateX: "-50%",
-          translateY: "-50%",
-          opacity: isVisible ? 1 : 0,
-        }}
-        animate={{
-          width: isHovering ? 0 : 8,
-          height: isHovering ? 0 : 8,
-        }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
+      {/* Titik: mengikuti mouse tanpa jeda */}
+      <div
+        ref={dot}
+        aria-hidden="true"
+        data-hover="0"
+        className="pointer-events-none fixed left-0 top-0 z-99999 h-2 w-2 rounded-full bg-white opacity-0 mix-blend-difference
+          transition-[width,height,opacity] duration-200 data-[hover=1]:h-0 data-[hover=1]:w-0"
       />
     </>
   );

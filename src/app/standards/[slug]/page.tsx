@@ -19,8 +19,8 @@ const staggerContainer = {
 };
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 30, filter: 'blur(8px)' },
-  show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 1, ease: luxEase } }
+  hidden: { opacity: 0, y: 30 },
+  show: { opacity: 1, y: 0, transition: { duration: 1, ease: luxEase } }
 };
 
 interface StandardDetailPageProps {
@@ -83,8 +83,8 @@ export default function StandardDetailPage({ params }: StandardDetailPageProps) 
 
         {/* --- FULL WIDTH BANNER IMAGE (CINEMATIC REVEAL) --- */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, filter: 'blur(12px)' }}
-          animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1.2, delay: 0.4, ease: luxEase }}
           className="relative w-full aspect-video md:aspect-21/9 overflow-hidden rounded-md bg-foreground/5 mb-16 md:mb-24 group"
         >
@@ -202,7 +202,7 @@ export default function StandardDetailPage({ params }: StandardDetailPageProps) 
                   return (
                     <React.Fragment key={sec.clause}>
                       <blockquote className="relative my-16 py-8 px-8 md:px-10 border-l-4 border-accent bg-foreground/2 text-foreground text-xl md:text-2xl font-medium leading-relaxed rounded-r-md">
-                        &quot;Our targets are never arbitrary — every prediction model traces back to a verified legal and scientific foundation.&quot;
+                        &quot;{standard.implication}&quot;
                       </blockquote>
                       <p className="leading-relaxed">{sec.body}</p>
                     </React.Fragment>
@@ -215,6 +215,38 @@ export default function StandardDetailPage({ params }: StandardDetailPageProps) 
                   </p>
                 );
               })}
+            </div>
+
+            {/* --- DOKUMEN ASLI --- */}
+            <div className="mt-16 border-t border-foreground/10 pt-8">
+              <span className="block font-mono text-[10px] uppercase tracking-widest text-muted">Read the source</span>
+              <ul className="mt-4 flex flex-col gap-3">
+                {standard.sources.map((src) => {
+                  const external = src.href.startsWith('http');
+                  return (
+                    <li key={src.href}>
+                      <a
+                        href={src.href}
+                        target={external ? '_blank' : undefined}
+                        rel={external ? 'noreferrer noopener' : undefined}
+                        className="group/src inline-flex items-baseline gap-2 text-sm text-foreground transition-colors duration-300 hover:text-accent"
+                      >
+                        <span className="underline decoration-foreground/20 underline-offset-4 transition-colors group-hover/src:decoration-accent">
+                          {src.label}
+                        </span>
+                        {src.note && (
+                          <span className="shrink-0 rounded-full border border-foreground/15 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted">
+                            {src.note}
+                          </span>
+                        )}
+                        <span aria-hidden="true" className="shrink-0 text-muted transition-transform duration-300 group-hover/src:translate-x-0.5 group-hover/src:text-accent">
+                          {external ? '↗' : '→'}
+                        </span>
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
 
             {/* --- FOOTNOTE DOKUMENTASI --- */}

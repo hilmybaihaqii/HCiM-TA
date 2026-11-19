@@ -86,9 +86,9 @@ export default function ShapBlock() {
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={s.name}
-                initial={{ opacity: 0, x: 16, filter: 'blur(4px)' }}
-                animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-                exit={{ opacity: 0, x: -16, filter: 'blur(4px)' }}
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
                 transition={{ duration: 0.4, ease: EASE }}
               >
                 <span className="block text-sm font-medium text-foreground">

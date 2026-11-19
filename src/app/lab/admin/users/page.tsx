@@ -6,7 +6,7 @@ import { api } from '@/lib/api';
 import { useSessionUser } from '@/components/SessionGuard';
 import { primaryBtn, secondaryBtn } from '../../components/report/ui';
 import {
-  FilterMenu, HistoryControls, HistoryMessage, HistoryRow, HistorySkeleton, PAGE_SIZE, Pager, formatWhen, matchesQuery,
+  SingleFilter, HistoryControls, HistoryMessage, HistoryRow, HistorySkeleton, PAGE_SIZE, Pager, formatWhen, matchesQuery,
 } from '../../logs/components/history';
 import UserActionModal, { ActionType } from '../components/UserActionModal';
 import { AdminUser, isAdminRole, isDeactivated, useAdminData } from '../AdminData';
@@ -29,7 +29,7 @@ const initials = (u: AdminUser) => {
 };
 
 // Ponsel: akun | status | panah. Desktop: akun | peran | status | panah.
-const ROW = 'grid grid-cols-[1fr_auto_1rem] sm:grid-cols-[1fr_7rem_8rem_1rem] items-center gap-3 sm:gap-4';
+const ROW = 'grid grid-cols-[1fr_auto_1.75rem] sm:grid-cols-[1fr_7rem_8rem_1.75rem] items-center gap-3 sm:gap-4';
 
 function Status({ user }: { user: AdminUser }) {
   const off = isDeactivated(user);
@@ -116,7 +116,7 @@ export default function AdminUsersPage() {
       <HistoryControls
         query={query}
         onQuery={v => { setQuery(v); reset(); }}
-        filter={<FilterMenu options={FILTERS} value={filter} onChange={v => { setFilter(v); reset(); }} label="Show accounts" />}
+        filter={<SingleFilter title="Status" options={FILTERS} value={filter} onChange={v => { setFilter(v); reset(); }} />}
         placeholder="Search by name, email or account ID"
         summary={!loading && (q || filter !== 'all') ? `${matches.length} matching ${matches.length === 1 ? 'account' : 'accounts'}` : null}
       />

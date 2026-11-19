@@ -246,9 +246,13 @@ function PipelinePageInner() {
   };
 
   /* ---------- View turunan dari URL + state ---------- */
-  const currentJob = job && job.id === jobId ? job : (jobId ? finishedJobs.get(jobId) ?? null : null);
+  // Kembali ke halaman ini: URL baru diganti ke ?job= sesaat setelah render pertama. Pakai id job terakhir
+  // sejak render pertama, supaya job yang sudah selesai langsung tampil sebagai hasil (tanpa sempat
+  // menampilkan layar "running" lalu melompat ke hasil).
+  const viewId = jobId ?? resumeId;
+  const currentJob = job && job.id === viewId ? job : (viewId ? finishedJobs.get(viewId) ?? null : null);
   const issue = pollIssue && pollIssue.jobId === jobId ? pollIssue : null;
-  const view: View = !jobId ? (resumeId ? 'running' : 'form')
+  const view: View = !viewId ? 'form'
     : issue ? 'error'
     : !currentJob ? 'running'
     : currentJob.status === 'done' ? 'result'
@@ -268,16 +272,15 @@ function PipelinePageInner() {
             accent="to TdP risk."
             description={`Enter a drug's exposure and ion-channel block. We simulate a human ventricular cell at ${joinList(db?.doses ?? DEFAULT_DOSES)}× Cmax, measure 11 biomarkers, and classify the risk for the mean and for each dose.`}
           />
-          <PipelineMonitor job={currentJob} loading={!!jobId && !currentJob && view !== 'error'} doses={doses} db={db} />
+          <PipelineMonitor job={currentJob} loading={!!viewId && !currentJob && view !== 'error'} doses={doses} db={db} />
 
           {/* Tanpa AnimatePresence mode="wait": bisa macet di opacity 0 sehingga hasil tidak tampil */}
             {view === 'form' && (
               <motion.div
                 key="form"
-                initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
-                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                exit={{ opacity: 0, y: -20, filter: 'blur(8px)', scale: 0.98 }}
-                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
                 className="flex flex-col gap-6 pb-20"
               >
                 <DrugParamsForm
@@ -304,9 +307,9 @@ function PipelinePageInner() {
             {view === 'result' && currentJob && (
               <motion.div
                 key="result"
-                initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
-                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
               >
                 <PipelineResult key={currentJob.id} job={currentJob} db={db} onRunAnother={runAnother} />
               </motion.div>

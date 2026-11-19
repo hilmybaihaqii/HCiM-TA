@@ -2,6 +2,7 @@ import React from 'react';
 import LabNavbar from './components/LabNavbar';
 import LabFooter from './components/LabFooter';
 import SessionGuard from '@/components/SessionGuard';
+import UserViewSplash from './components/UserViewSplash';
 import { LabShellSkeleton } from './components/Skeletons';
 
 export default function LabLayout({ children }: { children: React.ReactNode }) {
@@ -12,9 +13,10 @@ export default function LabLayout({ children }: { children: React.ReactNode }) {
       {/* Ambient color layer — sama seperti splash screen & landing page,
           dipasang fixed supaya tetap terasa di seluruh sub-halaman /lab. */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-[32rem] h-[32rem] rounded-full bg-accent/5 blur-[140px] animate-[blob-drift-1_16s_ease-in-out_infinite]" />
-        <div className="absolute top-[45%] -right-40 w-[28rem] h-[28rem] rounded-full bg-teal/5 blur-[140px] animate-[blob-drift-2_20s_ease-in-out_-4s_infinite]" />
-        <div className="absolute bottom-[-10%] left-[20%] w-96 h-96 rounded-full bg-amber/5 blur-[130px] animate-[blob-drift-3_14s_ease-in-out_-2s_infinite]" />
+        {/* Gradien radial statis: tanpa blur & tanpa animasi tak berujung, jadi tidak ada repaint terus-menerus */}
+        <div className="absolute -top-56 -left-56 w-[44rem] h-[44rem] rounded-full bg-[radial-gradient(closest-side,color-mix(in_srgb,var(--accent-red)_7%,transparent),transparent)]" />
+        <div className="absolute top-[40%] -right-56 w-[40rem] h-[40rem] rounded-full bg-[radial-gradient(closest-side,color-mix(in_srgb,var(--accent-teal)_7%,transparent),transparent)]" />
+        <div className="absolute bottom-[-18%] left-[14%] w-[36rem] h-[36rem] rounded-full bg-[radial-gradient(closest-side,color-mix(in_srgb,var(--accent-amber)_7%,transparent),transparent)]" />
         <div
           className="absolute inset-0 opacity-[0.25]"
           style={{
@@ -27,6 +29,8 @@ export default function LabLayout({ children }: { children: React.ReactNode }) {
 
       {/* min-h-dvh (bukan 100vh): tinggi ikut berubah saat toolbar Safari muncul/hilang */}
       <div className="relative z-10 flex flex-col min-h-dvh">
+        {/* Sambutan saat admin kembali ke user view; layout ini tetap terpasang selama pindah halaman */}
+        <UserViewSplash />
         <LabNavbar />
         <main className="flex-1 w-full flex flex-col">
           {children}

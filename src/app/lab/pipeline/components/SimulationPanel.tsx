@@ -183,12 +183,13 @@ export function BiomarkerMatrix({ job, selected, onSelect }: {
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-sm font-medium">Biomarker ratios by dose</h3>
-        <GuideLink topic="ratios" />
+        <GuideLink topic="dose-averaging" />
       </div>
       <p className="text-sm text-foreground/70 max-w-3xl leading-relaxed">
         The first two columns are the raw values from the simulation. The dose columns are ratios to the drug-free
-        cell (drug value ÷ |drug-free value|), and these are what the risk model reads. No change is 1, or −1 for
-        biomarkers that are negative, such as vrest. Marked: qNet below 0.9, APD50 or APD90 above 1.1, and any
+        cell (drug value ÷ |drug-free value|). No change is 1, or −1 for
+        biomarkers that are negative, such as vrest. The Mean column is the average of the dose columns, and only
+        that column goes into the risk model. Marked: qNet below 0.9, APD50 or APD90 above 1.1, and any
         other biomarker that moved more than 10%.{' '}
         {' '}{onSelect ? 'The highlighted column is the dose you are looking at; click a column header to switch.' : ''}
       </p>
@@ -295,7 +296,10 @@ export function MethodNote({ job, prediction }: { job: PipelineJob; prediction?:
       </dl>
       {c?.calibrationNote || c?.warning ? (
         <div className="flex flex-col gap-3 text-sm text-foreground/70 leading-relaxed">
-          <span className="text-xs font-mono uppercase tracking-wider text-foreground/60">From the risk model</span>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="text-xs font-mono uppercase tracking-wider text-foreground/60">From the risk model</span>
+            <GuideLink topic="prediction-set" />
+          </div>
           {c.calibrationNote && <p>{c.calibrationNote}</p>}
           {c.warning && <p className="text-accent">{c.warning}</p>}
         </div>

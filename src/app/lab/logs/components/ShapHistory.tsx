@@ -32,7 +32,7 @@ export const nameOf = (c: Contribution) => c.biomarker || c.feature || '—';
 export const sortByInfluence = (list: Contribution[] = []) => [...list].sort((a, b) => Math.abs(b.shap ?? 0) - Math.abs(a.shap ?? 0));
 
 // Ponsel: waktu | kelas | panah. Desktop: + faktor utama.
-const ROW = 'grid grid-cols-[1fr_auto_1rem] sm:grid-cols-[13rem_9rem_1fr_1rem] items-center gap-3 sm:gap-4';
+const ROW = 'grid grid-cols-[1fr_auto_1.75rem] sm:grid-cols-[13rem_9rem_1fr_1.75rem] items-center gap-3 sm:gap-4';
 
 /** Detail satu analisis SHAP. `owner` = pemilik (halaman admin). */
 export function ShapDetail({ log, owner, note }: { log: ShapLog; owner?: React.ReactNode; note?: React.ReactNode }) {

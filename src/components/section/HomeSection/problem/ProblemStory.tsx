@@ -234,7 +234,7 @@ export default function ProblemStory() {
         // Teks naik dari balik "jendela" (overflow-hidden) baris demi baris, gaya editorial.
         gsap.set('.ps-line', { yPercent: 110 });
         gsap.set('.ps-cta', { autoAlpha: 0, y: 20 });
-        gsap.set('.ps-visual', { autoAlpha: 0, scale: 1.04, filter: 'blur(8px)' });
+        gsap.set('.ps-visual', { autoAlpha: 0, scale: 1.04 });
         CHAPTER_FX.forEach((fx, i) => fx.init(qs[i]));
 
         /** Animasi visual dibungkus timeline sendiri lalu diperlambat, supaya temponya setara dengan teks. */
@@ -247,7 +247,7 @@ export default function ProblemStory() {
         const enter = (tl: Tl, i: number, at: gsap.Position) => {
           const q = qs[i];
           tl.to(q('.ps-line'), { yPercent: 0, duration: 1.2, stagger: 0.2, ease: 'power3.out' }, at)
-            .to(q('.ps-visual'), { autoAlpha: 1, scale: 1, filter: 'blur(0px)', duration: 1.3, ease: 'power2.out' }, '<0.3')
+            .to(q('.ps-visual'), { autoAlpha: 1, scale: 1, duration: 1.3, ease: 'power2.out' }, '<0.3')
             .to(q('.ps-cta'), { autoAlpha: 1, y: 0, duration: 0.8, ease: 'power2.out' }, '<0.6');
           tl.add(slow((sub) => CHAPTER_FX[i].enter(sub, q)), '<0.1');
         };
@@ -257,7 +257,7 @@ export default function ProblemStory() {
           const q = qs[i];
           tl.to(q('.ps-line'), { yPercent: -110, duration: 1, stagger: 0.07, ease: 'power2.in' })
             .to(q('.ps-cta'), { autoAlpha: 0, y: -16, duration: 0.6 }, '<')
-            .to(q('.ps-visual'), { autoAlpha: 0, scale: 0.96, filter: 'blur(8px)', duration: 1.1, ease: 'power1.in' }, '<0.1');
+            .to(q('.ps-visual'), { autoAlpha: 0, scale: 0.96, duration: 1.1, ease: 'power1.in' }, '<0.1');
         };
 
         // Bab pertama muncul saat section mendekati atas layar, sebelum panel menempel.

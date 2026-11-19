@@ -4,70 +4,23 @@ import React, { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import {
-  DoseKey, DrugDb, FEATURES, PipelineJob, describeFailure, doseId, formatChange, formatDrugName, joinList, ratioChange,
+  DoseKey, DrugDb, FEATURES, PipelineJob, describeFailure, formatChange, formatDrugName, joinList, ratioChange,
 } from '@/lib/pipeline';
 import { getTierColor } from '@/lib/tierColor';
-import { parsePredictResponse, type ShapData } from '@/lib/predict';
+import { parsePredictResponse, type PredictionOutput, type ShapData } from '@/lib/predict';
 import RiskVerdict from '../../components/report/RiskVerdict';
 import BiomarkerList from '../../components/report/BiomarkerList';
-import { SectionHead, SlideIndicator, TabRail, primaryBtn, textLink } from '../../components/report/ui';
+import ModelInputNote from '../../components/report/ModelInputNote';
+import { SectionHead, TabRail, primaryBtn, secondaryBtn, textLink } from '../../components/report/ui';
 import DrugInputs from './DrugInputs';
 import { BiomarkerMatrix, MethodNote, TracesSection, doseSeriesLabel, useTraceSeries } from './SimulationPanel';
 
 /*
  * Halaman hasil Full Pipeline, dibaca dari atas seperti laporan singkat:
- * 1. vonis hasil run (mean ratios)  2. strip dosis  3. 11 biomarker dosis terpilih  4. satu pilihan detail.
+ * 1. vonis hasil run (mean ratios)  2. 11 biomarker (rata-rata dosis)  3. satu pilihan detail.
+ * Pilihan dosis (Mean / n× Cmax) hanya ada di tab detail "All doses", bukan di bagian prediksi.
  * Prediksi risiko & SHAP hanya berjalan sekali per run atas rata-rata biomarker.
  */
-
-export type DoseOption = {
-  key: DoseKey;
-  label: string;
-  ratios: (number | null)[] | null;
-};
-
-/* =========================================================
-   2. STRIP DOSIS: kolom selebar layar, penanda bergeser mulus
-   ========================================================= */
-function DoseStrip({ options, selected, onSelect, eadsByDose }: {
-  options: DoseOption[];
-  selected: DoseKey;
-  onSelect: (key: DoseKey) => void;
-  eadsByDose: Map<number, number>;
-}) {
-  const index = options.findIndex(o => doseId(o.key) === doseId(selected));
-  return (
-    <div
-      role="radiogroup"
-      aria-label="Dose"
-      className="relative grid border-y border-foreground/10"
-      style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
-    >
-      <SlideIndicator index={index} count={options.length} className="left-0 -bottom-px h-0.5 px-3 before:block before:h-full before:rounded-full before:bg-action" />
-      {options.map(o => {
-        const isSel = doseId(o.key) === doseId(selected);
-        const eads = o.key === 'mean' ? 0 : eadsByDose.get(o.key) ?? 0;
-        return (
-          <button
-            key={doseId(o.key)}
-            type="button"
-            role="radio"
-            aria-checked={isSel}
-            onClick={() => onSelect(o.key)}
-            className={`relative py-4 md:py-5 text-center transition-colors duration-300 ${isSel ? 'text-action' : 'text-foreground/60 hover:text-foreground'}`}
-          >
-            <span className="block text-sm font-medium">
-              {o.key === 'mean' ? 'Mean' : <>{o.key}×<span className="hidden sm:inline"> Cmax</span></>}
-              {eads > 0 && (
-                <span title="Early afterdepolarizations at this dose" className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-amber-500 align-middle" />
-              )}
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 /* =========================================================
    CATATAN SIMULASI: temuan simulasi (EADs, gagal, divergensi)
@@ -141,7 +94,7 @@ function simFindings(job: PipelineJob): React.ReactNode | null {
             {p}
           </React.Fragment>
         ))}
-        . Select a dose above to inspect its action potential traces and biomarker values.
+        . Open All doses below to inspect each dose.
       </>
     );
   }
@@ -151,14 +104,14 @@ function simFindings(job: PipelineJob): React.ReactNode | null {
     const maxChg = formatChange(ratioChange(divergentBm.max));
     return (
       <>
-        Biomarker response across doses varied most in <span className="font-mono text-foreground">{divergentBm.key}</span> ({minChg} at {divergentBm.minDose}× to {maxChg} at {divergentBm.maxDose}× Cmax), with no early afterdepolarizations. Select a dose above to inspect traces and biomarkers.
+        Biomarker response across doses varied most in <span className="font-mono text-foreground">{divergentBm.key}</span> ({minChg} at {divergentBm.minDose}× to {maxChg} at {divergentBm.maxDose}× Cmax), with no early afterdepolarizations. Open All doses below to inspect each dose.
       </>
     );
   }
 
   return (
     <>
-      All {perDose.length || 4} doses simulated with stable repolarization. Select a dose above to inspect its action potential traces and biomarker values.
+      All {perDose.length || 4} doses simulated with stable repolarization. Open All doses below to inspect each dose.
     </>
   );
 }
@@ -173,49 +126,60 @@ const DETAILS: { id: DetailId; label: string }[] = [
   { id: 'drug', label: 'Drug & method' },
 ];
 
-export default function PipelineResult({ job, db, onRunAnother }: {
-  job: PipelineJob; db: DrugDb | null; onRunAnother: () => void;
+/** Status data trace AP/kalsium. Di riwayat, trace dimuat terpisah (payload besar). */
+export type TracesStatus = 'ready' | 'loading' | 'error';
+
+export default function PipelineResult({
+  job, db, onRunAnother, header, prediction, tier, shap, embedded = false, tracesStatus = 'ready', onRetryTraces, footer,
+}: {
+  job: PipelineJob;
+  db: DrugDb | null;
+  /** Tombol "New simulation" (halaman pipeline). Tanpa ini dan tanpa `header`, baris atas hanya berisi nama obat. */
+  onRunAnother?: () => void;
+  /** Pengganti isi kanan baris atas (mis. tanggal di riwayat) */
+  header?: React.ReactNode;
+  /** Hasil model dari sumber lain (riwayat); default dibaca dari job.prediction */
+  prediction?: PredictionOutput | null;
+  tier?: string;
+  shap?: ShapData | null;
+  /** Ditampilkan di dalam baris riwayat: jarak lebih rapat, tanpa padding bawah halaman */
+  embedded?: boolean;
+  tracesStatus?: TracesStatus;
+  onRetryTraces?: () => void;
+  /** Catatan kecil di paling bawah (mis. ID catatan) */
+  footer?: React.ReactNode;
 }) {
   const { apSeries, caSeries } = useTraceSeries(job);
   const [selected, setSelected] = useState<DoseKey>('mean');
   const [detail, setDetail] = useState<DetailId>('traces');
 
   const perDose = useMemo(() => job.sim_result?.per_dose ?? [], [job.sim_result]);
-  const eadsByDose = useMemo(() => new Map(perDose.map(d => [d.dose, d.flags?.EADs ?? 0])), [perDose]);
   const finding = useMemo(() => simFindings(job), [job]);
   const doses = job.sim_result?.doses ?? job.sim_params?.doses ?? perDose.map(d => d.dose);
 
-  const options: DoseOption[] = useMemo(() => {
-    const runs = [...perDose].sort((a, b) => a.dose - b.dose);
-    return [
-      { key: 'mean' as const, label: 'Mean', ratios: job.ratios ?? null },
-      ...runs.map(d => ({ key: d.dose, label: `${d.dose}×`, ratios: d.ratios ?? null })),
-    ];
-  }, [job, perDose]);
-
   // Run-level AI prediction & explanation dari payload job (dihitung sekali oleh backend atas mean ratios)
   const rawPrediction = Array.isArray(job.prediction) ? job.prediction : null;
-  const runTier = rawPrediction
+  const runTier = tier ?? (rawPrediction
     ? String((rawPrediction[0] as { label?: string } | undefined)?.label ?? 'unknown').toLowerCase()
-    : 'unknown';
-  const runPrediction = useMemo(() => (rawPrediction ? parsePredictResponse(rawPrediction) : null), [rawPrediction]);
+    : 'unknown');
+  const parsedPrediction = useMemo(() => (rawPrediction ? parsePredictResponse(rawPrediction) : null), [rawPrediction]);
+  const runPrediction = prediction !== undefined ? prediction : parsedPrediction;
 
-  const runShap = useMemo((): ShapData | null => {
+  const parsedShap = useMemo((): ShapData | null => {
     const first = Array.isArray(job.explanation) ? (job.explanation[0] as Partial<ShapData> | undefined) : undefined;
     return first && Array.isArray(first.contributions) && typeof first.base_value === 'number'
       ? { predicted_class: runTier, base_value: first.base_value, contributions: first.contributions }
       : null;
   }, [job.explanation, runTier]);
+  const runShap = shap !== undefined ? shap : parsedShap;
+  const hasVerdict = !!runPrediction || runTier !== 'unknown';
 
   const drug = job.request?.drug ?? job.sim_params?.drug;
   const cipaRisk = drug ? db?.drugs[drug.toLowerCase()]?.cipa_risk : undefined;
 
-  const selectedRun = perDose.find(d => d.dose === selected);
-  const selectedRatios = selected === 'mean' ? job.ratios ?? [] : selectedRun?.ratios ?? [];
-
   return (
     // Satu kolom konten yang konsisten; di layar lebar baris tidak melebar berlebihan
-    <div className="w-full max-w-5xl mx-auto flex flex-col gap-14 md:gap-20 pb-20">
+    <div className={`w-full max-w-5xl mx-auto flex flex-col ${embedded ? 'gap-12 md:gap-16' : 'gap-14 md:gap-20 pb-20'}`}>
       {/* ---------- Baris atas: obat di kiri, simulasi baru di kanan ---------- */}
       <div className="flex items-center justify-between gap-4 px-1">
         {/* Ponsel: "CiPA" saja & tombol ringkas, supaya nama obat tidak terpotong */}
@@ -227,14 +191,16 @@ export default function PipelineResult({ job, db, onRunAnother }: {
             </>
           )}
         </p>
-        <button type="button" onClick={onRunAnother} className={`${primaryBtn} max-sm:px-3.5 max-sm:py-2 max-sm:text-xs`}>
-          New simulation
-        </button>
+        {header ?? (onRunAnother && (
+          <button type="button" onClick={onRunAnother} className={`${primaryBtn} max-sm:px-3.5 max-sm:py-2 max-sm:text-xs`}>
+            New simulation
+          </button>
+        ))}
       </div>
 
       {/* ---------- 1. Vonis hasil run (selalu dari mean ratios job, dirender sekali per run) ---------- */}
       <div className="min-h-[var(--verdict-h)] flex flex-col justify-center [--verdict-h:20rem] sm:[--verdict-h:18rem]">
-        {rawPrediction ? (
+        {hasVerdict ? (
           <RiskVerdict tier={runTier} prediction={runPrediction} />
         ) : (
           <p className="text-center text-base text-foreground/70 max-w-xl mx-auto leading-relaxed text-balance">
@@ -243,35 +209,30 @@ export default function PipelineResult({ job, db, onRunAnother }: {
         )}
       </div>
 
-      {/* ---------- 2. Dosis ---------- */}
-      <section aria-labelledby="doses-heading">
-        <SectionHead id="doses-heading" title="Simulated doses" meta={`${doses.length} doses simulated`} />
-        <div className="mt-5">
-          <DoseStrip options={options} selected={selected} onSelect={setSelected} eadsByDose={eadsByDose} />
-        </div>
+      {/* ---------- 2. Apa yang masuk ke model: rata-rata 11 rasio dari semua dosis ---------- */}
+      <ModelInputNote job={job} />
+
+      {/* ---------- 2. 11 biomarker: selalu rata-rata dosis (input prediksi) ---------- */}
+      <BiomarkerList
+        ratios={job.ratios ?? []}
+        control={job.sim_result?.control_metrics}
+        drug={job.sim_result?.raw_metrics}
+        tier={runTier}
+        shap={runShap}
+        explaining={false}
+        driversNote="Calculated for the overall run from the mean biomarker profile across simulated doses."
+        meta={`Mean across ${doses.length} simulated doses`}
+        emptyDriversMessage="The driver analysis (SHAP) is not available for this simulation run."
+      />
+
+      {/* ---------- 3. Detail: satu pilihan, bukan banyak tab ---------- */}
+      <section aria-label="More detail">
+        <SectionHead title="Behind the result" />
         {finding && (
           <p className="mt-5 mx-auto max-w-2xl text-center text-sm text-foreground/70 leading-relaxed text-balance">
             {finding}
           </p>
         )}
-      </section>
-
-      {/* ---------- 3. 11 biomarker dosis terpilih ---------- */}
-      <BiomarkerList
-        ratios={selectedRatios}
-        control={job.sim_result?.control_metrics}
-        drug={selectedRun ? selectedRun.raw_metrics : job.sim_result?.raw_metrics}
-        tier={runTier}
-        shap={runShap}
-        explaining={false}
-        driversNote="Calculated for the overall run from the mean biomarker profile across simulated doses."
-        meta={selected === 'mean' ? 'Showing mean across doses' : `Showing ${selected}× Cmax`}
-        emptyDriversMessage="The driver analysis (SHAP) is not available for this simulation run."
-      />
-
-      {/* ---------- 4. Detail: satu pilihan, bukan banyak tab ---------- */}
-      <section aria-label="More detail">
-        <SectionHead title="Behind the result" />
         <div className="mt-5">
           <TabRail tabs={DETAILS} value={detail} onChange={id => setDetail(id as DetailId)} label="More detail" panelPrefix="detail" />
         </div>
@@ -285,7 +246,18 @@ export default function PipelineResult({ job, db, onRunAnother }: {
           className="pt-8 md:pt-10"
         >
           {detail === 'traces' && (
-            <TracesSection apSeries={apSeries} caSeries={caSeries} highlight={selected === 'mean' ? null : doseSeriesLabel(selected)} />
+            tracesStatus === 'loading' ? (
+              <p className="py-16 text-center text-sm text-foreground/60" role="status">Loading action potential and calcium traces…</p>
+            ) : tracesStatus === 'error' ? (
+              <div className="py-12 flex flex-col items-center gap-4 text-center">
+                <p className="text-sm text-foreground/70">The traces for this run could not be loaded.</p>
+                {onRetryTraces && <button type="button" onClick={onRetryTraces} className={secondaryBtn}>Try again</button>}
+              </div>
+            ) : apSeries.length > 0 || caSeries.length > 0 ? (
+              <TracesSection apSeries={apSeries} caSeries={caSeries} highlight={selected === 'mean' ? null : doseSeriesLabel(selected)} />
+            ) : (
+              <p className="py-16 text-center text-sm text-foreground/60">No trace data was recorded for this run.</p>
+            )
           )}
           {detail === 'doses' && (
             <div className="flex flex-col gap-12">
@@ -303,6 +275,8 @@ export default function PipelineResult({ job, db, onRunAnother }: {
           )}
         </motion.div>
       </section>
+
+      {footer}
     </div>
   );
 }

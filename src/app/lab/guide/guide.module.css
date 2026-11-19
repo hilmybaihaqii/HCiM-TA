@@ -96,3 +96,17 @@
   .chapterLink { transition: none; }
   :global(html):has(.guide) { scroll-behavior: auto; }
 }
+
+/* Bagian yang dituju tombol bantuan dari halaman hasil: ditandai sebentar supaya jelas
+   pertanyaan mana yang dijawab di sini. Hanya warna & garis, tanpa gerak tata letak. */
+.content section:target {
+  animation: guide-target 2.4s ease-out 1;
+  border-radius: 0.75rem;
+}
+@keyframes guide-target {
+  0%, 55% { background-color: color-mix(in srgb, var(--accent-red) 7%, transparent); box-shadow: 0 0 0 0.75rem color-mix(in srgb, var(--accent-red) 7%, transparent); }
+  100% { background-color: transparent; box-shadow: 0 0 0 0.75rem transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .content section:target { animation: none; }
+}

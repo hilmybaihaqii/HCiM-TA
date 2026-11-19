@@ -4,6 +4,17 @@ import Footer from "@/components/Footer";
 import SmoothScroll from "@/components/SmoothScroll";
 import BackToTop from "@/components/ui/BackToTop";
 
+// Posisi & ukuran sama dengan versi blur sebelumnya, sedikit diperbesar karena gradien menggantikan sebaran blur
+const AMBIENT: { pos: React.CSSProperties; size: string; color: string }[] = [
+  { pos: { top: '-4%', left: '-16%' }, size: 'min(56vw, 44rem)', color: 'color-mix(in srgb, var(--accent-red) 24%, transparent)' },
+  { pos: { top: '9%', right: '-14%' }, size: 'min(50vw, 40rem)', color: 'color-mix(in srgb, var(--accent-teal) 24%, transparent)' },
+  { pos: { top: '28%', left: '-4%' }, size: 'min(42vw, 32rem)', color: 'color-mix(in srgb, var(--accent-amber) 21%, transparent)' },
+  { pos: { top: '46%', right: '-16%' }, size: 'min(48vw, 38rem)', color: 'color-mix(in srgb, var(--accent-teal) 21%, transparent)' },
+  { pos: { top: '63%', left: '-14%' }, size: 'min(46vw, 37rem)', color: 'color-mix(in srgb, var(--accent-red) 21%, transparent)' },
+  { pos: { top: '80%', right: '0%' }, size: 'min(42vw, 32rem)', color: 'color-mix(in srgb, var(--accent-amber) 21%, transparent)' },
+  { pos: { top: '95%', left: '10%' }, size: 'min(40vw, 31rem)', color: 'color-mix(in srgb, var(--accent-teal) 17%, transparent)' },
+];
+
 export default function HomeLayout({
   children,
 }: {
@@ -11,16 +22,16 @@ export default function HomeLayout({
 }) {
   return (
     <div className="relative min-h-screen bg-background">
-      {/* Ambient color layer — membentang di sepanjang tinggi konten,
-          bukan cuma di Hero, supaya warnanya hidup dari atas sampai bawah. */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[0%] -left-[10%] w-[42vw] h-[42vw] max-w-130 max-h-130 rounded-full bg-accent/25 blur-[90px]" />
-        <div className="absolute top-[12%] -right-[8%] w-[36vw] h-[36vw] max-w-115 max-h-115 rounded-full bg-teal/25 blur-[90px]" />
-        <div className="absolute top-[30%] left-[2%] w-[28vw] h-[28vw] max-w-90 max-h-90 rounded-full bg-amber/22 blur-[85px]" />
-        <div className="absolute top-[48%] -right-[10%] w-[34vw] h-[34vw] max-w-110 max-h-110 rounded-full bg-teal/22 blur-[90px]" />
-        <div className="absolute top-[65%] -left-[8%] w-[32vw] h-[32vw] max-w-105 max-h-105 rounded-full bg-accent/22 blur-[85px]" />
-        <div className="absolute top-[82%] right-[5%] w-[28vw] h-[28vw] max-w-90 max-h-90 rounded-full bg-amber/22 blur-[85px]" />
-        <div className="absolute top-[98%] left-[15%] w-[26vw] h-[26vw] max-w-85 max-h-85 rounded-full bg-teal/18 blur-[80px]" />
+      {/* Ambient color layer: membentang sepanjang konten. Gradien radial biasa (bukan blur-[90px]):
+          tampilannya sama, tapi tidak membuat lapisan filter raksasa yang berat di GPU HP murah. */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
+        {AMBIENT.map((b, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full"
+            style={{ ...b.pos, width: b.size, height: b.size, background: `radial-gradient(closest-side, ${b.color}, transparent)` }}
+          />
+        ))}
       </div>
 
       <SmoothScroll />

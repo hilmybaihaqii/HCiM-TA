@@ -4,8 +4,6 @@ import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Mail, ArrowUp } from 'lucide-react';
-import { FaGithub, FaLinkedin, FaXTwitter } from 'react-icons/fa6';
-import type { IconType } from 'react-icons';
 
 const luxEase = [0.16, 1, 0.3, 1] as const;
 
@@ -46,7 +44,7 @@ const AnimatedLink = ({ title, href }: { title: string; href: string }) => {
 /* =========================================================
    REUSABLE COMPONENT: SOCIAL ICON BUTTON (bulat, hover glow)
    ========================================================= */
-const SocialIcon = ({ icon: Icon, href, label }: { icon: IconType | typeof Mail; href: string; label: string }) => {
+const SocialIcon = ({ icon: Icon, href, label }: { icon: typeof Mail; href: string; label: string }) => {
   return (
     <Link
       href={href}
@@ -92,7 +90,7 @@ export default function Footer() {
       >
 
         {/* ==================== LEFT COLUMN: BRANDING ==================== */}
-        <div className="md:col-span-5 flex flex-col justify-between">
+        <div className="md:col-span-6 flex flex-col justify-between">
           <div>
             <Link
               href="/"
@@ -106,10 +104,7 @@ export default function Footer() {
 
             {/* Social icons */}
             <div className="flex items-center gap-3 mt-8">
-              <SocialIcon icon={FaXTwitter} href="#" label="Twitter" />
-              <SocialIcon icon={FaLinkedin} href="#" label="LinkedIn" />
-              <SocialIcon icon={FaGithub} href="#" label="GitHub" />
-              <SocialIcon icon={Mail} href="mailto:hcim.ta01@gmail.com" label="Email" />
+              <SocialIcon icon={Mail} href="mailto:hcim.ta01@gmail.com" label="Email the team" />
             </div>
           </div>
 
@@ -124,41 +119,30 @@ export default function Footer() {
         </div>
 
         {/* SPACING COLUMN */}
-        <div className="hidden md:block md:col-span-1"></div>
+        <div className="hidden md:block md:col-span-2"></div>
 
         {/* ==================== RIGHT COLUMNS: LINKS ==================== */}
         <div className="md:col-span-2">
           <h4 className="text-[10px] font-mono uppercase tracking-[0.2em] text-foreground mb-6">
             Platform
           </h4>
+          {/* Sama persis dengan menu navbar, supaya tidak ada tautan yang hanya ada di footer */}
           <ul className="space-y-4">
-            <AnimatedLink title="Model Overview" href="#" />
-            <AnimatedLink title="Methodology" href="#" />
-            <AnimatedLink title="API Documentation" href="#" />
-            <AnimatedLink title="Research Papers" href="#" />
-          </ul>
-        </div>
-
-        <div className="md:col-span-2">
-          <h4 className="text-[10px] font-mono uppercase tracking-[0.2em] text-foreground mb-6">
-            Resources
-          </h4>
-          <ul className="space-y-4">
-            <AnimatedLink title="Ethics Policy" href="#" />
-            <AnimatedLink title="Terms of Service" href="#" />
-            <AnimatedLink title="Privacy Policy" href="#" />
-            <AnimatedLink title="Support" href="#" />
+            <AnimatedLink title="Home" href="/" />
+            <AnimatedLink title="Standards" href="/standards" />
+            <AnimatedLink title="Articles" href="/articles" />
+            <AnimatedLink title="About Us" href="/aboutus" />
           </ul>
         </div>
 
         <div className="md:col-span-2 flex flex-col justify-between">
           <div>
             <h4 className="text-[10px] font-mono uppercase tracking-[0.2em] text-foreground mb-6">
-              Connect
+              Project
             </h4>
             <ul className="space-y-4">
+              <AnimatedLink title="Run a prediction" href="/login" />
               <AnimatedLink title="Contact" href="mailto:hcim.ta01@gmail.com" />
-              <AnimatedLink title="Support" href="#" />
             </ul>
           </div>
 
@@ -193,31 +177,9 @@ export default function Footer() {
           </p>
         </div>
 
-        <div className="flex items-center gap-6">
-          {/* Animated EQ Visualizer */}
-          <div className="flex gap-0.75 h-3 mr-4 items-end">
-            {[1, 0.6, 0.8, 0.4, 1].map((h, idx) => (
-              <motion.div
-                key={idx}
-                className="w-0.5 bg-foreground/30 rounded-t-sm"
-                animate={{ height: [`${h * 100}%`, '100%', `${h * 100}%`] }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  delay: idx * 0.15,
-                  ease: "easeInOut"
-                }}
-              />
-            ))}
-          </div>
-
-          <Link href="#" className="text-[11px] font-mono uppercase tracking-widest text-muted hover:text-foreground transition-colors duration-300">
-            Privacy
-          </Link>
-          <Link href="#" className="text-[11px] font-mono uppercase tracking-widest text-muted hover:text-accent transition-colors duration-300">
-            Cookies
-          </Link>
-        </div>
+        <p className="text-[11px] font-mono uppercase tracking-widest text-muted">
+          For research use only
+        </p>
       </motion.div>
     </footer>
   );

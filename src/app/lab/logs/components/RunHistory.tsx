@@ -1,47 +1,49 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, Loader2 } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { api } from '@/lib/api';
 import { cachedGet } from '@/lib/historyCache';
 import {
-  FEATURES,
-  formatChange,
-  ratioChange,
-  type PipelineJob,
+  formatDrugName,
+  getDrugs,
+  type DrugDb,
   type DoseRun,
-  type Trace,
-  type DoseKey,
-  type PipelineRequest,
+  type Flags,
   type JobStatus,
+  type PipelineJob,
+  type PipelineRequest,
+  type Trace,
 } from '@/lib/pipeline';
-import { isStrongChange } from '@/lib/biomarkerHighlight';
 import { normalizeTier } from '@/lib/tierColor';
-import GuideLink from '../../components/GuideLink';
+import type { PredictionOutput, ShapData } from '@/lib/predict';
 import RiskVerdict from '../../components/report/RiskVerdict';
-import type { PredictionOutput } from '@/lib/predict';
-import { SHORT_DESC } from '../../components/report/biomarkerText';
-import { ShapDetail, type Contribution } from './ShapHistory';
+import BiomarkerList from '../../components/report/BiomarkerList';
+import { secondaryBtn } from '../../components/report/ui';
+import { ManualInputNote } from '../../components/report/ModelInputNote';
+import { Bone } from '../../components/Skeletons';
+import PipelineResult, { type TracesStatus } from '../../pipeline/components/PipelineResult';
 import {
-  TracesSection,
-  BiomarkerMatrix,
-  useTraceSeries,
-  doseSeriesLabel,
-} from '../../pipeline/components/SimulationPanel';
-import {
+  FilterPanel,
+  TIER_OPTIONS,
   HistoryControls,
   HistoryMessage,
   HistoryRow,
   HistorySkeleton,
   Pager,
-  TierFilter,
   TierText,
-  TierFilterValue,
-  ValueRows,
+  type TierFilterValue,
+  fetchAllPages,
   formatWhen,
   matchesQuery,
   matchesTier,
   useHistory,
 } from './history';
+
+/*
+ * Riwayat run (satu catatan per prediksi). Baris dibuka seperti accordion; isinya memakai komponen
+ * hasil yang sama dengan halaman Full Pipeline / Digital Lab, jadi riwayat terbaca persis seperti
+ * saat hasil pertama kali keluar. Filter: obat, metode input, dan hasil (tier).
+ */
 
 export type Confidence = { confidence: number; label: string };
 
@@ -162,376 +164,242 @@ export function historyToPredictionOutput(pred: RunLog): PredictionOutput {
 }
 
 /* =========================================================
-   SIMULATION OUTPUT SECTION (Pipeline runs only, 2nd stage fetch)
+   DETAIL RUN: tampilan sama dengan halaman hasil prediksi
    ========================================================= */
 
-// In-memory cache for trace payloads (~285 KB per run), valid for the page lifetime only.
-// Prevents sessionStorage QuotaExceededError when opening multiple runs.
+// Trace (~285 KB per run) hanya disimpan di memori selama halaman terbuka, bukan di sessionStorage.
 const tracesMemoryCache = new Map<string, NonNullable<RunDetailResponse['pipeline']>>();
 
-function SimulationSection({
-  runId,
-  prediction,
-  initialPipeline,
-}: {
-  runId: string;
-  prediction: RunLog;
-  initialPipeline: RunDetailResponse['pipeline'];
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [pipelineWithTraces, setPipelineWithTraces] = useState<RunDetailResponse['pipeline'] | null>(() => {
-    return tracesMemoryCache.get(runId) ?? null;
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedDose, setSelectedDose] = useState<DoseKey>('mean');
+/** Database obat (CiPA risk, parameter) untuk run pipeline; satu request bersama lewat getDrugs() */
+function useDrugDb(enabled: boolean) {
+  const [db, setDb] = useState<DrugDb | null>(null);
+  useEffect(() => {
+    if (!enabled) return;
+    let alive = true;
+    getDrugs().then(d => { if (alive) setDb(d); }).catch(() => { /* detail tetap tampil tanpa db */ });
+    return () => { alive = false; };
+  }, [enabled]);
+  return db;
+}
 
-  const fetchTraces = () => {
-    if (pipelineWithTraces || tracesMemoryCache.has(runId)) {
-      if (!pipelineWithTraces && tracesMemoryCache.has(runId)) {
-        setPipelineWithTraces(tracesMemoryCache.get(runId)!);
-      }
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    cachedGet<RunDetailResponse>(`/api/history/runs/${runId}?include_traces=true`)
-      .then(res => {
-        if (res.pipeline) {
-          tracesMemoryCache.set(runId, res.pipeline);
-          setPipelineWithTraces(res.pipeline);
-        }
+/** Trace AP/kalsium dimuat setelah detail utama tampil, jadi vonis & biomarker tidak menunggu payload besar */
+function useRunTraces(runId: string, enabled: boolean) {
+  const [state, setState] = useState<{ id: string; pipe: RunDetailResponse['pipeline'] | null; status: TracesStatus }>(() => {
+    const cached = tracesMemoryCache.get(runId);
+    return { id: runId, pipe: cached ?? null, status: cached ? 'ready' : 'loading' };
+  });
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    if (!enabled || tracesMemoryCache.has(runId)) return;
+    let alive = true;
+    api(`/api/history/runs/${encodeURIComponent(runId)}?include_traces=true`)
+      .then((res: RunDetailResponse) => {
+        if (!alive) return;
+        if (res?.pipeline) tracesMemoryCache.set(runId, res.pipeline);
+        setState({ id: runId, pipe: res?.pipeline ?? null, status: 'ready' });
       })
       .catch(err => {
         console.error('Failed to load simulation traces:', err);
-        setError('Could not load simulation traces. Please try again.');
-      })
-      .finally(() => setLoading(false));
+        if (alive) setState(s => ({ ...s, status: 'error' }));
+      });
+    return () => { alive = false; };
+  }, [runId, enabled, attempt]);
+
+  const retry = () => { setState(s => ({ ...s, status: 'loading' })); setAttempt(a => a + 1); };
+  return { ...state, retry };
+}
+
+function toShapData(expl: RunDetailResponse['explanation'], tier: string): ShapData | null {
+  const list = expl?.contributions;
+  if (!expl || !Array.isArray(list) || list.length === 0) return null;
+  return {
+    predicted_class: tier,
+    base_value: expl.base_value ?? 0,
+    contributions: list.map(c => ({ biomarker: c.biomarker || c.feature || '—', value: c.value ?? 0, shap: c.shap ?? 0 })),
   };
+}
 
-  const onToggle = () => {
-    const next = !isOpen;
-    setIsOpen(next);
-    if (next && !pipelineWithTraces && !loading) {
-      fetchTraces();
-    }
+/** Bentuk PipelineJob dari catatan riwayat, supaya komponen hasil pipeline bisa dipakai ulang apa adanya */
+function toJob(runId: string, pred: RunLog, pipe: NonNullable<RunDetailResponse['pipeline']>): PipelineJob {
+  const traces = pipe.traces;
+  const perDose = pipe.per_dose ?? [];
+  const sum = (k: keyof Flags) => perDose.reduce((n, d) => n + (d.flags?.[k] ?? 0), 0);
+  const empty: Trace = { time: [], voltage: [], cai: [] };
+  return {
+    id: pipe.job_id || runId,
+    status: (pipe.status as JobStatus) || 'done',
+    request: (pipe.sim_params as PipelineRequest) || {},
+    error: null,
+    created_at: pred.created_at,
+    started_at: null,
+    finished_at: null,
+    sim_params: pipe.sim_params ?? null,
+    ratios: pipe.ratios ?? (Array.isArray(pred.input) ? pred.input : []),
+    sim_result: {
+      doses: pipe.doses ?? pipe.sim_params?.doses ?? perDose.map(d => d.dose),
+      dose_mode: 'mean_of_doses',
+      per_dose: perDose,
+      traces_by_dose: traces?.traces_by_dose ?? [],
+      trace: traces?.trace ?? empty,
+      control_trace: traces?.control_trace ?? empty,
+      raw_metrics: pipe.raw_metrics ?? {},
+      control_metrics: pipe.control_metrics ?? {},
+      conc_nM: [],
+      flags: { EADs: sum('EADs'), noDepols: sum('noDepols'), noRepols: sum('noRepols') },
+      elapsed_s: 0,
+      engine_version: '',
+    },
+    sim_latency_ms: pipe.sim_latency_ms,
   };
+}
 
-  const pipe = pipelineWithTraces || initialPipeline;
-  const traces = pipe?.traces;
-
-  const simJob: PipelineJob = useMemo(() => {
-    return {
-      id: pipe?.job_id || runId,
-      status: (pipe?.status as JobStatus) || 'done',
-      request: (pipe?.sim_params as PipelineRequest) || {},
-      error: null,
-      created_at: prediction.created_at,
-      started_at: null,
-      finished_at: null,
-      sim_params: pipe?.sim_params || null,
-      ratios: (pipe?.ratios as number[]) || (prediction.input as number[]) || [],
-      sim_result: {
-        doses: (pipe?.doses as number[]) || [1, 2, 3, 4],
-        dose_mode: (pipe?.dose_mode as 'mean_of_doses') || 'mean_of_doses',
-        per_dose: (pipe?.per_dose as DoseRun[]) || [],
-        traces_by_dose: (traces?.traces_by_dose as (Trace & { dose: number })[]) || [],
-        trace: (traces?.trace as Trace) || { time: [], voltage: [], cai: [] },
-        control_trace: (traces?.control_trace as Trace) || { time: [], voltage: [], cai: [] },
-        raw_metrics: pipe?.raw_metrics || {},
-        control_metrics: pipe?.control_metrics || {},
-        conc_nM: [],
-        flags: { EADs: 0, noDepols: 0, noRepols: 0 },
-        elapsed_s: 0,
-        engine_version: '1.0',
-      },
-      sim_latency_ms: pipe?.sim_latency_ms,
-    };
-  }, [pipe, traces, runId, prediction]);
-
-  const { apSeries, caSeries } = useTraceSeries(simJob);
-  const highlightLabel = selectedDose === 'mean' ? null : doseSeriesLabel(Number(selectedDose));
-
+/** Kerangka saat detail dimuat: bentuk vonis + daftar biomarker, supaya tinggi tidak melompat */
+function DetailSkeleton() {
   return (
-    <div className="border border-foreground/10 rounded-card overflow-hidden bg-surface-white/40">
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={isOpen}
-        className="w-full flex items-center justify-between p-4 sm:p-5 text-left hover:bg-foreground/[0.03] transition-colors"
-      >
-        <div className="flex flex-col gap-0.5">
-          <span className="text-sm font-semibold text-foreground">Simulation output</span>
-          <span className="text-xs text-foreground/60">
-            Action potential and calcium traces, and per-dose biomarker matrix
-          </span>
-        </div>
-        <ChevronDown
-          className={`w-4 h-4 text-foreground/60 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
-          aria-hidden="true"
-        />
-      </button>
-
-      {isOpen && (
-        <div className="p-4 sm:p-6 border-t border-foreground/10 flex flex-col gap-8">
-          {loading ? (
-            <div className="py-12 flex flex-col items-center justify-center gap-3 text-foreground/60">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span className="text-sm">Loading simulation traces and dose matrix…</span>
-            </div>
-          ) : error ? (
-            <div className="py-8 flex flex-col items-center justify-center gap-3 text-center">
-              <p className="text-sm text-accent">{error}</p>
-              <button
-                type="button"
-                onClick={fetchTraces}
-                className="px-3 py-1.5 rounded-chip border border-foreground/20 text-xs font-medium text-foreground hover:bg-foreground/5 transition-colors"
-              >
-                Try again
-              </button>
-            </div>
-          ) : (
-            <>
-              {apSeries.length > 0 || caSeries.length > 0 ? (
-                <TracesSection apSeries={apSeries} caSeries={caSeries} highlight={highlightLabel} />
-              ) : (
-                <p className="text-sm text-foreground/70 py-4 text-center">No trace data recorded for this run.</p>
-              )}
-              <BiomarkerMatrix job={simJob} selected={selectedDose} onSelect={setSelectedDose} />
-            </>
-          )}
-        </div>
-      )}
+    <div className="flex flex-col items-center gap-8 py-6" aria-hidden="true">
+      <Bone className="h-3 w-40" />
+      <Bone className="h-12 w-56 sm:w-72" />
+      <Bone className="h-3 w-64 max-w-full" />
+      <div className="w-full flex flex-col gap-2 pt-6">
+        {[0, 1, 2, 3, 4].map(i => <Bone key={i} className="h-9 w-full" />)}
+      </div>
     </div>
   );
 }
 
-/* =========================================================
-   RUN DETAIL (Stage 1 fetch on row expand)
-   ========================================================= */
+/** Keterangan teknis kecil di paling bawah detail */
+function RecordMeta({ log, pred, pipeline, owner }: {
+  log: RunLog; pred: RunLog; pipeline: RunDetailResponse['pipeline']; owner?: React.ReactNode;
+}) {
+  const items: { k: string; v: React.ReactNode; mono?: boolean }[] = [
+    ...(owner ? [{ k: 'User', v: owner }] : []),
+    { k: 'Model', v: `${pred.latency_ms ?? '—'} ms`, mono: true },
+    ...(typeof pipeline?.sim_latency_ms === 'number' ? [{ k: 'Simulation', v: `${(pipeline.sim_latency_ms / 1000).toFixed(1)} s`, mono: true }] : []),
+    { k: 'Record', v: log.id, mono: true },
+    ...(pipeline?.job_id ? [{ k: 'Job', v: pipeline.job_id, mono: true }] : []),
+  ];
+  return (
+    <dl className="flex flex-wrap gap-x-6 gap-y-1.5 border-t border-foreground/10 pt-5 text-xs text-foreground/55">
+      {items.map(it => (
+        <div key={it.k} className="flex min-w-0 gap-2">
+          <dt>{it.k}</dt>
+          <dd className={`truncate text-foreground/80 ${it.mono ? 'font-mono' : ''}`}>{it.v}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
 
 export function RunDetail({ log, owner }: { log: RunLog; owner?: React.ReactNode }) {
   const [detail, setDetail] = useState<RunDetailResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let alive = true;
     cachedGet<RunDetailResponse>(`/api/history/runs/${log.id}`)
-      .then(res => {
-        if (alive) {
-          setDetail(res);
-          setLoading(false);
-        }
-      })
+      .then(res => { if (alive) setDetail(res); })
       .catch(err => {
         console.error('Failed to load run detail:', err);
-        if (alive) {
-          setError('Could not load run details. Please try again.');
-          setLoading(false);
-        }
+        if (alive) setFailed(true);
       });
-    return () => {
-      alive = false;
-    };
-  }, [log.id]);
+    return () => { alive = false; };
+  }, [log.id, attempt]);
 
-  if (loading) {
+  const pred = detail?.prediction;
+  const pipelineBase = detail?.pipeline ?? null;
+  const isPipeline = !!detail && (pred?.input_method?.method === 'pipeline' || pred?.source === 'pipeline' || !!pipelineBase);
+  const db = useDrugDb(isPipeline);
+  const traces = useRunTraces(log.id, isPipeline);
+
+  const tier = pred?.predicted_tier ? normalizeTier(pred.predicted_tier) : 'unknown';
+  const prediction = useMemo(() => (pred ? historyToPredictionOutput(pred) : null), [pred]);
+  const shap = useMemo(() => toShapData(detail?.explanation ?? null, tier), [detail?.explanation, tier]);
+  const pipe = traces.pipe ?? pipelineBase;
+  const job = useMemo(() => (pred && pipe ? toJob(log.id, pred, pipe) : null), [log.id, pred, pipe]);
+
+  if (failed) {
     return (
-      <div className="py-12 flex flex-col items-center justify-center gap-3 text-foreground/60">
-        <Loader2 className="w-5 h-5 animate-spin" />
-        <span className="text-sm">Loading run details…</span>
+      <div className="py-10 flex flex-col items-center gap-4 text-center">
+        <p className="text-sm text-foreground/70">Could not load the details of this run.</p>
+        <button type="button" onClick={() => { setFailed(false); setAttempt(a => a + 1); }} className={secondaryBtn}>Try again</button>
       </div>
     );
   }
+  if (!detail || !pred || !prediction) return <DetailSkeleton />;
 
-  if (error || !detail) {
+  const when = <span className="shrink-0 text-xs sm:text-sm text-foreground/55 tabular-nums">{formatWhen(pred.created_at)}</span>;
+  const meta = <RecordMeta log={log} pred={pred} pipeline={pipe} owner={owner} />;
+
+  if (isPipeline && job) {
     return (
-      <div className="py-8 text-center">
-        <p className="text-sm text-accent">{error || 'Could not load run details.'}</p>
-      </div>
+      <PipelineResult
+        embedded
+        job={job}
+        db={db}
+        header={when}
+        prediction={prediction}
+        tier={tier}
+        shap={shap}
+        tracesStatus={traces.status}
+        onRetryTraces={traces.retry}
+        footer={meta}
+      />
     );
   }
 
-  const pred = detail.prediction;
-  const expl = detail.explanation;
-  const pipeline = detail.pipeline;
-  const isPipeline = pred.input_method?.method === 'pipeline' || pred.source === 'pipeline' || !!pipeline;
-
-  const predOutput = historyToPredictionOutput(pred);
+  // Digital Lab: susunan sama dengan hasil di halaman Digital Lab
   const input = Array.isArray(pred.input) ? pred.input : [];
-  const changes = FEATURES.map((_, i) => ratioChange(input[i]));
-  const maxDev = Math.max(0.1, ...changes.map(c => Math.abs(c ?? 0)));
-
   return (
-    <div className="flex flex-col gap-8">
-      {/* 1. Input method block */}
-      <div className="rounded-card border border-foreground/10 bg-surface-white/60 p-4 sm:p-5 flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-4">
-          <span className="text-xs font-mono uppercase tracking-wider text-foreground/50">Input Method</span>
-          <span className="text-xs text-foreground/60">
-            {isPipeline ? 'Cardiac electrophysiology simulation' : 'Manual entry'}
-          </span>
-        </div>
-        {isPipeline ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-1">
-            <div>
-              <dt className="text-xs text-foreground/60">Mode</dt>
-              <dd className="text-sm font-medium text-foreground">
-                {pred.input_method?.mode_label || 'Pipeline simulation'}
-              </dd>
-            </div>
-            {pred.input_method?.drug && (
-              <div>
-                <dt className="text-xs text-foreground/60">Drug</dt>
-                <dd className="text-sm font-medium text-foreground capitalize">{pred.input_method.drug}</dd>
-              </div>
-            )}
-            <div>
-              <dt className="text-xs text-foreground/60">Peak concentration (Cmax)</dt>
-              <dd className="text-sm font-medium text-foreground font-mono">
-                {typeof pipeline?.sim_params?.cmax_nM === 'number'
-                  ? `${pipeline.sim_params.cmax_nM} nM`
-                  : '—'}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-foreground/60">Simulated doses</dt>
-              <dd className="text-sm font-medium text-foreground font-mono">
-                {Array.isArray(pipeline?.doses) && pipeline.doses.length > 0
-                  ? pipeline.doses.map(d => `${d}×`).join(', ') + ' Cmax'
-                  : Array.isArray(pipeline?.sim_params?.doses) && pipeline.sim_params.doses.length > 0
-                  ? pipeline.sim_params.doses.map(d => `${d}×`).join(', ') + ' Cmax'
-                  : '1×, 2×, 3×, 4× Cmax'}
-              </dd>
-            </div>
-          </div>
-        ) : (
-          <p className="text-sm text-foreground/70">
-            Eleven biomarker ratios entered manually in Digital Lab. No cardiac cell simulation was run for this record.
-          </p>
-        )}
+    <div className="w-full max-w-5xl mx-auto flex flex-col gap-12 md:gap-16">
+      <div className="flex items-center justify-between gap-4 px-1">
+        <p className="min-w-0 text-sm text-foreground/70 leading-snug">
+          <span className="font-medium text-foreground">Digital Lab</span> · 11 ratios entered manually
+        </p>
+        {when}
       </div>
-
-      {/* 2. Risk verdict, probabilities, and prediction set */}
-      <div className="py-2 flex flex-col items-center">
-        <RiskVerdict
-          tier={pred.predicted_tier ? normalizeTier(pred.predicted_tier) : 'unknown'}
-          prediction={predOutput}
-          compact
-        />
-      </div>
-
-      {/* 3. Eleven biomarker ratios */}
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
-          <h3 className="text-sm font-semibold text-foreground">
-            {isPipeline ? 'Mean biomarker ratios across doses' : 'Biomarker ratios'}
-          </h3>
-          <div className="ml-auto flex flex-wrap items-center justify-end gap-x-4 gap-y-1"><span className="text-xs text-foreground/60">Relative to drug-free control</span><GuideLink topic="ratios" /></div>
-        </div>
-        {input.length > 0 ? (
-          <ValueRows
-            headers={['Biomarker', 'Change from the drug-free cell', 'Change', 'Ratio']}
-            rows={FEATURES.map((key, i) => ({
-              key,
-              hint: SHORT_DESC[key],
-              bar: changes[i] === null ? null : (changes[i] as number) / maxDev,
-              strong: isStrongChange(key, input[i]),
-              main: formatChange(changes[i]),
-              second: typeof input[i] === 'number' ? input[i].toFixed(4) : '—',
-            }))}
-          />
-        ) : (
-          <p className="text-sm text-foreground/70">No biomarker ratios were recorded for this run.</p>
-        )}
-      </div>
-
-      {/* 4. SHAP driver analysis with base value */}
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
-          <h3 className="text-sm font-semibold text-foreground">SHAP driver analysis</h3>
-          <div className="ml-auto flex flex-wrap items-center justify-end gap-x-4 gap-y-1"><span className="text-xs text-foreground/60">Feature importance</span><GuideLink topic="shap" /></div>
-        </div>
-        {expl && expl.contributions && expl.contributions.length > 0 ? (
-          <ShapDetail
-            log={{
-              id: expl.id,
-              prediction_id: expl.prediction_id,
-              predicted_class: expl.predicted_class || pred.predicted_tier || '',
-              base_value: expl.base_value ?? 0,
-              contributions: (expl.contributions as Contribution[]) ?? [],
-              created_at: expl.created_at,
-            }}
-            note={
-              isPipeline
-                ? 'Calculated for the overall run from the mean biomarker profile across simulated doses.'
-                : undefined
-            }
-          />
-        ) : (
-          <p className="text-sm text-foreground/70">No SHAP explanation was recorded for this run.</p>
-        )}
-      </div>
-
-      {/* 5. Simulation output accordion (pipeline runs only) */}
-      {isPipeline && (
-        <SimulationSection
-          runId={log.id}
-          prediction={pred}
-          initialPipeline={pipeline}
-        />
-      )}
-
-      {/* 6. Metadata footer */}
-      <dl className="flex flex-wrap justify-between gap-x-6 gap-y-1 text-xs text-foreground/60 border-t border-foreground/10 pt-4">
-        {owner && (
-          <div className="flex gap-2 min-w-0">
-            <dt>User</dt>
-            <dd className="text-foreground/80 truncate">{owner}</dd>
-          </div>
-        )}
-        <div className="flex gap-2">
-          <dt>Model processing</dt>
-          <dd className="font-mono text-foreground/80">{pred.latency_ms ?? '—'} ms</dd>
-        </div>
-        {typeof pipeline?.sim_latency_ms === 'number' && (
-          <div className="flex gap-2">
-            <dt>Simulation runtime</dt>
-            <dd className="font-mono text-foreground/80">{pipeline.sim_latency_ms} ms</dd>
-          </div>
-        )}
-        <div className="flex gap-2 min-w-0">
-          <dt>Record</dt>
-          <dd className="font-mono text-foreground/80 truncate">{log.id}</dd>
-        </div>
-        {pipeline?.job_id && (
-          <div className="flex gap-2 min-w-0">
-            <dt>Job ID</dt>
-            <dd className="font-mono text-foreground/80 truncate">{pipeline.job_id}</dd>
-          </div>
-        )}
-      </dl>
+      <RiskVerdict tier={tier} prediction={prediction} />
+      <ManualInputNote />
+      <BiomarkerList
+        ratios={input}
+        tier={tier}
+        shap={shap}
+        explaining={false}
+        emptyDriversMessage="No driver analysis (SHAP) was recorded for this run."
+      />
+      {meta}
     </div>
   );
 }
 
 /* =========================================================
-   RUN HISTORY LIST
+   DAFTAR RIWAYAT + FILTER (obat, metode, hasil)
    ========================================================= */
 
-// Ponsel: input method + waktu | hasil | panah. Desktop: waktu | input method | hasil | waktu proses | panah.
-const ROW = 'grid grid-cols-[1fr_auto_1rem] sm:grid-cols-[11rem_1fr_8rem_6rem_1rem] items-center gap-3 sm:gap-4';
+// Ponsel: metode + waktu | hasil | panah. Desktop: waktu | metode | hasil | waktu proses | panah.
+const ROW = 'grid grid-cols-[1fr_auto_1.75rem] sm:grid-cols-[11rem_1fr_8rem_6rem_1.75rem] items-center gap-3 sm:gap-4';
 
-/** Match search query across ID, tier, date, drug name, and input method */
-const matchRun = (log: RunLog, query: string, tier: TierFilterValue) => {
-  if (!matchesTier(log.predicted_tier, tier)) return false;
-  const inputMethodStr = formatInputMethod(log);
+/** Filter multi-pilih: daftar kosong = tidak disaring. Di dalam grup = ATAU, antar grup = DAN. */
+type RunFilter = { drug: string[]; method: string[]; tier: string[] };
+type GroupId = keyof RunFilter;
+const ALL_RUNS: RunFilter = { drug: [], method: [], tier: [] };
+const isAllRuns = (f: RunFilter) => !f.drug.length && !f.method.length && !f.tier.length;
+
+const isDigitalLab = (log: RunLog) => log.input_method?.method === 'digital_lab' || log.source === 'digital_lab';
+/** Nama metode untuk filter: Digital Lab, atau mode pipeline (CiPA drug, New drug, ...) */
+const methodOf = (log: RunLog) => (isDigitalLab(log) ? 'Digital Lab' : log.input_method?.mode_label || 'Pipeline');
+const drugOf = (log: RunLog) => (isDigitalLab(log) ? null : log.input_method?.drug?.trim().toLowerCase() || null);
+
+const matchRun = (log: RunLog, query: string, f: RunFilter) => {
+  if (f.tier.length && !f.tier.some(t => matchesTier(log.predicted_tier, t as TierFilterValue))) return false;
+  if (f.method.length && !f.method.includes(methodOf(log))) return false;
+  if (f.drug.length && !f.drug.includes(drugOf(log) ?? '')) return false;
   return matchesQuery(query, [
     log.id,
     log.predicted_tier,
     formatWhen(log.created_at),
-    inputMethodStr,
+    formatInputMethod(log),
     log.input_method?.method,
     log.input_method?.mode,
     log.input_method?.mode_label,
@@ -539,24 +407,70 @@ const matchRun = (log: RunLog, query: string, tier: TierFilterValue) => {
   ]);
 };
 
+/** Pilihan filter obat & metode dari seluruh riwayat; dimuat saat pill pertama kali dibuka */
+function useRunOptions(endpoint: string) {
+  const [items, setItems] = useState<RunLog[] | null>(null);
+  const requested = useRef(false);
+  const load = () => {
+    if (requested.current) return;
+    requested.current = true;
+    fetchAllPages<RunLog>(endpoint)
+      .then(r => setItems(r.items))
+      .catch(() => { requested.current = false; setItems([]); });
+  };
+  const options = useMemo(() => {
+    const drugs = new Set<string>();
+    const methods = new Set<string>();
+    for (const log of items ?? []) {
+      const d = drugOf(log);
+      if (d) drugs.add(d);
+      methods.add(methodOf(log));
+    }
+    return {
+      drugs: [...drugs].sort().map(d => ({ id: d, label: formatDrugName(d) })),
+      methods: [...methods].sort().map(m => ({ id: m, label: m })),
+    };
+  }, [items]);
+  return { ...options, loading: items === null, load };
+}
+
+const ENDPOINT = '/api/history/predictions';
+
 export default function RunHistory() {
-  const h = useHistory<RunLog>('/api/history/predictions', matchRun);
+  const h = useHistory<RunLog, RunFilter>(ENDPOINT, matchRun, ALL_RUNS, isAllRuns);
   const { items: shown, total, loading, error, page, pages, setPage } = h;
   const [open, setOpen] = useState<string | null>(null);
+  const opts = useRunOptions(ENDPOINT);
 
-  // Bersihkan cache stale pipeline-run-traces dan pipeline-doses dari sessionStorage
+  const setFilter = (next: RunFilter) => {
+    setOpen(null);
+    h.setFilter(next);
+  };
+  const toggle = (group: string, id: string) => {
+    const g = group as GroupId;
+    const list = h.filter[g];
+    setFilter({ ...h.filter, [g]: list.includes(id) ? list.filter(x => x !== id) : [...list, id] });
+  };
+
+  // Ringkasan filter aktif dalam satu kalimat, mis. "Drug: Bepridil, Dofetilide · Result: High"
+  const labelOf = (list: readonly { id: string; label: string }[], id: string) => list.find(o => o.id === id)?.label ?? formatDrugName(id);
+  const activeText = [
+    h.filter.drug.length ? `Drug: ${h.filter.drug.map(d => labelOf(opts.drugs, d)).join(', ')}` : '',
+    h.filter.method.length ? `Method: ${h.filter.method.join(', ')}` : '',
+    h.filter.tier.length ? `Result: ${h.filter.tier.map(t => labelOf(TIER_OPTIONS, t)).join(', ')}` : '',
+  ].filter(Boolean).join(' · ');
+
+  // Bersihkan cache lama trace/dosis dari sessionStorage (versi sebelumnya menyimpannya di sana)
   useEffect(() => {
     try {
-      const staleKeys: string[] = [];
+      const stale: string[] = [];
       for (let i = 0; i < sessionStorage.length; i++) {
         const key = sessionStorage.key(i);
-        if (key && (key.startsWith('pipeline-doses:') || key.startsWith('pipeline-run-traces:'))) {
-          staleKeys.push(key);
-        }
+        if (key && (key.startsWith('pipeline-doses:') || key.startsWith('pipeline-run-traces:'))) stale.push(key);
       }
-      staleKeys.forEach(k => sessionStorage.removeItem(k));
+      stale.forEach(k => sessionStorage.removeItem(k));
     } catch {
-      // storage blocked / SSR: ignore
+      // storage diblokir: abaikan
     }
   }, []);
 
@@ -564,21 +478,23 @@ export default function RunHistory() {
     <div className="flex flex-col gap-5">
       <HistoryControls
         query={h.query}
-        onQuery={v => {
-          setOpen(null);
-          h.setQuery(v);
-        }}
+        onQuery={v => { setOpen(null); h.setQuery(v); }}
         filter={
-          <TierFilter
-            value={h.filter}
-            onChange={v => {
-              setOpen(null);
-              h.setFilter(v);
-            }}
+          <FilterPanel
+            onOpen={opts.load}
+            onClear={() => setFilter(ALL_RUNS)}
+            onToggle={toggle}
+            groups={[
+              { id: 'drug', title: 'Drug', options: opts.drugs, selected: h.filter.drug, loading: opts.loading, emptyText: 'No drugs in your history yet.' },
+              { id: 'method', title: 'Input method', options: opts.methods, selected: h.filter.method, loading: opts.loading, emptyText: 'No input methods in your history yet.' },
+              { id: 'tier', title: 'Result', options: TIER_OPTIONS, selected: h.filter.tier },
+            ]}
           />
         }
         placeholder="Search by drug, input method, record ID or result"
-        summary={!loading && h.filtering ? `${total} matching ${total === 1 ? 'run' : 'runs'}` : null}
+        summary={!loading && h.filtering
+          ? <>{total} matching {total === 1 ? 'run' : 'runs'}{activeText && <span className="text-foreground/50"> · {activeText}</span>}</>
+          : null}
       />
 
       <div>
@@ -594,7 +510,18 @@ export default function RunHistory() {
         ) : error ? (
           <HistoryMessage>Could not load your activity history. Reload the page to try again.</HistoryMessage>
         ) : shown.length === 0 ? (
-          <HistoryMessage>{h.filtering ? 'No runs match your search.' : 'No runs yet.'}</HistoryMessage>
+          h.filtering ? (
+            <div className="py-14 flex flex-col items-center gap-4 text-center">
+              <p className="text-sm text-foreground/70 text-balance">
+                No runs match {isAllRuns(h.filter) ? 'your search' : 'the filters you picked'}. Try fewer filters or a different search.
+              </p>
+              {!isAllRuns(h.filter) && (
+                <button type="button" onClick={() => setFilter(ALL_RUNS)} className={secondaryBtn}>Clear filters</button>
+              )}
+            </div>
+          ) : (
+            <HistoryMessage>No runs yet.</HistoryMessage>
+          )
         ) : (
           <ul>
             {shown.map(log => (
@@ -606,16 +533,10 @@ export default function RunHistory() {
                 onToggle={() => setOpen(open === log.id ? null : log.id)}
                 cells={
                   <>
-                    <span className="hidden sm:block text-sm text-foreground truncate">
-                      {formatWhen(log.created_at)}
-                    </span>
+                    <span className="hidden sm:block text-sm text-foreground truncate">{formatWhen(log.created_at)}</span>
                     <span className="flex flex-col min-w-0">
-                      <span className="text-sm font-medium text-foreground truncate">
-                        {formatInputMethod(log)}
-                      </span>
-                      <span className="sm:hidden text-xs text-foreground/55 truncate">
-                        {formatWhen(log.created_at)}
-                      </span>
+                      <span className="text-sm font-medium text-foreground truncate">{formatInputMethod(log)}</span>
+                      <span className="sm:hidden text-xs text-foreground/55 truncate">{formatWhen(log.created_at)}</span>
                     </span>
                     <span className="justify-self-end sm:justify-self-start">
                       <TierText tier={log.predicted_tier} />
@@ -637,10 +558,7 @@ export default function RunHistory() {
         page={page}
         pages={pages}
         disabled={loading}
-        onChange={p => {
-          setOpen(null);
-          setPage(p);
-        }}
+        onChange={p => { setOpen(null); setPage(p); }}
       />
     </div>
   );
