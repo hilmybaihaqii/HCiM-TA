@@ -111,12 +111,10 @@ export default function RiskVerdict({
       </h2>
       {prediction && known && <VoteBar prediction={prediction} />}
       {prediction && known && <ConformalFacts prediction={prediction} />}
-      <div className="w-full max-w-md border-t border-foreground/10 pt-3">
-        <p className="text-center text-[11px] uppercase tracking-wider text-foreground/50">Reading guides</p>
-        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1">
-          <GuideLink topic="risk-prediction" variant="text" label="Risk & probabilities" />
-          {prediction && known && <GuideLink topic="prediction-set" variant="text" label="Prediction set" />}
-        </div>
+      {/* Dua pertanyaan yang paling sering muncul saat membaca vonis, berdampingan di bawahnya */}
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <GuideLink topic="risk-prediction" />
+        {prediction && known && <GuideLink topic="prediction-set" />}
       </div>
     </div>
   );

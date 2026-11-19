@@ -8,6 +8,7 @@ import { FlaskConical, ActivitySquare, User, LogOut, ChevronDown, Shield, Monito
 import { api } from '@/lib/api';
 import { useSessionUser } from '@/components/SessionGuard';
 import { clearSessionFlag } from '@/lib/sessionFlag';
+import { startUserViewSplash } from './UserViewSplash';
 
 export default function LabNavbar() {
   const pathname = usePathname();
@@ -99,7 +100,7 @@ export default function LabNavbar() {
   return (
     <>
       <header className="fixed top-0 left-0 w-full z-50 pt-[max(1rem,env(safe-area-inset-top))] md:pt-[max(1.5rem,env(safe-area-inset-top))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] md:px-12 pointer-events-none flex justify-center">
-        <div className="w-full max-w-7xl flex items-center pointer-events-auto bg-surface-white/70 backdrop-blur-xl border border-foreground/5 shadow-[0_4px_20px_rgba(0,0,0,0.02)] rounded-full px-3 md:px-4 py-2.5">
+        <div className="w-full max-w-7xl flex items-center pointer-events-auto bg-surface-white/70 backdrop-blur-md border border-foreground/5 shadow-[0_4px_20px_rgba(0,0,0,0.02)] rounded-full px-3 md:px-4 py-2.5">
           
           {/* ============================== */}
           {/* BAGIAN KIRI: LOGO              */}
@@ -189,7 +190,7 @@ export default function LabNavbar() {
                   animate={{ opacity: 1, y: 0, scale: 1 }} 
                   exit={{ opacity: 0, y: 8, scale: 0.98 }}
                   transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                  className="absolute right-0 top-full mt-3 w-52 bg-surface-white/90 backdrop-blur-2xl border border-foreground/5 shadow-[0_16px_40px_rgba(0,0,0,0.08)] rounded-card p-2 flex flex-col z-101"
+                  className="absolute right-0 top-full mt-3 w-52 bg-surface-white/90 backdrop-blur-md border border-foreground/5 shadow-[0_16px_40px_rgba(0,0,0,0.08)] rounded-card p-2 flex flex-col z-101"
                 >
                   <Link 
                     href="/lab/profile" 
@@ -199,7 +200,7 @@ export default function LabNavbar() {
                     <User className="w-4 h-4" /> Profile
                   </Link>
 
-                  {/* LOGIKA SWITCHER (Menggunakan Link Biasa Tanpa Animasi Tambahan) */}
+                  {/* Pindah tampilan: masuk admin memunculkan "Welcome, Admin." (admin layout), kembali ke user view memunculkan "Welcome back." */}
                   {user.role === 'admin' && (
                     <>
                       <div className="h-px bg-foreground/5 my-1 mx-2" />
@@ -214,7 +215,7 @@ export default function LabNavbar() {
                       ) : (
                         <Link 
                           href="/lab" 
-                          onClick={() => setShowProfileMenu(false)} 
+                          onClick={() => { setShowProfileMenu(false); startUserViewSplash(); }} 
                           className="flex items-center gap-3 px-3 py-2.5 rounded-control text-xs font-medium text-muted hover:text-foreground hover:bg-foreground/3 transition-colors"
                         >
                           <MonitorPlay className="w-4 h-4" /> User View
@@ -256,7 +257,7 @@ export default function LabNavbar() {
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 20, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="relative w-full max-w-[320px] bg-surface-white/80 backdrop-blur-2xl border border-foreground/10 shadow-[0_30px_80px_rgba(0,0,0,0.1)] rounded-sheet p-6 overflow-hidden"
+              className="relative w-full max-w-[320px] bg-surface-white/80 backdrop-blur-md border border-foreground/10 shadow-[0_30px_80px_rgba(0,0,0,0.1)] rounded-sheet p-6 overflow-hidden"
             >
               <div className="mb-6 text-center">
                 <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4 border border-accent/20">

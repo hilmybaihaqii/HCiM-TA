@@ -86,8 +86,8 @@ function AllowVerticalScroll() {
  * pembungkus canvas: R3F mengukur canvas dengan getBoundingClientRect, yang ikut terkena
  * transform, sehingga canvas sempat tersimpan 94% ukuran aslinya sampai halaman di-scroll.
  */
-function Model({ isMobile, show, onLoaded }: { isMobile: boolean; show: boolean; onLoaded: () => void }) {
-  const { scene } = useGLTF(isMobile ? MODEL_MOBILE : MODEL_DESKTOP);
+function Model({ isMobile, lite, show, onLoaded }: { isMobile: boolean; lite: boolean; show: boolean; onLoaded: () => void }) {
+  const { scene } = useGLTF(isMobile || lite ? MODEL_MOBILE : MODEL_DESKTOP);
   const center = useMassCenter(scene);
   const spin = useRef<THREE.Group>(null);
   const reveal = useRef(0);
@@ -119,8 +119,18 @@ function Model({ isMobile, show, onLoaded }: { isMobile: boolean; show: boolean;
   );
 }
 
+/**
+ * Perangkat lemah (≤4 core CPU atau ≤4 GB RAM): pakai model versi HP & resolusi render lebih rendah,
+ * supaya hero tetap mulus di laptop/HP murah. Komponen ini hanya dirender di browser (ssr: false).
+ */
+function detectLowEnd(): boolean {
+  const nav = navigator as Navigator & { deviceMemory?: number };
+  return (nav.hardwareConcurrency ?? 8) <= 4 || (nav.deviceMemory ?? 8) <= 4;
+}
+
 export default function Heart3D() {
   const isMobile = useMediaQuery(MOBILE_QUERY);
+  const [lowEnd] = useState(detectLowEnd);
   const { setPageReady, splashDone } = useSplash();
   const [ready, setReady] = useState(false);
   // Jantung baru muncul setelah splash terbuka, supaya animasinya benar-benar terlihat.
@@ -161,19 +171,19 @@ export default function Heart3D() {
       />
       <Canvas
         camera={{ position: [0, 0, 4], fov: 45 }}
-        dpr={isMobile ? [1, 1.5] : [1, 2]}
+        dpr={lowEnd ? 1 : isMobile ? [1, 1.5] : [1, 2]}
         // Selama splash: 'demand' (model dimuat & shader dikompilasi sekali, lalu diam) supaya animasi splash
         // tidak berebut GPU. Setelah splash selesai baru render terus, dan berhenti saat hero tidak terlihat.
         frameloop={!inView ? 'never' : splashDone ? 'always' : 'demand'}
         // Ukur dari offsetWidth/Height (abaikan transform leluhur) supaya ukuran canvas selalu pas.
         resize={{ offsetSize: true }}
-        gl={{ powerPreference: 'high-performance' }}
+        gl={{ powerPreference: 'high-performance', antialias: !lowEnd }}
       >
         <Suspense fallback={null}>
           {/* Desktop: drag = putar, scroll = zoom. HP: geser samping = putar, cubit = zoom. */}
           <OrbitControls enableZoom enablePan={false} enableDamping={false} minDistance={2.6} maxDistance={6} />
           <AllowVerticalScroll />
-          <Model isMobile={isMobile} show={show} onLoaded={handleLoaded} />
+          <Model isMobile={isMobile} lite={lowEnd} show={show} onLoaded={handleLoaded} />
           <Environment preset="city" />
         </Suspense>
       </Canvas>

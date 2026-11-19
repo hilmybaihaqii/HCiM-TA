@@ -21,7 +21,6 @@ const SECTIONS = [
   { id: '/lab/admin/users', label: 'Accounts' },
   { id: '/lab/admin/logs/activity', label: 'Sign-ins' },
   { id: '/lab/admin/logs/prediction', label: 'Predictions' },
-  { id: '/lab/admin/logs/shap', label: 'SHAP' },
 ];
 
 const fmt = (n?: number) => (typeof n === 'number' ? n.toLocaleString('en-US') : '—');

@@ -128,9 +128,8 @@ function Layer({ p, i, n, animated, children }: { p: MotionValue<number>; i: num
   const local = useTransform(p, [a, a + (b - a) * 0.7], [0, 1]);
   const opacity = useStepOpacity(p, i, n);
   const scale = useTransform(opacity, [0, 1], [0.96, 1]);
-  const filter = useTransform(opacity, [0, 1], ['blur(8px)', 'blur(0px)']);
   return (
-    <motion.div style={animated ? { opacity, scale, filter } : undefined} className="motion-safe:absolute motion-safe:inset-0 mb-10 flex items-center">
+    <motion.div style={animated ? { opacity, scale } : undefined} className="motion-safe:absolute motion-safe:inset-0 mb-10 flex items-center">
       <div className="w-full">{children(local)}</div>
     </motion.div>
   );

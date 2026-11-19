@@ -18,11 +18,11 @@ export default function StandardsHero() {
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 24, filter: 'blur(4px)' },
+    hidden: { opacity: 0, y: 24 },
     show: { 
       opacity: 1, 
       y: 0, 
-      filter: 'blur(0px)',
+      
       transition: { duration: 0.9, ease: luxEase } 
     },
   };
@@ -49,7 +49,7 @@ export default function StandardsHero() {
 
           <motion.div variants={itemVariants} className="lg:col-span-5">
             <p className="text-sm md:text-base text-muted leading-relaxed font-light mb-2">
-              Our targets are not arbitrary. Every predictive cardiotoxicity workflow traces directly to recognized international, national, industrial, and scientific frameworks.
+              Cardivex does not invent its own definition of cardiac risk. Which currents are simulated, which biomarkers are read, which drugs it was tested on and how a result may be used are all set by the four frameworks below.
             </p>
           </motion.div>
         </motion.div>
@@ -63,10 +63,10 @@ export default function StandardsHero() {
           className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 pt-12"
         >
           {[
-            { level: 'International', code: 'ICH S7B / E14', label: 'In-Silico Clinical Benchmark' },
-            { level: 'National Law', code: 'BPOM No. 15 / 2022', label: 'Indonesian ADR Integrity' },
-            { level: 'Industrial', code: 'CiPA Protocol', label: '11 Ion Current Parameters' },
-            { level: 'Scientific', code: 'Ensemble ML + MaaS', label: 'Peer-Reviewed Precision' },
+            { level: 'International', code: 'ICH S7B / E14', label: 'Simulation accepted as supporting evidence since 2022' },
+            { level: 'National', code: 'BPOM No. 4 / 2026', label: 'Indonesian pharmacovigilance duties' },
+            { level: 'Industrial', code: 'CiPA', label: '28 reference drugs, 11 biomarkers, 3 risk tiers' },
+            { level: 'Scientific', code: 'Trained on 12, tested on 16', label: 'Held-out drugs, conformal confidence, SHAP' },
           ].map((stat, idx) => (
             <motion.div
               key={stat.code}

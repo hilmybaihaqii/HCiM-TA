@@ -79,8 +79,10 @@ function CompassZero() {
         {Array.from({ length: 12 }, (_, i) => {
           const a = (i * Math.PI) / 6;
           const r1 = i % 3 === 0 ? 24 : 27;
+          // Dibulatkan agar string atribut SSR & client identik (hindari hydration mismatch floating-point)
+          const p = (n: number) => Math.round(n * 1000) / 1000;
           return (
-            <line key={i} x1={50 + Math.sin(a) * r1} y1={50 - Math.cos(a) * r1} x2={50 + Math.sin(a) * 31} y2={50 - Math.cos(a) * 31}
+            <line key={i} x1={p(50 + Math.sin(a) * r1)} y1={p(50 - Math.cos(a) * r1)} x2={p(50 + Math.sin(a) * 31)} y2={p(50 - Math.cos(a) * 31)}
               stroke="#0A0A0A" strokeOpacity={i % 3 === 0 ? 0.5 : 0.2} strokeWidth={i % 3 === 0 ? 1.6 : 1} strokeLinecap="round" />
           );
         })}

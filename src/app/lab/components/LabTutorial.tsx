@@ -23,7 +23,7 @@ const CustomTooltip = ({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 10, scale: 0.95 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className="bg-white/95 backdrop-blur-2xl border border-black/5 shadow-[0_30px_80px_rgba(0,0,0,0.12)] rounded-card p-6 md:p-8 flex flex-col relative overflow-hidden"
+        className="bg-white/95 backdrop-blur-md border border-black/5 shadow-[0_30px_80px_rgba(0,0,0,0.12)] rounded-card p-6 md:p-8 flex flex-col relative overflow-hidden"
       >
         <div className="absolute top-0 right-10 w-32 h-px bg-linear-to-r from-transparent via-accent/30 to-transparent" />
         

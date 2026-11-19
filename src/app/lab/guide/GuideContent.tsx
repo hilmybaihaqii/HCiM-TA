@@ -127,14 +127,18 @@ const BIOMARKER_DEFINITIONS = [
   },
 ];
 
+// Urutan bagian = urutan membaca hasil: apa yang diukur -> cara membacanya -> apa yang masuk ke model -> hasilnya.
+// `id` setiap bagian sama dengan nama topik di GuideLink, jadi tiap tombol bantuan punya tujuannya sendiri.
 const SECTIONS = [
   { id: 'biomarkers', title: '1. The 11 Biomarkers' },
   { id: 'ratios', title: '2. Ratios vs Control' },
-  { id: 'simulation-graphs', title: '3. Simulation Graphs' },
-  { id: 'risk-prediction', title: '4. Risk & Probabilities' },
-  { id: 'prediction-set', title: '5. Prediction Set' },
-  { id: 'shap', title: '6. SHAP Explanations' },
-  { id: 'history-retention', title: '7. History & Retention' },
+  { id: 'drug-inputs', title: '3. Drug Inputs' },
+  { id: 'simulation-graphs', title: '4. Simulation Graphs' },
+  { id: 'dose-averaging', title: '5. What Goes Into the Model' },
+  { id: 'risk-prediction', title: '6. Risk & Probabilities' },
+  { id: 'prediction-set', title: '7. Prediction Set' },
+  { id: 'shap', title: '8. SHAP Explanations' },
+  { id: 'history-retention', title: '9. History & Retention' },
 ];
 
 export default function GuideContent({ loadHistory = true, visual = false }: { loadHistory?: boolean; visual?: boolean }) {
@@ -199,7 +203,7 @@ export default function GuideContent({ loadHistory = true, visual = false }: { l
           />
 
           <div className={styles.heroFooter}>
-            <span>7 guide sections</span>
+            <span>9 guide sections</span>
             <span>11 biomarkers</span>
             <a href={visual ? `#${SECTIONS[activeTopic].id}` : "#biomarkers"}>Explore the guide <ArrowRight size={16} aria-hidden="true" /></a>
           </div>
@@ -362,12 +366,63 @@ export default function GuideContent({ loadHistory = true, visual = false }: { l
             </section>
 
             {/* =========================================================
-                SECTION 3: READING THE SIMULATION GRAPHS
+                SECTION 3: DRUG INPUTS
+                ========================================================= */}
+            <section hidden={visual && SECTIONS[activeTopic].id !== 'drug-inputs'} tabIndex={visual ? -1 : undefined} id="drug-inputs" aria-labelledby="heading-drug-inputs" className="scroll-mt-28">
+              <GuideSectionHead
+                id="heading-drug-inputs"
+                title="3. Drug Inputs"
+                meta="Cmax and ion channel parameters"
+              />
+
+              <div className="mt-5 border-t border-foreground/10 pt-5 max-w-3xl space-y-3 text-sm text-foreground/85 leading-relaxed">
+                <h3 className="text-base font-semibold text-foreground">
+                  These values describe the drug, not the result.
+                </h3>
+                <p>
+                  They tell the simulation how much drug reaches the cell and how strongly it blocks each ion channel.
+                  The eleven biomarkers are then measured from how the cell behaves under those conditions.
+                </p>
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="flex flex-col gap-2 border-t border-foreground/10 pt-5">
+                  <h3 className="text-sm font-medium text-foreground">Cmax (exposure)</h3>
+                  <p className="text-sm text-foreground/75 leading-relaxed">
+                    The free therapeutic peak plasma concentration, in nM. Every simulation runs at multiples of it,
+                    so Cmax sets the whole concentration range.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 border-t border-foreground/10 pt-5">
+                  <h3 className="text-sm font-medium text-foreground">hERG binding</h3>
+                  <p className="text-sm text-foreground/75 leading-relaxed">
+                    Kmax, Ku, n, halfmax and Vhalf describe how the drug binds to the hERG channel, the channel most
+                    closely linked to TdP risk. They come from the CiPA fitting.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 border-t border-foreground/10 pt-5">
+                  <h3 className="text-sm font-medium text-foreground">Other channels</h3>
+                  <p className="text-sm text-foreground/75 leading-relaxed">
+                    IC50 and the Hill coefficient for the sodium and calcium currents. An empty field means the drug
+                    does not block that channel, so it is left untouched in the simulation.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 border-l-2 border-foreground/15 pl-4 py-1 text-sm text-foreground/80 leading-relaxed">
+                <strong>Where the numbers come from:</strong> a CiPA drug loads them from the reference database;
+                a new drug uses the values you enter; and a CiPA drug with your own lab data starts from the database
+                and keeps the fields you changed. The result page labels each value accordingly.
+              </div>
+            </section>
+
+            {/* =========================================================
+                SECTION 4: READING THE SIMULATION GRAPHS
                 ========================================================= */}
             <section hidden={visual && SECTIONS[activeTopic].id !== 'simulation-graphs'} tabIndex={visual ? -1 : undefined} id="simulation-graphs" aria-labelledby="heading-graphs" className="scroll-mt-28">
               <GuideSectionHead
                 id="heading-graphs"
-                title="3. Reading the Simulation Graphs"
+                title="4. Reading the Simulation Graphs"
                 meta="Action potential & calcium transients"
               />
               <p className="mt-4 text-sm text-foreground/75 max-w-3xl leading-relaxed">
@@ -415,12 +470,81 @@ export default function GuideContent({ loadHistory = true, visual = false }: { l
             </section>
 
             {/* =========================================================
-                SECTION 4: RISK PREDICTION AND PROBABILITIES
+                SECTION 5: WHAT GOES INTO THE MODEL (DOSE AVERAGING)
+                ========================================================= */}
+            <section hidden={visual && SECTIONS[activeTopic].id !== 'dose-averaging'} tabIndex={visual ? -1 : undefined} id="dose-averaging" aria-labelledby="heading-dose-averaging" className="scroll-mt-28">
+              <GuideSectionHead
+                id="heading-dose-averaging"
+                title="5. What Goes Into the Model"
+                meta="Four concentrations, one averaged input"
+              />
+
+              <div className="mt-5 border-t border-foreground/10 pt-5 max-w-3xl space-y-3 text-sm text-foreground/85 leading-relaxed">
+                <h3 className="text-base font-semibold text-foreground">
+                  The model reads eleven numbers: each biomarker ratio averaged across the simulated concentrations.
+                </h3>
+                <p>
+                  A Full Pipeline run simulates the cell at 1×, 2×, 3× and 4× Cmax. Every biomarker therefore has four
+                  ratios, one per concentration. Those four are averaged into a single ratio, and the eleven averages
+                  are the input vector the risk model classifies.
+                </p>
+              </div>
+
+              <div className="mt-6 border-t border-foreground/10 pt-5">
+                <h4 className="mb-3 font-mono text-sm uppercase tracking-wider text-muted">Worked example: APD90</h4>
+                <div className="overflow-x-auto -mx-1 px-1 overscroll-x-contain">
+                  <table className="min-w-[34rem] w-full text-sm border-separate border-spacing-0">
+                    <thead>
+                      <tr className="text-[11px] text-foreground/60">
+                        <th className="px-3 py-2 text-left font-medium">1× Cmax</th>
+                        <th className="px-3 py-2 text-left font-medium">2× Cmax</th>
+                        <th className="px-3 py-2 text-left font-medium">3× Cmax</th>
+                        <th className="px-3 py-2 text-left font-medium">4× Cmax</th>
+                        <th className="px-3 py-2 text-left font-medium text-foreground/75">Mean → model</th>
+                      </tr>
+                    </thead>
+                    <tbody className="font-mono tabular-nums">
+                      <tr>
+                        <td className="border-t border-foreground/10 px-3 py-2.5 text-foreground/80">1.012</td>
+                        <td className="border-t border-foreground/10 px-3 py-2.5 text-foreground/80">1.031</td>
+                        <td className="border-t border-foreground/10 px-3 py-2.5 text-foreground/80">1.048</td>
+                        <td className="border-t border-foreground/10 px-3 py-2.5 text-foreground/80">1.061</td>
+                        <td className="border-t border-foreground/10 bg-foreground/[0.04] px-3 py-2.5 font-semibold text-foreground">1.038</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p className="mt-3 text-sm text-foreground/75 leading-relaxed">
+                  Only the last column reaches the model. The per-concentration columns are simulation output, shown so
+                  you can see how the effect grows with exposure; they are not four separate predictions.
+                </p>
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex flex-col gap-2 border-t border-foreground/10 pt-5">
+                  <h3 className="text-sm font-medium text-foreground">When a concentration is left out</h3>
+                  <p className="text-sm text-foreground/75 leading-relaxed">
+                    If the cell fails to depolarize or repolarize at one concentration, that biomarker is undefined there
+                    and is excluded from its average. The average then uses the remaining concentrations.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 border-t border-foreground/10 pt-5">
+                  <h3 className="text-sm font-medium text-foreground">Digital Lab runs</h3>
+                  <p className="text-sm text-foreground/75 leading-relaxed">
+                    Digital Lab simulates nothing: the eleven ratios you type in are used directly. If your values come
+                    from several concentrations, average them yourself first, the same way the pipeline does.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* =========================================================
+                SECTION 6: RISK PREDICTION AND PROBABILITIES
                 ========================================================= */}
             <section hidden={visual && SECTIONS[activeTopic].id !== 'risk-prediction'} tabIndex={visual ? -1 : undefined} id="risk-prediction" aria-labelledby="heading-risk" className="scroll-mt-28">
               <GuideSectionHead
                 id="heading-risk"
-                title="4. Risk Prediction and Probabilities"
+                title="6. Risk Prediction and Probabilities"
                 meta="Mean dose vector & tree probabilities"
               />
 
@@ -451,12 +575,12 @@ export default function GuideContent({ loadHistory = true, visual = false }: { l
             </section>
 
             {/* =========================================================
-                SECTION 5: THE PREDICTION SET (CONFORMAL PREDICTION)
+                SECTION 7: THE PREDICTION SET (CONFORMAL PREDICTION)
                 ========================================================= */}
             <section hidden={visual && SECTIONS[activeTopic].id !== 'prediction-set'} tabIndex={visual ? -1 : undefined} id="prediction-set" aria-labelledby="heading-set" className="scroll-mt-28">
               <GuideSectionHead
                 id="heading-set"
-                title="5. The Prediction Set"
+                title="7. The Prediction Set"
                 meta="Conformal coverage & uncertainty"
               />
               <p className="mt-4 text-sm text-foreground/75 max-w-3xl leading-relaxed">
@@ -528,12 +652,12 @@ export default function GuideContent({ loadHistory = true, visual = false }: { l
             </section>
 
             {/* =========================================================
-                SECTION 6: SHAP (LOCAL VS. GLOBAL)
+                SECTION 8: SHAP (LOCAL VS. GLOBAL)
                 ========================================================= */}
             <section hidden={visual && SECTIONS[activeTopic].id !== 'shap'} tabIndex={visual ? -1 : undefined} id="shap" aria-labelledby="heading-shap" className="scroll-mt-28">
               <GuideSectionHead
                 id="heading-shap"
-                title="6. SHAP"
+                title="8. SHAP"
                 meta="Per-run drivers vs. overall model importances"
               />
 
@@ -578,12 +702,12 @@ export default function GuideContent({ loadHistory = true, visual = false }: { l
             </section>
 
             {/* =========================================================
-                SECTION 7: HISTORY AND RETENTION
+                SECTION 9: HISTORY AND RETENTION
                 ========================================================= */}
             <section hidden={visual && SECTIONS[activeTopic].id !== 'history-retention'} tabIndex={visual ? -1 : undefined} id="history-retention" aria-labelledby="heading-retention" className="scroll-mt-28">
               <GuideSectionHead
                 id="heading-retention"
-                title="7. History and Retention"
+                title="9. History and Retention"
                 meta="Storage limits, trace reclamation & job caps"
               />
 

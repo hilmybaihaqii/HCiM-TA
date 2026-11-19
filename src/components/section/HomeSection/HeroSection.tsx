@@ -40,26 +40,28 @@ export default function HeroSection() {
   const { splashStarted, splashDone } = useSplash();
   const scope = useRef<HTMLElement>(null);
 
-  // Hide the intro pieces before first paint, then play them once the splash screen leaves.
+  // Satu efek untuk intro hero. Sebelum splash selesai: potongan teks disembunyikan. Setelah selesai:
+  // dimainkan dengan fromTo (posisi awal ada di timeline itu sendiri), jadi tidak bergantung pada urutan
+  // efek lain. revertOnUpdate memulihkan semua style bila efek dijalankan ulang (mis. kembali dari halaman
+  // lain), sehingga teks tidak pernah tertinggal dalam keadaan tersembunyi.
   useGSAP(
     () => {
-      gsap.set(".hero-char", { yPercent: 105 });
-      gsap.set(".hero-line", { yPercent: 110 });
-      gsap.set(".hero-fade", { autoAlpha: 0, y: 16 });
-    },
-    { scope },
-  );
-
-  useGSAP(
-    () => {
-      if (!splashDone) return;
+      const chars = ".hero-char";
+      const lines = ".hero-line";
+      const fades = ".hero-fade";
+      if (!splashDone) {
+        gsap.set(chars, { yPercent: 105 });
+        gsap.set(lines, { yPercent: 110 });
+        gsap.set(fades, { autoAlpha: 0, y: 16 });
+        return;
+      }
       gsap
         .timeline({ defaults: { ease: "expo.out" } })
-        .to(".hero-char", { yPercent: 0, duration: 1.6, stagger: 0.045 })
-        .to(".hero-line", { yPercent: 0, duration: 1.3, stagger: 0.09 }, 0.5)
-        .to(".hero-fade", { autoAlpha: 1, y: 0, duration: 1.1, stagger: 0.08 }, 0.75);
+        .fromTo(chars, { yPercent: 105 }, { yPercent: 0, duration: 1.6, stagger: 0.045 }, 0)
+        .fromTo(lines, { yPercent: 110 }, { yPercent: 0, duration: 1.3, stagger: 0.09 }, 0.5)
+        .fromTo(fades, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 1.1, stagger: 0.08 }, 0.75);
     },
-    { scope, dependencies: [splashDone] },
+    { scope, dependencies: [splashDone], revertOnUpdate: true },
   );
 
   /*

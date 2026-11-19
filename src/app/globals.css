@@ -223,3 +223,23 @@ html[data-splash-seen] [data-splash] {
 @media (prefers-reduced-motion: reduce) {
   .compass-needle, .lost-route { animation: none !important; }
 }
+
+/* Ruang scrollbar selalu disediakan: pindah dari halaman pendek ke halaman panjang (atau sebaliknya)
+   tidak lagi menggeser seluruh isi ke samping saat scrollbar muncul/hilang. */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* Masuk halaman di area lab (app/lab/template.tsx): hanya memudar, tanpa geser, supaya tidak "jedug". */
+@keyframes page-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+/* fill-mode `backwards` (bukan `both`): setelah selesai animasi tidak lagi berlaku, jadi wrapper ini
+   tidak menjadi stacking context. Dengan `both`, dropdown/panel di dalam halaman tertutup footer. */
+.page-in {
+  animation: page-in 0.28s ease-out backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-in { animation: none; }
+}

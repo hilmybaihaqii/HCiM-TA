@@ -2,14 +2,13 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Check, X, type LucideIcon } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 
 export type StageState = 'pending' | 'active' | 'done' | 'failed';
 
 export type Stage = {
   id: string;
   title: string;
-  icon: LucideIcon;
   /** Apa yang dikerjakan di tahap ini */
   does: string;
   /** Hasil nyata setelah tahap selesai (dari data API) */
@@ -18,27 +17,22 @@ export type Stage = {
   live?: React.ReactNode;
 };
 
-function Node({ state, icon: Icon, size = 'md' }: { state: StageState; icon: LucideIcon; size?: 'sm' | 'md' }) {
-  const Glyph = state === 'done' ? Check : state === 'failed' ? X : Icon;
+/**
+ * Lingkaran tahap: nomor urut (bukan ikon dekoratif), centang saat selesai, silang saat gagal.
+ * Tahap aktif cukup ditandai bingkai gelap; tanpa cincin berdenyut.
+ */
+function Node({ state, index, size = 'md' }: { state: StageState; index: number; size?: 'sm' | 'md' }) {
   const dim = size === 'sm' ? 'w-9 h-9' : 'w-11 h-11';
   return (
     <span className={`relative z-10 ${dim} rounded-full border flex items-center justify-center shrink-0 transition-colors duration-500
       ${state === 'done' ? 'bg-action border-transparent text-surface-white'
-        : state === 'active' ? 'bg-surface-white border-action text-action'
+        : state === 'active' ? 'bg-surface-white border-action border-[1.5px] text-action'
         : state === 'failed' ? 'bg-surface-white border-accent text-accent'
-        : 'bg-surface-white border-foreground/15 text-foreground/60'}`}
+        : 'bg-surface-white border-foreground/15 text-foreground/55'}`}
     >
-      {/* Langkah aktif: cincin tipis yang mengembang pelan */}
-      {state === 'active' && (
-        <motion.span
-          aria-hidden="true"
-          className="absolute inset-0 rounded-full border border-action/60"
-          initial={{ opacity: 0.5, scale: 1 }}
-          animate={{ opacity: 0, scale: 1.45 }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }}
-        />
-      )}
-      <Glyph className="w-4 h-4" strokeWidth={state === 'done' ? 2.5 : 1.6} />
+      {state === 'done' ? <Check className="w-4 h-4" strokeWidth={2.5} aria-hidden="true" />
+        : state === 'failed' ? <X className="w-4 h-4" strokeWidth={2} aria-hidden="true" />
+        : <span className="text-sm font-medium tabular-nums">{index + 1}</span>}
     </span>
   );
 }
@@ -120,7 +114,7 @@ export default function StageMonitor({ id, label, status, meta, stages, states }
         {stages.map((s, i) => (
           <li key={s.id} className="min-w-0" aria-current={states[i] === 'active' ? 'step' : undefined}>
             <div className="flex items-center">
-              <Node state={states[i]} icon={s.icon} />
+              <Node state={states[i]} index={i} />
               {i < stages.length - 1 && <Connector state={connector(i)} />}
             </div>
             <p className="mt-4 text-[10px] font-mono tracking-[0.15em] text-foreground/60">0{i + 1}</p>
@@ -143,7 +137,7 @@ export default function StageMonitor({ id, label, status, meta, stages, states }
                 aria-pressed={shown === i}
                 className={`rounded-full transition-shadow ${shown === i ? 'ring-2 ring-action/25 ring-offset-2 ring-offset-surface-white' : ''}`}
               >
-                <Node state={states[i]} icon={s.icon} size="sm" />
+                <Node state={states[i]} index={i} size="sm" />
               </button>
               {i < stages.length - 1 && <Connector state={connector(i)} />}
             </li>

@@ -60,12 +60,12 @@ export default function LabForm({ onSubmit, initial }: {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       className="w-full mb-16"
     >
       {/* ID TOUR DITAMBAHKAN DI SINI */}
-      <div id="tour-lab-form" className="bg-surface-white/80 backdrop-blur-3xl border border-foreground/4 shadow-[0_24px_60px_rgba(0,0,0,0.02)] rounded-sheet p-5 md:p-8 relative overflow-hidden">
+      <div id="tour-lab-form" className="bg-surface-white/80 backdrop-blur-md border border-foreground/4 shadow-[0_24px_60px_rgba(0,0,0,0.02)] rounded-sheet p-5 md:p-8 relative overflow-hidden">
         
         {/* Dekorasi Garis Kaca HUD */}
         <div className="absolute top-0 left-10 w-px h-4 bg-foreground/10" />

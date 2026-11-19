@@ -19,22 +19,27 @@ const SEEN_KEY = 'hasSeenSplash';
 const noop = () => () => {};
 
 /**
- * INVARIANT:
- * SPLASH_MIN_DISPLAY_MS < SPLASH_CHECKPOINT_MS < SPLASH_SAFETY_TIMEOUT_MS
+ * INVARIANT: SPLASH_MIN_DISPLAY_MS < SPLASH_CHECKPOINT_MS < SPLASH_SAFETY_TIMEOUT_MS
  *
- * - SPLASH_CHECKPOINT_MS (3000ms): Target waktu timeline GSAP di SplashScreen.tsx mencapai tl.call.
- * - SPLASH_MIN_DISPLAY_MS (1800ms): Batas bawah sebelum splash boleh terbuka, harus < checkpoint agar tidak menahan warm load.
- * - SPLASH_SAFETY_TIMEOUT_MS (12000ms): Batas pengaman jika aset 3D lambat/gagal. HARUS > checkpoint agar gate aset berfungsi!
+ * - SPLASH_CHECKPOINT_MS (1500ms): titik gerbang di timeline SplashScreen; intro berhenti di sini bila halaman belum siap.
+ * - SPLASH_MIN_DISPLAY_MS (1200ms): batas bawah sebelum splash boleh terbuka.
+ * - SPLASH_SAFETY_TIMEOUT_MS (4000ms): batas tunggu aset 3D. Lewat dari ini splash tetap terbuka dan model
+ *   menyusul; orang yang sedang butuh tidak boleh tertahan lama di layar pembuka.
  */
-export const SPLASH_SAFETY_TIMEOUT_MS = 12000;
-export const SPLASH_MIN_DISPLAY_MS = 1800;
-export const SPLASH_CHECKPOINT_MS = 3000;
+export const SPLASH_SAFETY_TIMEOUT_MS = 4000;
+export const SPLASH_MIN_DISPLAY_MS = 1200;
+export const SPLASH_CHECKPOINT_MS = 1500;
 
 /** Splash sudah pernah tampil di tab ini (dibaca dari sessionStorage, aman saat render server) */
 function useSeenSplash() {
   return useSyncExternalStore(
     noop,
-    () => { try { return sessionStorage.getItem(SEEN_KEY) === 'true'; } catch { return false; } },
+    () => {
+      // data-splash-seen dipasang skrip di <head> (mis. setelah ?login=success). Splash-nya sudah disembunyikan
+      // CSS, jadi harus dianggap selesai juga; kalau tidak, hero di landing menunggu splash yang tak terlihat.
+      if (document.documentElement.hasAttribute('data-splash-seen')) return true;
+      try { return sessionStorage.getItem(SEEN_KEY) === 'true'; } catch { return false; }
+    },
     () => false,
   );
 }
@@ -49,7 +54,7 @@ export function SplashProvider({ children }: { children: React.ReactNode }) {
   const [timedOut, setTimedOut] = useState(false);
 
   // Pengaman: jangan menahan splash lebih dari SPLASH_SAFETY_TIMEOUT_MS walau aset belum selesai.
-  // INVARIANT: SPLASH_SAFETY_TIMEOUT_MS (12s) > SPLASH_CHECKPOINT_MS (3s). Jika lebih kecil, gate aset 3D akan mati!
+  // INVARIANT: SPLASH_SAFETY_TIMEOUT_MS > SPLASH_CHECKPOINT_MS, kalau tidak gerbang aset 3D tidak berfungsi.
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production' && SPLASH_SAFETY_TIMEOUT_MS <= SPLASH_CHECKPOINT_MS) {
       console.warn(

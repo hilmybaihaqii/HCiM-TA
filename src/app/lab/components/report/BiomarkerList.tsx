@@ -9,6 +9,7 @@ import { getTierCssVar } from '@/lib/tierColor';
 import type { ShapData } from '@/lib/predict';
 import { BIOMARKER_INFO, SHORT_DESC } from './biomarkerText';
 import { EcgTrace } from './HeartbeatLoader';
+import GuideLink from '../GuideLink';
 import { SectionHead, TabRail, secondaryBtn } from './ui';
 
 /*
@@ -212,6 +213,8 @@ export default function BiomarkerList({ ratios, control, drug, tier, shap, expla
           <span className="font-medium text-foreground">{SHORT_DESC[r.key]}.</span>{' '}
           {BIOMARKER_INFO[r.key]}
           {influence && <> <span className="text-foreground">{influence}</span></>}
+          {/* Di sinilah orang bertanya "biomarker ini apa?", jadi tombolnya ke daftar definisi */}
+          <span className="mt-4 flex"><GuideLink topic="biomarkers" /></span>
         </p>
         <dl className="grid grid-cols-3 md:grid-cols-1 gap-2 md:gap-0 py-3 md:py-1 md:px-4 rounded-card bg-surface-white/70 md:divide-y md:divide-foreground/10">
           {hasRaw ? (

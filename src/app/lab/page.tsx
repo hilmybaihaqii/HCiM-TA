@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ChartColumn, Gauge, ListChecks } from 'lucide-react';
 import { formatChange, strongestChange } from '@/lib/pipeline';
 import { getTierColor } from '@/lib/tierColor';
 import LabForm from './components/LabForm';
@@ -12,6 +11,7 @@ import LabContainer from './components/LabContainer';
 import HeartbeatLoader from './components/report/HeartbeatLoader';
 import RiskVerdict from './components/report/RiskVerdict';
 import BiomarkerList from './components/report/BiomarkerList';
+import { ManualInputNote } from './components/report/ModelInputNote';
 import StageMonitor, { type Stage, type StageState } from './components/report/StageMonitor';
 import { primaryBtn } from './components/report/ui';
 import { type Report, clearLabReport, retryLabExplain, submitLabReport, useLabReport } from './useLabReport';
@@ -47,21 +47,18 @@ function buildStages(r: Report | null): Stage[] {
     {
       id: 'biomarkers',
       title: 'Your biomarkers',
-      icon: ChartColumn,
       does: 'The 11 ratios you entered, each compared with the drug-free cell.',
       output: shift ? <>Largest change <span className="font-mono">{shift.key} {formatChange(shift.change)}</span></> : undefined,
     },
     {
       id: 'risk',
       title: 'Risk model',
-      icon: Gauge,
       does: 'Classifies TdP risk as low, intermediate or high.',
       output: tier ? <><span className={`capitalize ${getTierColor(tier).text}`}>{tier}</span> risk</> : undefined,
     },
     {
       id: 'drivers',
       title: 'Main drivers',
-      icon: ListChecks,
       does: 'SHAP shows which biomarkers moved the model most.',
       output: top ? <>Strongest driver <span className="font-mono">{top.biomarker}</span></> : undefined,
     },
@@ -100,7 +97,7 @@ export default function DigitalLabPage() {
         />
 
         {showForm && (
-          <motion.div key="form" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
+          <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
             {report?.error && (
               <p role="alert" className="mb-6 text-center text-sm text-accent leading-relaxed text-balance">{report.error}</p>
             )}
@@ -120,7 +117,7 @@ export default function DigitalLabPage() {
         {report?.status === 'done' && report.tier && (
           <motion.div
             key="report"
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             className="w-full max-w-5xl mx-auto flex flex-col gap-14 md:gap-20 pt-6 pb-20"
           >
@@ -134,6 +131,8 @@ export default function DigitalLabPage() {
             </div>
 
             <RiskVerdict tier={report.tier} prediction={report.prediction} />
+
+            <ManualInputNote />
 
             <BiomarkerList
               ratios={report.inputs}

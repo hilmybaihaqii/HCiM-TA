@@ -29,7 +29,7 @@ function toConfidences(p: PredictionLog['probabilities']): Confidence[] {
 }
 
 // Ponsel: waktu | hasil | panah. Desktop: + waktu proses.
-const ROW = 'grid grid-cols-[1fr_auto_1rem] sm:grid-cols-[13rem_1fr_6rem_1rem] items-center gap-3 sm:gap-4';
+const ROW = 'grid grid-cols-[1fr_auto_1.75rem] sm:grid-cols-[13rem_1fr_6rem_1.75rem] items-center gap-3 sm:gap-4';
 
 /** Detail satu prediksi: vote, 11 rasio yang dikirim, waktu proses. `owner` = pemilik (halaman admin). */
 export function PredictionDetail({ log, owner }: { log: PredictionLog; owner?: React.ReactNode }) {

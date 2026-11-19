@@ -83,7 +83,7 @@ export default function StoryLine() {
         const beats = gsap.utils.toArray<HTMLElement>('.story-beat');
 
         gsap.set(beats, { autoAlpha: 0 });
-        gsap.set('.story-word', { autoAlpha: 0, y: 30, filter: 'blur(4px)' });
+        gsap.set('.story-word', { autoAlpha: 0, y: 30 });
 
         /** Efek penekanan untuk satu kalimat, sesuai jenisnya. */
         const emphasize = (t: gsap.core.Timeline, beat: HTMLElement, effect: Effect) => {
@@ -111,10 +111,10 @@ export default function StoryLine() {
         /** Kalimat i masuk: kata-kata naik bergantian (tempo santai), lalu efek penekanannya. */
         const enter = (t: gsap.core.Timeline, i: number, at?: gsap.Position) => {
           const beat = beats[i];
-          t.set(beat, { autoAlpha: 1, y: 0, filter: 'blur(0px)' }, at).fromTo(
+          t.set(beat, { autoAlpha: 1, y: 0 }, at).fromTo(
             beat.querySelectorAll('.story-word'),
-            { autoAlpha: 0, y: 30, filter: 'blur(4px)' },
-            { autoAlpha: 1, y: 0, filter: 'blur(0px)', duration: 1, stagger: 0.07, ease: 'power2.out' },
+            { autoAlpha: 0, y: 30 },
+            { autoAlpha: 1, y: 0, duration: 1, stagger: 0.07, ease: 'power2.out' },
             '<',
           );
           emphasize(t, beat, BEATS[i].effect);
@@ -144,8 +144,8 @@ export default function StoryLine() {
           tl.to({}, { duration: 1.6 }) // jeda baca
             .fromTo(
               beats[i - 1],
-              { autoAlpha: 1, y: 0, filter: 'blur(0px)' },
-              { autoAlpha: 0, y: -32, filter: 'blur(4px)', duration: 0.9, ease: 'power1.inOut' },
+              { autoAlpha: 1, y: 0 },
+              { autoAlpha: 0, y: -32, duration: 0.9, ease: 'power1.inOut' },
             );
           enter(tl, i, '-=0.3');
         });

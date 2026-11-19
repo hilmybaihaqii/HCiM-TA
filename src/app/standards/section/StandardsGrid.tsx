@@ -66,6 +66,9 @@ export default function StandardsGrid() {
                     <h3 className="text-xl sm:text-2xl md:text-3xl font-medium tracking-tight text-foreground group-hover:text-accent transition-colors duration-300">
                       {item.title}
                     </h3>
+                    <p className="mt-2 max-w-xl text-sm font-light leading-relaxed text-muted">
+                      {item.subtitle}
+                    </p>
                   </div>
 
                   {/* ARROW TOGGLE (chevron, rotates on open) */}
@@ -100,40 +103,81 @@ export default function StandardsGrid() {
                       transition={{ duration: 0.6, ease: luxEase }}
                       className="overflow-hidden"
                     >
-                      <div className="pb-10 md:pb-12 md:pl-[33%] pr-6">
-                        <p className="text-base sm:text-lg text-muted font-light leading-relaxed max-w-2xl mb-8">
+                      <div className="pb-12 md:pb-16 md:pl-[33%] pr-0 md:pr-6">
+                        {/* Ringkasan, lalu klausul lengkap: isi pilar dibaca di halaman ini, bukan hanya di halaman detail */}
+                        <p className="max-w-2xl text-base sm:text-lg font-light leading-relaxed text-muted">
                           {item.excerpt}
                         </p>
+                        <p className="mt-5 max-w-2xl border-l-2 border-accent/40 pl-4 text-sm leading-relaxed text-foreground">
+                          {item.implication}
+                        </p>
 
-                        <div className="flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-foreground/10">
+                        <dl className="mt-10 grid grid-cols-1 gap-x-12 gap-y-8 sm:grid-cols-2">
+                          {item.content.map((sec) => (
+                            <div key={sec.clause} className="max-w-md">
+                              <dt className="flex items-baseline gap-3">
+                                <span className="font-mono text-[11px] text-muted">{sec.clause}</span>
+                                <span className="text-sm font-medium tracking-tight text-foreground">{sec.title}</span>
+                              </dt>
+                              <dd className="mt-2 text-sm font-light leading-relaxed text-muted">{sec.body}</dd>
+                            </div>
+                          ))}
+                        </dl>
+
+                        {/* Dokumen asli: teks peraturan atau paper, dibuka di tab baru */}
+                        <div className="mt-10 border-t border-foreground/10 pt-6">
+                          <span className="block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
+                            Read the source
+                          </span>
+                          <ul className="mt-4 flex flex-col gap-3">
+                            {item.sources.map((src) => {
+                              const external = src.href.startsWith('http');
+                              return (
+                                <li key={src.href}>
+                                  <a
+                                    href={src.href}
+                                    target={external ? '_blank' : undefined}
+                                    rel={external ? 'noreferrer noopener' : undefined}
+                                    className="group/src inline-flex max-w-2xl items-baseline gap-2 text-sm text-foreground transition-colors duration-300 hover:text-accent"
+                                  >
+                                    <span className="underline decoration-foreground/20 underline-offset-4 transition-colors group-hover/src:decoration-accent">
+                                      {src.label}
+                                    </span>
+                                    {src.note && (
+                                      <span className="shrink-0 rounded-full border border-foreground/15 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted">
+                                        {src.note}
+                                      </span>
+                                    )}
+                                    <span aria-hidden="true" className="shrink-0 text-muted transition-transform duration-300 group-hover/src:translate-x-0.5 group-hover/src:text-accent">
+                                      {external ? '↗' : '→'}
+                                    </span>
+                                  </a>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+
+                        <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-foreground/10 pt-6">
                           <div className="flex flex-wrap gap-4">
                             {item.relatedTags.map((tag) => (
-                              <span
-                                key={tag}
-                                className="text-xs font-mono text-muted"
-                              >
+                              <span key={tag} className="font-mono text-xs text-muted">
                                 • {tag}
                               </span>
                             ))}
                           </div>
-
                           <Link
                             href={`/standards/${item.slug}`}
-                            className="group/link inline-flex items-center gap-2 text-xs font-mono text-foreground hover:text-accent transition-colors duration-300"
+                            className="group/link inline-flex items-center gap-2 font-mono text-xs text-foreground transition-colors duration-300 hover:text-accent"
                           >
-                            <span>Inspect standard specifications</span>
+                            <span>Open the full reference</span>
                             <svg
-                              className="w-4 h-4 transition-transform duration-300 group-hover/link:translate-x-1 text-accent"
+                              className="h-4 w-4 text-accent transition-transform duration-300 group-hover/link:translate-x-1"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="1.5"
-                                d="M5 12h14M13 5l7 7-7 7"
-                              />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M5 12h14M13 5l7 7-7 7" />
                             </svg>
                           </Link>
                         </div>

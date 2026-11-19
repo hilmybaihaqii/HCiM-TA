@@ -66,7 +66,7 @@ export default function Navbar() {
         <div 
           className={`w-full max-w-7xl flex justify-between items-center pointer-events-auto transition-all duration-500 ease-out px-5 md:px-6 py-2.5 md:py-3 rounded-full border ${
             scrolled || isMenuOpen
-              ? 'bg-surface-white/70 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border-foreground/5' 
+              ? 'bg-surface-white/70 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.03)] border-foreground/5' 
               : 'bg-transparent border-transparent shadow-none'
           }`}
         >

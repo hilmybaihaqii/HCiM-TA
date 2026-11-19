@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import GuideLink from '../../components/GuideLink';
 import {
   DrugDb, HERG_KEYS, HergKey, IC50_CHANNELS, Ic50Key, PipelineJob, formatDrugName, isTrainingDrug, type DoseKey,
 } from '@/lib/pipeline';
@@ -111,6 +112,7 @@ export default function DrugInputs({ job, db, selected, onSelect, parts = 'all' 
             {isTrainingDrug(p.drug) && <> · in training set</>}
           </p>
         )}
+        <div className="w-full flex justify-end"><GuideLink topic="drug-inputs" /></div>
       </div>
 
       {/* ---------- Parameter ---------- */}

@@ -2,7 +2,7 @@
 
 import React, { useCallback, useState } from 'react';
 import {
-  FilterMenu, HistoryControls, HistoryMessage, HistoryRow, HistorySkeleton, Pager, formatWhen, matchesQuery, useHistory,
+  SingleFilter, HistoryControls, HistoryMessage, HistoryRow, HistorySkeleton, Pager, formatWhen, matchesQuery, useHistory,
 } from '../../../logs/components/history';
 import { AdminUser, personName, useAdminData } from '../../AdminData';
 
@@ -72,7 +72,7 @@ function deviceOf(ua?: string): string {
 }
 
 // Ponsel: akun + waktu | kejadian | panah. Desktop: waktu | akun | kejadian | IP | panah.
-const ROW = 'grid grid-cols-[1fr_auto_1rem] sm:grid-cols-[11rem_1fr_12rem_8rem_1rem] items-center gap-3 sm:gap-4';
+const ROW = 'grid grid-cols-[1fr_auto_1.75rem] sm:grid-cols-[11rem_1fr_12rem_8rem_1.75rem] items-center gap-3 sm:gap-4';
 
 function EventText({ raw }: { raw?: string }) {
   const { label, group } = describe(raw);
@@ -129,7 +129,7 @@ export default function AdminActivityPage() {
       <HistoryControls
         query={h.query}
         onQuery={v => { setOpen(null); h.setQuery(v); }}
-        filter={<FilterMenu options={FILTERS} value={h.filter} onChange={v => { setOpen(null); h.setFilter(v); }} label="Show events" />}
+        filter={<SingleFilter title="Event" options={FILTERS} value={h.filter} onChange={v => { setOpen(null); h.setFilter(v); }} />}
         placeholder="Search by name, email, IP or event"
         summary={!loading && h.filtering ? `${total} matching ${total === 1 ? 'event' : 'events'}` : null}
       />
