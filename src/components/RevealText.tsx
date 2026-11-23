@@ -1,6 +1,7 @@
 'use client';
 import { useRef } from 'react';
 import { motion, useScroll, useTransform, MotionValue } from 'framer-motion';
+import { useT } from '@/i18n/LanguageProvider';
 
 export const RevealText = ({ children }: { children: string }) => {
   const containerRef = useRef<HTMLParagraphElement>(null);
@@ -13,11 +14,13 @@ export const RevealText = ({ children }: { children: string }) => {
     offset: ['start 85%', 'end 45%'], 
   });
 
-  const words = children.split(' ');
+  const t = useT();
+  const words = t(children).split(' ');
 
   return (
     <p
       ref={containerRef}
+      data-i18n-skip
       className="flex flex-wrap text-2xl sm:text-3xl md:text-[40px] font-medium tracking-tight text-foreground leading-[1.3] md:leading-[1.2]"
     >
       {words.map((word, i) => {

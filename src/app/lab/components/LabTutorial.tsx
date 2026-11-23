@@ -95,17 +95,20 @@ export default function LabTutorial() {
     }
   };
 
+  // Di ponsel menu utama ada di bawah layar (LabBottomNav)
+  const isPhone = isMounted && window.matchMedia('(max-width: 767px)').matches;
+
   const steps: Step[] = [
     {
-      target: 'body', 
+      target: 'body',
       placement: 'center',
       title: 'Welcome to the Digital Lab',
       content: 'A quick tour of how to check a drug for the risk of Torsades de Pointes (TdP), a dangerous heart rhythm.',
     },
     {
-      target: '#tour-navbar-menu',
-      placement: 'bottom', 
-      isFixed: true, 
+      target: isPhone ? '#tour-navbar-menu-mobile' : '#tour-navbar-menu',
+      placement: isPhone ? 'top' : 'bottom',
+      isFixed: true,
       title: 'Pages',
       content: 'Full Pipeline starts from drug data and simulates the heart cell for you. Digital Lab takes biomarkers you already have. Activity Logs keeps every result.',
     },

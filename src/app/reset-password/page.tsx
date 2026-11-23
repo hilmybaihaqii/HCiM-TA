@@ -16,7 +16,14 @@ type Errors = { newPassword?: string; confirmPassword?: string };
 
 function ResetPasswordForm() {
   const router = useRouter();
-  const token = useSearchParams().get('token');
+  const searchParams = useSearchParams();
+  // Token dibaca sekali lalu dihapus dari URL, supaya tidak tertinggal di riwayat browser atau tersalin
+  const [token] = useState(() => searchParams.get('token'));
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has('token')) {
+      window.history.replaceState(null, '', '/reset-password');
+    }
+  }, []);
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');

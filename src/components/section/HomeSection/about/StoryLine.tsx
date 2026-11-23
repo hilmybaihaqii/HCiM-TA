@@ -5,6 +5,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 import { accentSerif } from '@/lib/fonts';
+import { useLang, useT } from '@/i18n/LanguageProvider';
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -49,7 +50,10 @@ const WAVE_WORD: CSSProperties = {
 };
 
 const THICKNESS: Partial<Record<Effect, string>> = { highlight: '0.42em', strike: '0.07em', underline: '0.07em' };
-const TIER_COLOR: Record<string, string> = { 'Low,': 'var(--accent-teal)', Intermediate: 'var(--accent-amber)', High: 'var(--accent-red)' };
+const TIER_COLOR: Record<string, string> = {
+  'Low,': 'var(--accent-teal)', Intermediate: 'var(--accent-amber)', High: 'var(--accent-red)',
+  'Rendah,': 'var(--accent-teal)', 'Menengah,': 'var(--accent-amber)', 'Tinggi.': 'var(--accent-red)',
+};
 
 function toSegments(text: string) {
   return text.split('==').map((part, i) => ({ words: part.split(' ').filter(Boolean), marked: i % 2 === 1 }));
@@ -74,6 +78,8 @@ function Words({ words, wordStyle, tight = false }: { words: string[]; wordStyle
 
 export default function StoryLine() {
   const scope = useRef<HTMLElement>(null);
+  const lang = useLang();
+  const t = useT();
 
   useGSAP(
     () => {
@@ -168,7 +174,8 @@ export default function StoryLine() {
         });
       });
     },
-    { scope },
+    // Kata-kata dirender ulang saat bahasa berubah, jadi timeline dibuat ulang untuk elemen barunya
+    { scope, dependencies: [lang], revertOnUpdate: true },
   );
 
   return (
@@ -181,10 +188,11 @@ export default function StoryLine() {
         <div className="grid w-full max-w-4xl place-items-center gap-16 motion-safe:gap-0">
           {BEATS.map((beat, i) => (
             <p
-              key={i}
+              key={`${lang}-${i}`}
+              data-i18n-skip
               className="story-beat motion-safe:col-start-1 motion-safe:row-start-1 motion-safe:invisible text-balance text-[clamp(1.75rem,4vw,3.4rem)] font-medium leading-[1.22] tracking-[-0.025em] text-foreground"
             >
-              {toSegments(beat.text).map((seg, si) =>
+              {toSegments(t(beat.text)).map((seg, si) =>
                 seg.marked ? (
                   <Fragment key={si}>
                     {/* frasa penting: serif italic (senada aksen "heart risk" di hero) + efeknya sendiri */}

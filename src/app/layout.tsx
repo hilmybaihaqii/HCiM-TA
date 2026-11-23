@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Figtree } from "next/font/google";
 import SplashScreen from "@/components/SplashScreen";
 import { SplashProvider } from "@/components/SplashProvider";
+import LanguageProvider from "@/i18n/LanguageProvider";
 import "./globals.css";
+import "@/i18n/i18n.css";
 
 import CustomCursor from "@/components/ui/CustomCursor";
 
@@ -42,13 +44,21 @@ export default function RootLayout({
             __html: "try{if(sessionStorage.getItem('hasSeenSplash')==='true'||/[?&]login=success/.test(location.search))document.documentElement.setAttribute('data-splash-seen','')}catch(e){}",
           }}
         />
+        {/* Pengguna bahasa Indonesia: tahan tampilan sampai teks diganti; batas waktu mencegah layar kosong */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: "try{if(localStorage.getItem('cardivex-lang')==='id'){var h=document.documentElement;h.lang='id';h.setAttribute('data-i18n-pending','');setTimeout(function(){h.removeAttribute('data-i18n-pending')},2500)}}catch(e){}",
+          }}
+        />
       </head>
       <body className="antialiased bg-white text-black">
-        <SplashProvider>
-          <SplashScreen />
-          <CustomCursor />
-          {children}
-        </SplashProvider>
+        <LanguageProvider>
+          <SplashProvider>
+            <SplashScreen />
+            <CustomCursor />
+            {children}
+          </SplashProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

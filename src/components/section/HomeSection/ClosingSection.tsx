@@ -3,6 +3,7 @@
 import React, { useRef } from 'react';
 import { motion, useInView, useScroll, useTransform, MotionValue } from 'framer-motion';
 import BubbleLink from '@/components/ui/BubbleLink';
+import { useT } from '@/i18n/LanguageProvider';
 import { WORLD_DOTS, NODES, ROUTES, AMBIENT_NODES, NodeKey } from '@/data/world-map-data';
 
 const luxEase = [0.16, 1, 0.3, 1] as const;
@@ -13,10 +14,11 @@ const luxEase = [0.16, 1, 0.3, 1] as const;
 const RevealText = ({ children }: { children: string }) => {
   const containerRef = useRef<HTMLParagraphElement>(null);
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ['start 95%', 'center 50%'] });
-  const words = children.split(' ');
+  const t = useT();
+  const words = t(children).split(' ');
 
   return (
-    <p ref={containerRef} className="flex flex-wrap justify-center text-3xl sm:text-5xl md:text-6xl lg:text-[72px] font-medium tracking-tighter text-foreground leading-[1.1] md:leading-[1.05]">
+    <p ref={containerRef} data-i18n-skip className="flex flex-wrap justify-center text-3xl sm:text-5xl md:text-6xl lg:text-[72px] font-medium tracking-tighter text-foreground leading-[1.1] md:leading-[1.05]">
       {words.map((word, i) => {
         const start = i / words.length;
         const end = start + 1 / words.length;

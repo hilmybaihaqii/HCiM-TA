@@ -3,8 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { DrugDb, JobStatus, PipelineJob, formatChange, formatDrugName, joinList, strongestChange } from '@/lib/pipeline';
-import { getTierColor } from '@/lib/tierColor';
 import HeartbeatLoader, { EcgTrace, type LoaderStep } from '../../components/report/HeartbeatLoader';
+import RiskLabel from '../../components/report/RiskLabel';
 import StageMonitor, { type Stage, type StageState } from '../../components/report/StageMonitor';
 
 /** Setelah 4 menit masih queued/simulating -> catatan lembut. */
@@ -117,7 +117,7 @@ function buildStages(job: PipelineJob | null, doses: number[], db: DrugDb | null
       title: 'Risk model',
       does: 'Classifies TdP risk as low, intermediate or high, with SHAP.',
       output: tier ? (
-        <><span className={`capitalize ${getTierColor(tier).text}`}>{tier}</span> risk <span className="text-foreground/70">(mean)</span></>
+        <><RiskLabel tier={tier} /> <span className="text-foreground/70">(mean)</span></>
       ) : undefined,
     },
   ];

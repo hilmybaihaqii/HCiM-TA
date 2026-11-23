@@ -4,7 +4,7 @@ import ArticleGrid from './section/ArticleGrid';
 import ResearchConnections from './section/ResearchConnections';
 
 export const metadata = {
-  title: 'Research & Publications | Cardivex',
+  title: 'Articles | Cardiotoxicity Prediction',
   description: 'Research publications informing Cardivex, covering cardiac drug safety, computational modeling, and machine learning, with links to the original papers.',
 };
 

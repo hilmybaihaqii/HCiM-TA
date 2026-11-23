@@ -64,6 +64,12 @@ Digital Lab. Full Pipeline reads the run-level prediction and SHAP directly from
 - Reference text (`SHORT_DESC`, `BIOMARKER_INFO`) explains what a biomarker is; it never states a
   result.
 
+## Language (English / Indonesian)
+
+- Write UI text in English as usual, then add its Indonesian text to `src/i18n/id.json` (English text is the key).
+- Sentences with numbers or names go in `src/i18n/patterns.ts`.
+- Text split into words or letters before rendering must use `useT()` and `data-i18n-skip`.
+
 ## Requests (free-plan backend)
 
 - History endpoints go through `cachedGet()` (`lib/historyCache.ts`): switching tabs or coming back to

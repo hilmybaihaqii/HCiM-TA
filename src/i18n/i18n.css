@@ -1,0 +1,37 @@
+/* Pengguna bahasa Indonesia: sembunyikan sebentar sampai teks selesai diganti, supaya tidak berkedip */
+html[data-i18n-pending] body {
+  opacity: 0;
+}
+
+/* Transisi saat berganti bahasa */
+::view-transition-old(root) {
+  animation: lang-out 200ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+::view-transition-new(root) {
+  animation: lang-in 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Tombol bahasa tidak ikut memudar, supaya putaran benderanya terlihat utuh */
+::view-transition-old(lang-switch) {
+  display: none;
+}
+
+::view-transition-new(lang-switch) {
+  animation: none;
+}
+
+@keyframes lang-out {
+  to { opacity: 0; transform: translateY(-4px); }
+}
+
+@keyframes lang-in {
+  from { opacity: 0; transform: translateY(6px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
