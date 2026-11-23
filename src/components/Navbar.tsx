@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { useSplash } from './SplashProvider';
 import { getLenis } from '@/lib/smoothScroll';
+import LanguageSwitcher from '@/i18n/LanguageSwitcher';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -79,11 +80,12 @@ export default function Navbar() {
             cardivex<span className="text-accent">.</span>
           </Link>
 
-          <div className="flex items-center gap-5 md:gap-8">
+          <div className="flex items-center gap-3 md:gap-6">
+            <LanguageSwitcher className="relative z-50" />
             <Link
               href="/login"
               prefetch={false}
-              className="relative z-50 px-5 py-2 text-xs font-medium tracking-[0.15em] border border-accent bg-accent text-surface-white hover:bg-accent-dark hover:border-accent-dark transition-all duration-300 rounded-full hidden sm:block"
+              className="relative z-50 hidden h-9 w-36 items-center justify-center whitespace-nowrap text-xs font-medium tracking-[0.15em] border border-accent bg-accent text-surface-white hover:bg-accent-dark hover:border-accent-dark transition-colors duration-300 rounded-full sm:inline-flex"
             >
               Get Started
             </Link>

@@ -3,7 +3,7 @@ import StandardsHero from './section/StandardsHero';
 import StandardsGrid from './section/StandardsGrid';
 
 export const metadata = {
-  title: 'Standards & Regulatory Basis — Cardivex',
+  title: 'Standards | Cardiotoxicity Prediction',
   description: 'How Cardivex traces to recognized international, national, industrial, and scientific standards.',
 };
 

@@ -6,6 +6,7 @@ import { normalizeTier } from '@/lib/tierColor';
 import type { PredictionOutput, ShapData } from '@/lib/predict';
 import RiskVerdict from './RiskVerdict';
 import BiomarkerList from './BiomarkerList';
+import CellDiagram from './CellDiagram';
 
 /*
  * Tampilan satu catatan riwayat di panel admin, dibuat dari komponen yang sama dengan hasil
@@ -102,13 +103,16 @@ export default function LogReport({ tier, prediction, ratios, shap, note, meta }
       </section>
 
       {hasRatios ? (
-        <BiomarkerList
-          ratios={ratios}
-          tier={level}
-          shap={shap ?? undefined}
-          explaining={false}
-          emptyDriversMessage="No driver analysis (SHAP) is stored with this record."
-        />
+        <>
+          <BiomarkerList
+            ratios={ratios}
+            tier={level}
+            shap={shap ?? undefined}
+            explaining={false}
+            emptyDriversMessage="No driver analysis (SHAP) is stored with this record."
+          />
+          <CellDiagram ratios={ratios} />
+        </>
       ) : (
         <p className="text-sm text-foreground/70">No biomarker values were stored with this record.</p>
       )}

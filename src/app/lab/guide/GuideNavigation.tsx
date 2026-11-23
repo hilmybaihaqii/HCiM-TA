@@ -61,7 +61,7 @@ export default function GuideNavigation({ sections }: {
       </div>
       <details ref={mobileMenu} className={styles.mobileNavigation}>
         <summary>
-          <span>{sections.find(section => section.id === active)?.title}</span>
+          <span>Guide Sections</span>
           <ChevronDown size={17} aria-hidden="true" />
         </summary>
         <nav aria-label="Table of contents">{links}</nav>

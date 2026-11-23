@@ -18,6 +18,7 @@ import { normalizeTier } from '@/lib/tierColor';
 import type { PredictionOutput, ShapData } from '@/lib/predict';
 import RiskVerdict from '../../components/report/RiskVerdict';
 import BiomarkerList from '../../components/report/BiomarkerList';
+import CellDiagram from '../../components/report/CellDiagram';
 import { secondaryBtn } from '../../components/report/ui';
 import { ManualInputNote } from '../../components/report/ModelInputNote';
 import { Bone } from '../../components/Skeletons';
@@ -368,6 +369,7 @@ export function RunDetail({ log, owner }: { log: RunLog; owner?: React.ReactNode
         explaining={false}
         emptyDriversMessage="No driver analysis (SHAP) was recorded for this run."
       />
+      {input.length > 0 && <CellDiagram ratios={input} />}
       {meta}
     </div>
   );
@@ -493,7 +495,7 @@ export default function RunHistory() {
         }
         placeholder="Search by drug, input method, record ID or result"
         summary={!loading && h.filtering
-          ? <>{total} matching {total === 1 ? 'run' : 'runs'}{activeText && <span className="text-foreground/50"> · {activeText}</span>}</>
+          ? <>{`${total} matching ${total === 1 ? 'run' : 'runs'}`}{activeText && <span className="text-foreground/50"> · {activeText}</span>}</>
           : null}
       />
 

@@ -63,9 +63,12 @@ export function LabShellSkeleton() {
       <div className="absolute inset-x-0 top-0 pt-[max(1rem,env(safe-area-inset-top))] md:pt-[max(1.5rem,env(safe-area-inset-top))] px-4 md:px-12 flex justify-center">
         <div className="w-full max-w-7xl h-12 rounded-full bg-surface-white/60 border border-foreground/5 flex items-center justify-between px-5">
           <Bone className="h-3 w-20" />
-          <Bone className="h-7 w-48 md:w-80 rounded-full" />
+          <Bone className="hidden md:block h-7 w-80 rounded-full" />
           <Bone className="h-7 w-7 rounded-full" />
         </div>
+      </div>
+      <div className="md:hidden fixed inset-x-0 bottom-0 z-10 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="mx-auto h-[3.75rem] max-w-md rounded-full border border-foreground/5 bg-surface-white/60" />
       </div>
       <PageSkeleton />
     </div>

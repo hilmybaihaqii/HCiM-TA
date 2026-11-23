@@ -10,6 +10,7 @@ import { getTierColor } from '@/lib/tierColor';
 import { parsePredictResponse, type PredictionOutput, type ShapData } from '@/lib/predict';
 import RiskVerdict from '../../components/report/RiskVerdict';
 import BiomarkerList from '../../components/report/BiomarkerList';
+import CellDiagram from '../../components/report/CellDiagram';
 import ModelInputNote from '../../components/report/ModelInputNote';
 import { SectionHead, TabRail, primaryBtn, secondaryBtn, textLink } from '../../components/report/ui';
 import DrugInputs from './DrugInputs';
@@ -224,6 +225,8 @@ export default function PipelineResult({
         meta={`Mean across ${doses.length} simulated doses`}
         emptyDriversMessage="The driver analysis (SHAP) is not available for this simulation run."
       />
+
+      <CellDiagram ratios={job.ratios ?? []} control={job.sim_result?.control_metrics} />
 
       {/* ---------- 3. Detail: satu pilihan, bukan banyak tab ---------- */}
       <section aria-label="More detail">

@@ -3,7 +3,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { formatChange, strongestChange } from '@/lib/pipeline';
-import { getTierColor } from '@/lib/tierColor';
 import LabForm from './components/LabForm';
 import TutorialGuide from './components/LabTutorial';
 import LabPageHeader from './components/LabPageHeader';
@@ -11,6 +10,7 @@ import LabContainer from './components/LabContainer';
 import HeartbeatLoader from './components/report/HeartbeatLoader';
 import RiskVerdict from './components/report/RiskVerdict';
 import BiomarkerList from './components/report/BiomarkerList';
+import RiskLabel from './components/report/RiskLabel';
 import { ManualInputNote } from './components/report/ModelInputNote';
 import StageMonitor, { type Stage, type StageState } from './components/report/StageMonitor';
 import { primaryBtn } from './components/report/ui';
@@ -54,7 +54,7 @@ function buildStages(r: Report | null): Stage[] {
       id: 'risk',
       title: 'Risk model',
       does: 'Classifies TdP risk as low, intermediate or high.',
-      output: tier ? <><span className={`capitalize ${getTierColor(tier).text}`}>{tier}</span> risk</> : undefined,
+      output: tier ? <RiskLabel tier={tier} /> : undefined,
     },
     {
       id: 'drivers',

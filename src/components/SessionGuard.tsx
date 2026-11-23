@@ -1,9 +1,9 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { clearSessionFlag, setSessionFlag } from '@/lib/sessionFlag';
+import { clearClientSession } from '@/lib/clientSession';
+import { setSessionFlag } from '@/lib/sessionFlag';
 import OpeningLab, { useOpeningLab } from './OpeningLab';
 
 export interface SessionUser {
@@ -42,7 +42,6 @@ export default function SessionGuard({ children, fallback }: {
   /** Opsional: tampilan selama sesi dicek (mis. skeleton). Default: teks "Verifying Session...". */
   fallback?: React.ReactNode;
 }) {
-  const router = useRouter();
   const [user, setUser] = useState<SessionUser | null>(null);
   // Baru login: tampilkan "Please wait" sebentar (sekaligus menutupi pengecekan sesi)
   const opening = useOpeningLab();
@@ -66,9 +65,10 @@ export default function SessionGuard({ children, fallback }: {
 
         const authError = error as { status?: number };
 
+        // Muat ulang penuh (bukan router) supaya laporan & cache di memori tidak terbawa ke akun berikutnya
         if (authError.status === 401 || authError.status === 403) {
-          clearSessionFlag();
-          router.replace('/login');
+          clearClientSession();
+          window.location.replace('/login');
           return;
         }
 
@@ -80,8 +80,8 @@ export default function SessionGuard({ children, fallback }: {
         }
 
         console.error('Session verification failed:', error);
-        clearSessionFlag();
-        router.replace('/login');
+        clearClientSession();
+        window.location.replace('/login');
       }
     };
 
@@ -94,7 +94,7 @@ export default function SessionGuard({ children, fallback }: {
         clearTimeout(retryTimer);
       }
     };
-  }, [router]);
+  }, []);
 
  // Selama sesi masih dicek, jangan render halaman Lab (cegah kedipan/bocor data)
   if (opening) return <OpeningLab />;

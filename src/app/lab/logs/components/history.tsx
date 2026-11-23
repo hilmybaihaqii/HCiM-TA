@@ -297,7 +297,7 @@ export function FilterPanel({ groups, onToggle, onClear, onOpen }: {
                 <fieldset key={g.id} className={gi > 0 ? 'mt-1 border-t border-foreground/8 pt-1' : ''}>
                   <legend className="flex w-full items-baseline justify-between gap-3 px-3 pt-2.5 pb-1.5">
                     <span className="text-xs font-semibold text-foreground">{g.title}</span>
-                    {g.selected.length > 0 && <span className="text-[11px] text-foreground/50">{g.selected.length} selected</span>}
+                    {g.selected.length > 0 && <span className="text-[11px] text-foreground/50">{`${g.selected.length} selected`}</span>}
                   </legend>
                   {g.loading ? (
                     <p className="px-3 py-2 text-sm text-foreground/55">Loading…</p>

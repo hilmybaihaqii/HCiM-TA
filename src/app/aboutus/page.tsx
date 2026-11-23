@@ -5,7 +5,7 @@ import TeamGrid from './section/TeamGrid';
 import AdvisorsGrid from './section/AdvisorsGrid';
 
 export const metadata = {
-  title: 'About Us | Cardivex',
+  title: 'About Us | Cardiotoxicity Prediction',
   description: 'Meet the student research team, supervisors, and scientific advisors behind Cardivex and its exploration of in-silico cardiac safety.',
 };
 

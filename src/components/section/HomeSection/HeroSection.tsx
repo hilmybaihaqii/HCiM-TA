@@ -105,6 +105,7 @@ export default function HeroSection() {
             {BG_LINES.map((line, li) => (
               <div
                 key={line}
+                data-i18n-skip
                 className="flex overflow-hidden whitespace-pre text-[15.5vw] md:text-[min(13.5vw,20svh)] font-black uppercase leading-[0.86] md:leading-[0.82] tracking-tighter py-[0.08em] -my-[0.08em] px-[0.04em]"
               >
                 {line.split("").map((ch, ci) => (
@@ -135,7 +136,8 @@ export default function HeroSection() {
         {/* ================= HEADLINE + CTA ================= */}
         <div className="relative md:absolute md:inset-x-0 md:bottom-0 z-20 pointer-events-none pb-14 md:pb-11">
           <div className="w-full max-w-7xl mx-auto px-6 md:px-12 flex flex-col lg:flex-row justify-between items-stretch lg:items-end gap-9 md:gap-8">
-            <div className="w-full lg:max-w-[34rem] pointer-events-auto">
+            {/* Teks tidak menangkap pointer, supaya jantung di belakangnya tetap bisa digeser */}
+            <div className="w-full lg:max-w-[34rem]">
               <h1 className="mb-4 md:mb-5 text-[2rem] sm:text-4xl lg:text-[2.6rem] font-medium leading-[1.04] tracking-[-0.03em] text-foreground">
                 {HEADLINE.map((line, i) => (
                   <span key={i} className="block overflow-hidden pb-[0.08em]">

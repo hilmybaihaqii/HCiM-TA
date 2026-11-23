@@ -3,7 +3,7 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import * as THREE from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useGLTF, OrbitControls, Environment } from '@react-three/drei';
+import { useGLTF, OrbitControls, Environment, Lightformer } from '@react-three/drei';
 import { useSplash } from '../SplashProvider';
 
 /*
@@ -65,6 +65,12 @@ function useMassCenter(scene: THREE.Object3D) {
  * tidak bisa scroll halaman. Kita ganti ke `pan-y`: geser vertikal satu jari tetap
  * scroll, sedangkan geser horizontal (putar) dan cubit dua jari (zoom) diteruskan ke kontrol.
  */
+function HeartControls() {
+  // Dipasang langsung di canvas: area geser selalu sama dengan area jantung, dan touch-action-nya terkendali
+  const canvas = useThree((state) => state.gl.domElement);
+  return <OrbitControls domElement={canvas} enableZoom enablePan={false} enableDamping={false} minDistance={2.6} maxDistance={6} />;
+}
+
 function AllowVerticalScroll() {
   const canvas = useThree((state) => state.gl.domElement);
   useEffect(() => {
@@ -181,10 +187,19 @@ export default function Heart3D() {
       >
         <Suspense fallback={null}>
           {/* Desktop: drag = putar, scroll = zoom. HP: geser samping = putar, cubit = zoom. */}
-          <OrbitControls enableZoom enablePan={false} enableDamping={false} minDistance={2.6} maxDistance={6} />
+          <HeartControls />
           <AllowVerticalScroll />
           <Model isMobile={isMobile} lite={lowEnd} show={show} onLoaded={handleLoaded} />
-          <Environment preset="city" />
+          {/* Pencahayaan dibuat lokal: preset drei mengambil file HDR dari CDN luar, dan kalau CDN itu
+              menolak permintaan, seluruh halaman ikut error. */}
+          <Environment resolution={128} frames={1}>
+            {/* Latar redup + panel putih yang kuat: bagian terang tetap bersih dan lekuk otot tetap berkontras */}
+            <color attach="background" args={['#6e6a69']} />
+            <Lightformer form="rect" intensity={6} color="#ffffff" position={[0, 7, 3]} rotation={[Math.PI / 2, 0, 0]} scale={[9, 5, 1]} />
+            <Lightformer form="rect" intensity={4.5} color="#ffffff" position={[-7, 2, 5]} rotation={[0, Math.PI / 3, 0]} scale={[4, 7, 1]} />
+            <Lightformer form="rect" intensity={3} color="#ffffff" position={[7, 1, 4]} rotation={[0, -Math.PI / 3, 0]} scale={[3, 6, 1]} />
+            <Lightformer form="rect" intensity={2} color="#ffffff" position={[0, 1, -8]} rotation={[0, Math.PI, 0]} scale={[9, 4, 1]} />
+          </Environment>
         </Suspense>
       </Canvas>
     </div>

@@ -7,8 +7,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FlaskConical, ActivitySquare, User, LogOut, ChevronDown, Shield, MonitorPlay, Workflow, BookOpen } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useSessionUser } from '@/components/SessionGuard';
-import { clearSessionFlag } from '@/lib/sessionFlag';
+import { clearClientSession } from '@/lib/clientSession';
 import { startUserViewSplash } from './UserViewSplash';
+import LabBottomNav from './LabBottomNav';
+import LanguageSwitcher from '@/i18n/LanguageSwitcher';
 
 export default function LabNavbar() {
   const pathname = usePathname();
@@ -40,10 +42,10 @@ export default function LabNavbar() {
   }, [showProfileMenu]);
 
   const navItems = [
-    { name: 'Full Pipeline', path: '/lab/pipeline', icon: Workflow },
-    { name: 'Digital Lab', path: '/lab', icon: FlaskConical },
-    { name: 'Activity Logs', path: '/lab/logs', icon: ActivitySquare },
-    { name: 'Guide', path: '/lab/guide', icon: BookOpen },
+    { name: 'Full Pipeline', short: 'Pipeline', path: '/lab/pipeline', icon: Workflow },
+    { name: 'Digital Lab', short: 'Lab', path: '/lab', icon: FlaskConical },
+    { name: 'Activity Logs', short: 'Logs', path: '/lab/logs', icon: ActivitySquare },
+    { name: 'Guide', short: 'Guide', path: '/lab/guide', icon: BookOpen },
   ];
 
   // Pil mengikuti URL yang sudah aktif, termasuk navigasi dari bantuan dan Back/Forward.
@@ -81,13 +83,8 @@ export default function LabNavbar() {
     } finally {
       setShowLogoutModal(false);
       setIsLoggingOut(false);
-      // Hasil lab yang diingat per tab (Digital Lab, job pipeline, dosis) jangan terlihat oleh akun berikutnya
-      try {
-        Object.keys(sessionStorage)
-          .filter(k => k === 'digital-lab-report' || k.startsWith('pipeline-'))
-          .forEach(k => sessionStorage.removeItem(k));
-      } catch { /* storage diblokir: tidak ada yang perlu dihapus */ }
-      clearSessionFlag(); // halaman publik bisa dibuka lagi
+      // Hasil lab yang diingat per tab jangan terlihat oleh akun berikutnya; halaman publik bisa dibuka lagi
+      clearClientSession();
       window.location.href = '/login';
     }
   };
@@ -116,7 +113,8 @@ export default function LabNavbar() {
           {/* ============================== */}
           {/* BAGIAN TENGAH: MENU DINAMIS    */}
           {/* ============================== */}
-          <div className="shrink-0 flex items-center justify-center">
+          {/* Ponsel memakai LabBottomNav */}
+          <div className="shrink-0 hidden md:flex items-center justify-center">
             {!isAdminRoute && (
               <nav
                 ref={navRef}
@@ -157,7 +155,8 @@ export default function LabNavbar() {
           {/* ============================== */}
           {/* BAGIAN KANAN: PROFIL           */}
           {/* ============================== */}
-          <div ref={profileRef} className="flex-1 flex justify-end relative">
+          <div ref={profileRef} className="flex-1 flex items-center justify-end gap-1.5 md:gap-2 relative">
+            <LanguageSwitcher />
             <button
               id="tour-user-profile"
               aria-haspopup="menu"
@@ -238,6 +237,8 @@ export default function LabNavbar() {
           </div>
         </div>
       </header>
+
+      {!isAdminRoute && <LabBottomNav id="tour-navbar-menu-mobile" items={navItems} pathname={pathname} />}
 
       {/* =========================================================
           LOGOUT CONFIRMATION MODAL
