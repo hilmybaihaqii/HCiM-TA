@@ -152,7 +152,7 @@ export default function LabForm({ onSubmit, initial }: {
               </div>
 
               {/* Data Source Footnote Label */}
-              <div className="flex items-center gap-1.5 bg-foreground/3 border border-foreground/5 px-3 py-1.5 rounded-control shrink-0">
+              <div className="flex items-center gap-1.5 bg-foreground/3 border border-foreground/5 px-3 py-1.5 rounded-full shrink-0">
                 <span className="text-[10px] text-muted">
                   Source: CiPA in-silico data
                 </span>
@@ -236,7 +236,7 @@ export default function LabForm({ onSubmit, initial }: {
                   type="button"
                   disabled={page === 0}
                   onClick={() => setPage((prev) => Math.max(0, prev - 1))}
-                  className={`w-8 h-8 rounded-control flex items-center justify-center transition-all border outline-none
+                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all border outline-none
                     ${page === 0 
                       ? 'border-foreground/5 text-muted/20 cursor-not-allowed' 
                       : 'border-foreground/10 text-muted hover:text-action hover:bg-action/10 active:scale-90'
@@ -252,7 +252,7 @@ export default function LabForm({ onSubmit, initial }: {
                       key={idx}
                       type="button"
                       onClick={() => setPage(idx)}
-                      className={`w-7 h-7 rounded-control text-[11px] font-mono font-medium transition-all duration-300 flex items-center justify-center outline-none
+                      className={`w-7 h-7 rounded-full text-[11px] font-mono font-medium transition-all duration-300 flex items-center justify-center outline-none
                         ${page === idx
                           ? 'bg-action text-surface-white shadow-sm scale-105'
                           : 'bg-foreground/5 text-muted hover:bg-action/10 hover:text-action'
@@ -269,7 +269,7 @@ export default function LabForm({ onSubmit, initial }: {
                   type="button"
                   disabled={page === totalPages - 1}
                   onClick={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
-                  className={`w-8 h-8 rounded-control flex items-center justify-center transition-all border outline-none
+                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all border outline-none
                     ${page === totalPages - 1 
                       ? 'border-foreground/5 text-muted/20 cursor-not-allowed' 
                       : 'border-foreground/10 text-muted hover:text-action hover:bg-action/10 active:scale-90'
@@ -299,7 +299,7 @@ export default function LabForm({ onSubmit, initial }: {
               id="tour-start-button"
               type="submit"
               disabled={!isReady}
-              className={`group flex items-center justify-center gap-3 w-full sm:w-auto px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.15em] transition-all duration-300 rounded-control shadow-lg 
+              className={`group flex items-center justify-center gap-3 w-full sm:w-auto px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.15em] transition-all duration-300 rounded-full shadow-lg 
                 ${isReady
                   ? 'bg-accent text-surface-white hover:bg-accent-dark hover:shadow-accent/25 hover:scale-[1.02] active:scale-95 cursor-pointer'
                   : 'bg-foreground/10 text-muted/50 shadow-none cursor-not-allowed'

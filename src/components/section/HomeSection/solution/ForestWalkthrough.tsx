@@ -75,7 +75,7 @@ export default function ForestWalkthrough() {
         />
       </div>
 
-      <div ref={track} className="relative mt-6 motion-safe:h-[520svh]">
+      <div ref={track} className="relative mt-6 motion-safe:h-[640svh]">
         <div className="motion-safe:sticky motion-safe:top-0 motion-safe:h-svh motion-safe:overflow-hidden">
           <div className="mx-auto grid h-full w-full max-w-7xl grid-cols-1 content-center gap-6 px-6 motion-safe:pt-24 motion-safe:pb-4 md:px-12 lg:grid-cols-12 lg:gap-12">
             {/* ---------- visual (atas di HP) ---------- */}

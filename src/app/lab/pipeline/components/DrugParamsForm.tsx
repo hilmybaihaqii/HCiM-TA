@@ -23,6 +23,8 @@ const HERG_META: Record<HergKey, { label: string; unit?: string; placeholder: st
 
 const EXAMPLE_DRUG = 'vandetanib';
 const PAD = 'px-6 sm:px-10 md:px-16';
+/** Kotak formulir: tingginya mengikuti isi */
+const SHEET = 'w-full flex flex-col bg-surface-white/70 backdrop-blur-md border border-foreground/10 rounded-sheet shadow-sm';
 const linkBtn = 'text-sm text-muted hover:text-foreground underline-offset-4 hover:underline transition-colors disabled:opacity-40 disabled:no-underline disabled:hover:text-muted';
 
 /** Field mana saja yang divalidasi di tiap checkpoint */
@@ -499,7 +501,7 @@ export default function DrugParamsForm({
   /* ---------- render ---------- */
   if (stepIndex === null) {
     return (
-      <div className="w-full bg-surface-white/70 backdrop-blur-md border border-foreground/10 rounded-sheet shadow-sm">
+      <div className={SHEET}>
         <ModeSelector onSelect={chooseMode} current={startAt === 'review' ? form.mode : undefined} />
       </div>
     );
@@ -509,7 +511,7 @@ export default function DrugParamsForm({
   const head = step ? STEP_HEAD[step] : null;
 
   return (
-    <div className="w-full bg-surface-white/70 backdrop-blur-md border border-foreground/10 rounded-sheet shadow-sm">
+    <div className={SHEET}>
       {/* Mode + checkpoint */}
       <div className={`${PAD} pt-8 md:pt-10 pb-6 border-b border-foreground/8`}>
         <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
@@ -551,13 +553,13 @@ export default function DrugParamsForm({
         )}
       </div>
 
-      <form onSubmit={handleSubmit} noValidate>
+      <form onSubmit={handleSubmit} noValidate className="flex flex-1 flex-col">
         {/* Animasi masuk saja (tanpa AnimatePresence mode="wait", yang bisa macet di opacity 0) */}
         <motion.div
             key={step}
             initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className={`${PAD} py-8 md:py-10 min-h-72`}
+            className={`${PAD} flex-1 py-8 md:py-10`}
           >
             {head && (
               <div className="mb-8">
@@ -576,7 +578,7 @@ export default function DrugParamsForm({
             type="button"
             onClick={back}
             disabled={submitting}
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-control border border-action/30 bg-surface-white text-sm font-medium text-action hover:border-action hover:bg-action/5 active:scale-[0.98] transition-all duration-300 disabled:opacity-40"
+            className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap px-5 py-3 rounded-full border border-action/30 bg-surface-white text-sm font-medium text-action hover:border-action hover:bg-action/5 active:scale-[0.98] transition-all duration-300 disabled:opacity-40"
           >
             <span aria-hidden="true">←</span> {stepIndex === 0 ? 'Back to modes' : 'Back'}
           </button>
@@ -585,7 +587,7 @@ export default function DrugParamsForm({
             <button
               type="submit"
               disabled={!canSubmit}
-              className={`flex items-center justify-center gap-2.5 px-7 py-3 rounded-control text-sm font-medium transition-all duration-300
+              className={`flex items-center justify-center gap-2.5 whitespace-nowrap border border-transparent px-6 sm:px-7 py-3 rounded-full text-sm font-medium transition-all duration-300
                 ${canSubmit ? 'bg-accent text-surface-white shadow-sm shadow-accent/20 hover:bg-accent-dark active:scale-[0.98]' : 'bg-foreground/8 text-muted/60 cursor-not-allowed'}`}
             >
               {submitting ? 'Starting…' : (
@@ -595,7 +597,7 @@ export default function DrugParamsForm({
           ) : (
             <button
               type="submit"
-              className="flex items-center gap-2 px-7 py-3 rounded-control bg-action text-surface-white text-sm font-medium shadow-sm shadow-action/20 hover:bg-action-dark active:scale-[0.98] transition-all duration-300"
+              className="flex items-center gap-2 whitespace-nowrap border border-transparent px-6 sm:px-7 py-3 rounded-full bg-action text-surface-white text-sm font-medium shadow-sm shadow-action/20 hover:bg-action-dark active:scale-[0.98] transition-all duration-300"
             >
               {step === 'overview' ? 'Start' : 'Next'} <span aria-hidden="true">→</span>
             </button>

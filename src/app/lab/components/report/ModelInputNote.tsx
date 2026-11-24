@@ -56,7 +56,7 @@ export default function ModelInputNote({ job }: { job: PipelineJob }) {
               );
             })}
             <div className="bg-background flex items-center justify-center text-foreground/40" aria-hidden="true">=</div>
-            <div className="bg-foreground/[0.04] px-3 py-3">
+            <div className="bg-background px-3 py-3">
               <dt className="text-[11px] text-foreground/70">Mean (model input)</dt>
               <dd className="mt-1 font-mono text-sm font-semibold tabular-nums text-foreground">{show(mean[idx])}</dd>
             </div>

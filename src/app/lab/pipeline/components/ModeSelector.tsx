@@ -87,7 +87,7 @@ export function EnterList({ info }: { info: ModeInfo }) {
 }
 
 /* =========================================================
-   PILIH MODE — tiga kartu sejajar, isi minimal
+   PILIH MODE — desktop: tiga kartu sejajar; tablet & HP: kartu bertumpuk
    ========================================================= */
 export default function ModeSelector({ onSelect, current }: { onSelect: (m: Mode) => void; current?: Mode }) {
   return (
@@ -95,7 +95,7 @@ export default function ModeSelector({ onSelect, current }: { onSelect: (m: Mode
       <h2 className="text-2xl md:text-3xl font-medium tracking-tight text-foreground">What data do you have?</h2>
       <p className="mt-2 text-sm text-muted">All three run the same simulation and the same AI model.</p>
 
-      <div className="mt-8 md:mt-10 grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5">
+      <div className="mt-8 md:mt-10 grid grid-cols-1 gap-3 lg:grid-cols-3 lg:gap-5">
         {MODES.map(m => {
           const isCurrent = current === m.id;
           return (
@@ -103,16 +103,19 @@ export default function ModeSelector({ onSelect, current }: { onSelect: (m: Mode
               key={m.id}
               type="button"
               onClick={() => onSelect(m.id)}
-              className={`group w-full text-left flex flex-col rounded-card border p-5 md:p-7 transition-all duration-300
+              className={`group w-full text-left flex flex-col rounded-card border p-5 transition-all duration-300
+                sm:flex-row sm:items-center sm:gap-8 sm:p-6 lg:flex-col lg:items-stretch lg:gap-0 lg:p-7
                 hover:border-action/40 hover:bg-surface-white
                 ${isCurrent ? 'border-action/40 bg-surface-white' : 'border-foreground/8'}`}
             >
-              <span className="font-mono text-[11px] text-muted">0{m.id} · {m.title}</span>
-              <span className="mt-4 md:mt-6 text-lg md:text-xl font-medium tracking-tight text-foreground leading-snug">{m.question}</span>
-              <span className="mt-2 text-sm text-muted leading-relaxed">{m.short}</span>
-              <span className="mt-6 md:mt-auto md:pt-8 flex items-center justify-between text-xs">
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="font-mono text-[11px] text-muted">0{m.id} · {m.title}</span>
+                <span className="mt-3 text-lg font-medium leading-snug tracking-tight text-foreground lg:mt-6 lg:text-xl">{m.question}</span>
+                <span className="mt-2 text-sm leading-relaxed text-muted">{m.short}</span>
+              </span>
+              <span className="mt-6 flex shrink-0 items-center justify-between text-xs sm:mt-0 sm:flex-col sm:items-end sm:gap-3 lg:flex-row lg:items-center lg:gap-0 lg:pt-8">
                 <span className="text-muted">{m.effort}</span>
-                <span className="text-foreground group-hover:text-action transition-colors">
+                <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full text-foreground transition-colors group-hover:text-action">
                   Choose <span aria-hidden="true" className="inline-block transition-transform duration-300 group-hover:translate-x-0.5">→</span>
                 </span>
               </span>

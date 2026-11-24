@@ -1,4 +1,4 @@
-import { getLang, translate } from './store';
+import { getLang, translate, type Lang } from './store';
 
 /*
  * Menerjemahkan teks yang sudah dirender, termasuk teks dari komponen server dan portal.
@@ -100,7 +100,7 @@ function restoreTree(root: Element) {
 }
 
 function onMutations(records: MutationRecord[]) {
-  if (getLang() !== 'id') return;
+  if (getLang() === 'en') return;
   for (const r of records) {
     if (r.type === 'characterData') applyText(r.target as Text);
     else if (r.type === 'attributes' && r.attributeName) applyAttr(r.target as Element, r.attributeName);
@@ -109,13 +109,12 @@ function onMutations(records: MutationRecord[]) {
 }
 
 /** Dipanggil setiap bahasa berubah */
-export function syncDom(lang: 'en' | 'id') {
+export function syncDom(lang: Lang) {
   observer?.disconnect();
   observer = null;
-  if (lang === 'en') {
-    restoreTree(document.body);
-    return;
-  }
+  // Selalu mulai dari teks Inggris aslinya, supaya pindah langsung antar bahasa asing juga benar
+  restoreTree(document.body);
+  if (lang === 'en') return;
   // Judul tab diatur DocumentTitle: hanya nama menunya yang mengikuti bahasa
   applyTree(document.body);
   observer = new MutationObserver(onMutations);

@@ -16,9 +16,9 @@ const focus = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visi
 const motionBtn = 'transition-[background-color,border-color,color,box-shadow,translate,scale] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-px active:translate-y-0 active:scale-[0.97] motion-reduce:translate-none motion-reduce:scale-100';
 
 /** Tombol utama: hitam */
-export const primaryBtn = `group inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-control bg-action text-surface-white text-sm font-medium shadow-sm shadow-action/20 hover:bg-action-dark hover:shadow-md hover:shadow-action/25 ${motionBtn} shrink-0 disabled:bg-foreground/10 disabled:text-foreground/40 disabled:shadow-none disabled:pointer-events-none ${focus}`;
+export const primaryBtn = `group inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-action text-surface-white text-sm font-medium shadow-sm shadow-action/20 hover:bg-action-dark hover:shadow-md hover:shadow-action/25 ${motionBtn} shrink-0 disabled:bg-foreground/10 disabled:text-foreground/40 disabled:shadow-none disabled:pointer-events-none ${focus}`;
 /** Tombol kedua: garis & teks warna aksi */
-export const secondaryBtn = `group inline-flex items-center justify-center gap-2 px-4 py-2 rounded-control border border-action/30 bg-surface-white text-sm font-medium text-action hover:border-action hover:bg-action/5 ${motionBtn} ${focus}`;
+export const secondaryBtn = `group inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-action/30 bg-surface-white text-sm font-medium text-action hover:border-action hover:bg-action/5 ${motionBtn} ${focus}`;
 export const textLink = 'text-sm text-foreground/70 hover:text-action underline-offset-4 hover:underline transition-colors';
 
 /** Judul bagian: judul di kiri, keterangan di kanan, satu baris */

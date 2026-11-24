@@ -48,7 +48,40 @@
   transform: scale(1.14);
 }
 
+/* Cipratan gooey saat bagian sel dipilih. Asal transform = titik tekan (0,0 grup). */
+.goo {
+  animation: goo-fade 760ms ease-out forwards;
+}
+
+.gooCore {
+  animation: goo-core 760ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.gooDrop {
+  transform: rotate(var(--a)) translateX(0) scale(1);
+  animation: goo-drop 760ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes goo-fade {
+  0% { opacity: 0.7; }
+  60% { opacity: 0.5; }
+  100% { opacity: 0; }
+}
+
+@keyframes goo-core {
+  0% { transform: scale(0.2); }
+  35% { transform: scale(1.35); }
+  100% { transform: scale(0); }
+}
+
+@keyframes goo-drop {
+  0% { transform: rotate(var(--a)) translateX(0) scale(1); }
+  45% { transform: rotate(var(--a)) translateX(var(--d)) scale(1); }
+  100% { transform: rotate(var(--a)) translateX(calc(var(--d) * 1.25)) scale(0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .goo { display: none; }
   .ion { animation: none; opacity: 0; }
   .halo { animation: none; }
   .lift, .plus { transition: none; }

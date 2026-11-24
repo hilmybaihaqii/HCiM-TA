@@ -35,7 +35,7 @@ export default function PhotoZoom() {
           gsap
             .timeline({
               defaults: { ease: 'none' },
-              scrollTrigger: { trigger: scope.current, start: 'top top', end: 'bottom bottom', scrub: 1 },
+              scrollTrigger: { trigger: scope.current, start: 'top top', end: 'bottom bottom', scrub: 1.6 },
             })
             .fromTo('.pz-frame', { clipPath: start }, { clipPath: 'inset(0% 0% 0% 0% round 0px)', duration: 1 })
             .fromTo('.pz-image', { scale: 1.3 }, { scale: 1, duration: 1 }, 0)

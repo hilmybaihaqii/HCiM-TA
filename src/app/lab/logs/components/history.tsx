@@ -172,7 +172,7 @@ export function HistoryControls({ query, onQuery, filter, placeholder, summary }
             onChange={e => onQuery(e.target.value)}
             placeholder={placeholder}
             enterKeyHint="search"
-            className="w-full h-11 pl-10 pr-10 rounded-control border border-foreground/12 bg-surface-white/80 text-sm text-foreground placeholder:text-foreground/45
+            className="w-full h-11 pl-10 pr-10 rounded-full border border-foreground/12 bg-surface-white/80 text-sm text-foreground placeholder:text-foreground/45
               outline-none transition-[border-color,box-shadow] duration-200 focus:border-action/50 focus:ring-4 focus:ring-action/10
               [&::-webkit-search-cancel-button]:appearance-none"
           />
@@ -263,7 +263,7 @@ export function FilterPanel({ groups, onToggle, onClear, onOpen }: {
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={count ? `Filter, ${count} active` : 'Filter'}
-        className={`h-11 inline-flex items-center gap-2 rounded-control border px-3.5 sm:px-4 text-sm font-medium
+        className={`h-11 inline-flex items-center gap-2 rounded-full border px-3.5 sm:px-4 text-sm font-medium
           transition-[background-color,border-color,color,scale] duration-200 ease-out active:scale-[0.97]
           focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action
           ${count
@@ -343,7 +343,7 @@ export function FilterPanel({ groups, onToggle, onClear, onOpen }: {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="h-9 rounded-control bg-action px-4 text-sm font-medium text-surface-white transition-[background-color,scale] duration-200 hover:bg-action-dark active:scale-[0.97]"
+                className="h-9 rounded-full bg-action px-4 text-sm font-medium text-surface-white transition-[background-color,scale] duration-200 hover:bg-action-dark active:scale-[0.97]"
               >
                 Done
               </button>

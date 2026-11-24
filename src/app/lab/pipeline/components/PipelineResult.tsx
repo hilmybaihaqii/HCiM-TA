@@ -6,7 +6,7 @@ import { ChevronDown } from 'lucide-react';
 import {
   DoseKey, DrugDb, FEATURES, PipelineJob, describeFailure, formatChange, formatDrugName, joinList, ratioChange,
 } from '@/lib/pipeline';
-import { getTierColor } from '@/lib/tierColor';
+import { getTierColor, getTierCssVar, normalizeTier, type RiskTier } from '@/lib/tierColor';
 import { parsePredictResponse, type PredictionOutput, type ShapData } from '@/lib/predict';
 import RiskVerdict from '../../components/report/RiskVerdict';
 import BiomarkerList from '../../components/report/BiomarkerList';
@@ -182,16 +182,15 @@ export default function PipelineResult({
     // Satu kolom konten yang konsisten; di layar lebar baris tidak melebar berlebihan
     <div className={`w-full max-w-5xl mx-auto flex flex-col ${embedded ? 'gap-12 md:gap-16' : 'gap-14 md:gap-20 pb-20'}`}>
       {/* ---------- Baris atas: obat di kiri, simulasi baru di kanan ---------- */}
-      <div className="flex items-center justify-between gap-4 px-1">
-        {/* Ponsel: "CiPA" saja & tombol ringkas, supaya nama obat tidak terpotong */}
-        <p className="min-w-0 text-sm text-foreground/70 leading-snug">
-          <span className="font-medium text-foreground">{drug ? formatDrugName(drug) : 'Custom compound'}</span>
-          {cipaRisk && (
-            <> · CiPA<span className="hidden sm:inline"> reference</span>{' '}
-              <span className={`capitalize ${getTierColor(cipaRisk).text}`}>{cipaRisk}</span>
-            </>
-          )}
-        </p>
+      <div className="flex items-end justify-between gap-4 px-1">
+        {/* Nama obat dibuat menonjol: ini yang pertama dicari pengguna di setiap hasil */}
+        <div className="min-w-0">
+          <p className="text-xs text-foreground/60">{drug ? 'Drug' : 'Compound'}</p>
+          <h2 className="mt-0.5 min-w-0 truncate text-2xl font-medium tracking-tight text-foreground sm:text-[1.75rem]">
+            {drug ? formatDrugName(drug) : 'Custom compound'}
+          </h2>
+          {cipaRisk && <CipaReference tier={normalizeTier(cipaRisk)} />}
+        </div>
         {header ?? (onRunAnother && (
           <button type="button" onClick={onRunAnother} className={`${primaryBtn} max-sm:px-3.5 max-sm:py-2 max-sm:text-xs`}>
             New simulation
@@ -341,4 +340,29 @@ export function PipelineFailure({ headline, details, onRetry, retryLabel = 'Try 
 export function failureCopy(error?: string | null) {
   const { headline, known } = describeFailure(error);
   return { headline, details: known ? null : error };
+}
+
+const TIER_STEPS: RiskTier[] = ['low', 'intermediate', 'high'];
+
+/**
+ * Label risiko resmi CiPA untuk obat ini, dibaca seperti skala tiga tingkat
+ * (bukan lencana): ruas terisi sampai tingkatnya, lalu nama tingkat.
+ */
+function CipaReference({ tier }: { tier: RiskTier }) {
+  const level = TIER_STEPS.indexOf(tier);
+  return (
+    <p className="mt-2 flex items-center gap-2.5 text-xs text-foreground/60">
+      <span>CiPA reference</span>
+      <span className="flex items-center gap-[3px]" aria-hidden="true">
+        {TIER_STEPS.map((step, i) => (
+          <span
+            key={step}
+            className="h-[5px] w-3.5 rounded-full"
+            style={{ background: i <= level ? getTierCssVar(tier) : 'color-mix(in srgb, var(--foreground) 12%, transparent)' }}
+          />
+        ))}
+      </span>
+      <span className={`font-medium capitalize ${getTierColor(tier).text}`}>{tier}</span>
+    </p>
+  );
 }

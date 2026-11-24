@@ -35,3 +35,9 @@ html[data-i18n-pending] body {
     animation: none;
   }
 }
+
+/* Bahasa Korea: Figtree tidak punya Hangul, jadi pakai font sistem Korea; kata tidak dipotong di tengah */
+html:lang(ko) body {
+  font-family: var(--font-figtree), "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", ui-sans-serif, system-ui, sans-serif;
+  word-break: keep-all;
+}

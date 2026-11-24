@@ -28,7 +28,7 @@ export function Reveal({ children, delay = 0, className = '' }: { children: Reac
     >
       <motion.div
         variants={{ hidden: { y: '110%' }, shown: { y: '0%' } }}
-        transition={{ duration: 1.1, ease: EASE, delay }}
+        transition={{ duration: 1.4, ease: EASE, delay }}
       >
         {children}
       </motion.div>
@@ -62,10 +62,10 @@ export function FadeUp({ children, delay = 0, className = '' }: { children: Reac
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, y: 32 }}
+      initial={{ opacity: 0, y: 28 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.25 }}
-      transition={{ duration: 1, ease: EASE, delay }}
+      transition={{ duration: 1.3, ease: EASE, delay }}
     >
       {children}
     </motion.div>

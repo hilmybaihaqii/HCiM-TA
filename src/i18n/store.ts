@@ -2,20 +2,28 @@ import { flushSync } from 'react-dom';
 import { PATTERNS, translateDate } from './patterns';
 
 /*
- * Bahasa situs. Teks sumber tetap bahasa Inggris di komponen; kamus `id.json` memetakannya ke
- * bahasa Indonesia dan hanya diunduh oleh pengguna yang memilih bahasa Indonesia.
+ * Bahasa situs. Teks sumber tetap bahasa Inggris di komponen; kamus `id.json` dan `ko.json`
+ * memetakannya ke bahasa Indonesia dan Korea, dan masing-masing hanya diunduh saat dipilih.
  * Lapisan DOM (domTranslator) hanya mengganti isi teks, jadi struktur React dan animasi tidak tersentuh.
  */
 
-export type Lang = 'en' | 'id';
+export type Lang = 'en' | 'id' | 'ko';
+export type ForeignLang = Exclude<Lang, 'en'>;
+export const LANGS: Lang[] = ['en', 'id', 'ko'];
 export const LANG_KEY = 'cardivex-lang';
 
+const LOADERS: Record<ForeignLang, () => Promise<{ default: Record<string, string> }>> = {
+  id: () => import('./id.json'),
+  ko: () => import('./ko.json'),
+};
+
 let lang: Lang = 'en';
-let dict: Record<string, string> | null = null;
-let loading: Promise<void> | null = null;
+const dicts: Partial<Record<ForeignLang, Record<string, string>>> = {};
+const loading: Partial<Record<ForeignLang, Promise<void>>> = {};
 const listeners = new Set<() => void>();
 const applyHooks = new Set<(next: Lang) => void>();
 
+export const isLang = (v: unknown): v is Lang => LANGS.includes(v as Lang);
 export const getLang = () => lang;
 export const getServerLang = (): Lang => 'en';
 export const subscribeLang = (fn: () => void) => {
@@ -27,25 +35,26 @@ export const onApplyLang = (fn: (next: Lang) => void) => {
   return () => { applyHooks.delete(fn); };
 };
 
-function loadDictionary() {
-  loading ??= import('./id.json')
-    .then(m => { dict = m.default as Record<string, string>; })
-    .catch(err => { loading = null; throw err; });
-  return loading;
+function loadDictionary(target: Lang) {
+  if (target === 'en') return Promise.resolve();
+  loading[target] ??= LOADERS[target]()
+    .then(m => { dicts[target] = m.default; })
+    .catch(err => { delete loading[target]; throw err; });
+  return loading[target];
 }
-
-const exact = (s: string) => dict?.[s];
 
 /** Terjemahan satu teks; kembali ke teks asli kalau belum ada di kamus */
 export function translate(text: string): string {
-  if (lang !== 'id' || !dict) return text;
-  const hit = exact(text);
+  if (lang === 'en') return text;
+  const dict = dicts[lang];
+  if (!dict) return text;
+  const hit = dict[text];
   if (hit !== undefined) return hit;
-  for (const [re, build] of PATTERNS) {
+  for (const [re, build] of PATTERNS[lang]) {
     const m = text.match(re);
     if (m) return build(m, translate);
   }
-  return translateDate(text) ?? text;
+  return translateDate(text, lang) ?? text;
 }
 
 function commit(next: Lang) {
@@ -60,9 +69,9 @@ export async function restoreLanguage() {
   let saved: string | null = null;
   try { saved = localStorage.getItem(LANG_KEY); } catch { /* storage diblokir: pakai bahasa Inggris */ }
   try {
-    if (saved === 'id') {
-      await loadDictionary();
-      commit('id');
+    if (isLang(saved) && saved !== 'en') {
+      await loadDictionary(saved);
+      commit(saved);
     }
   } finally {
     document.documentElement.removeAttribute('data-i18n-pending');
@@ -77,7 +86,7 @@ export async function setLanguage(next: Lang) {
   if (next === lang || switching) return;
   switching = true;
   try {
-    if (next === 'id') await loadDictionary();
+    await loadDictionary(next);
     try { localStorage.setItem(LANG_KEY, next); } catch { /* storage diblokir: berlaku untuk halaman ini saja */ }
 
     const doc = document as Document & { startViewTransition?: (cb: () => void) => ViewTransitionLike };

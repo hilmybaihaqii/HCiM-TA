@@ -117,8 +117,10 @@ export default function TraceChart({
   const xTicks = niceTicks(x0, x1, width < 480 ? 4 : 6);
 
   /* ---------- pointer ---------- */
-  const localX = (e: React.PointerEvent) => {
-    const rect = (e.currentTarget as SVGElement).getBoundingClientRect();
+  // Ukur dari tepi <svg>, bukan dari area hit (yang mulai di P.l), supaya garis tepat di bawah kursor
+  const localX = (e: React.PointerEvent<SVGRectElement>) => {
+    const svg = e.currentTarget.ownerSVGElement ?? e.currentTarget;
+    const rect = svg.getBoundingClientRect();
     return Math.min(Math.max(e.clientX - rect.left, P.l), width - P.r);
   };
 

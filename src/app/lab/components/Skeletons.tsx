@@ -68,7 +68,7 @@ export function LabShellSkeleton() {
         </div>
       </div>
       <div className="md:hidden fixed inset-x-0 bottom-0 z-10 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div className="mx-auto h-[3.75rem] max-w-md rounded-full border border-foreground/5 bg-surface-white/60" />
+        <div className="mx-auto h-[3.25rem] max-w-[22rem] rounded-full border border-foreground/5 bg-surface-white/60" />
       </div>
       <PageSkeleton />
     </div>
