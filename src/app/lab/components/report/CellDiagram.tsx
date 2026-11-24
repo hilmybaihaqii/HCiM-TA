@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useId, useState } from 'react';
+import React, { useId, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { FEATURES, formatChange, ratioChange } from '@/lib/pipeline';
 import { isStrongChange } from '@/lib/biomarkerHighlight';
 import { SHORT_DESC } from './biomarkerText';
 import { SectionHead } from './ui';
 import styles from './CellDiagram.module.css';
+import { edgeS, membranePath, useLivingCell } from './useLivingCell';
 
 /*
  * Ilustrasi sederhana satu sel otot jantung. Sel di kiri, penjelasan bagian yang dipilih di kanan.
@@ -92,6 +93,12 @@ const CHANNELS: { id: PartId; label: string; x: number; edge: number; light: str
   { id: 'k', label: 'K⁺', x: 435, edge: 310, light: '#DE8B92', color: K, dark: '#7F4046', ion: K },
 ];
 
+/** Tetesan cipratan gooey: arah, jarak, ukuran (sedikit acak supaya terasa organik) */
+const GOO_DROPS = [
+  { angle: 12, dist: 36, r: 7.5 }, { angle: 75, dist: 29, r: 6 }, { angle: 138, dist: 38, r: 8 },
+  { angle: 196, dist: 31, r: 6 }, { angle: 252, dist: 37, r: 7.5 }, { angle: 314, dist: 28, r: 5.5 },
+];
+
 const HOTSPOTS: { id: PartId; x: number; y: number }[] = [
   { id: 'membrane', x: 320, y: 90 },
   { id: 'ttubule', x: 370, y: 124 },
@@ -118,6 +125,9 @@ const PORES = Array.from({ length: 18 }, (_, i) => {
   const a = (i / 18) * Math.PI * 2;
   return { x: (320 + Math.cos(a) * 80).toFixed(1), y: (200 + Math.sin(a) * 54).toFixed(1) };
 });
+
+/** Bentuk membran saat render pertama (server dan tanpa animasi) */
+const BASE_PATH = membranePath(0);
 
 function Mitochondrion({ cx, cy, w, h, angle, fill, active }: { cx: number; cy: number; w: number; h: number; angle: number; fill: string; active: boolean }) {
   const x = cx - w / 2;
@@ -151,10 +161,29 @@ export default function CellDiagram({ ratios, control }: {
   control?: Record<string, number | null>;
 }) {
   const [selected, setSelected] = useState<PartId>('herg');
+  // Cipratan "gooey" di titik yang ditekan; key baru memutar ulang animasinya
+  const [splash, setSplash] = useState<{ x: number; y: number; color: string; key: number } | null>(null);
   const part = PARTS[selected];
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const ref = (name: string) => `url(#${uid}-${name})`;
   const dim = (id: PartId) => (selected === id ? 1 : 0.92);
+
+  // Gerak sel hidup: elemen bertanda data-* diperbarui langsung oleh useLivingCell
+  const svgRef = useRef<SVGSVGElement>(null);
+  useLivingCell(svgRef);
+
+  /** Pilih bagian sel dan munculkan cipratan di titik tekan (keyboard: di penanda bagian itu) */
+  const choose = (id: PartId, e?: React.MouseEvent<SVGGElement>) => {
+    setSelected(id);
+    const channel = CHANNELS.find(c => c.id === id);
+    let point = channel ? { x: channel.x, y: channel.edge } : HOTSPOTS.find(h => h.id === id) ?? { x: 320, y: 200 };
+    const ctm = e?.currentTarget.ownerSVGElement?.getScreenCTM();
+    if (e && ctm) {
+      const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse());
+      point = { x: p.x, y: p.y };
+    }
+    setSplash(prev => ({ x: point.x, y: point.y, color: channel?.color ?? '#E0787E', key: (prev?.key ?? 0) + 1 }));
+  };
 
   const hit = (id: PartId) => ({
     role: 'button',
@@ -162,11 +191,11 @@ export default function CellDiagram({ ratios, control }: {
     'aria-label': PARTS[id].title,
     'aria-pressed': selected === id,
     className: styles.part,
-    onClick: () => setSelected(id),
+    onClick: (e: React.MouseEvent<SVGGElement>) => choose(id, e.detail ? e : undefined),
     onKeyDown: (e: React.KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        setSelected(id);
+        choose(id);
       }
     },
   });
@@ -177,9 +206,9 @@ export default function CellDiagram({ ratios, control }: {
       <p className="mt-2 text-sm text-foreground/70">Select a part of the cell to see what it does.</p>
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] gap-6 md:gap-12 items-center">
-        <svg viewBox="30 20 580 365" className="block w-full h-auto" role="group" aria-label="Simplified heart muscle cell">
+        <svg ref={svgRef} viewBox="30 20 580 365" className="block w-full h-auto" role="group" aria-label="Simplified heart muscle cell">
           <defs>
-            <clipPath id={`${uid}-body`}><rect x="70" y="90" width="500" height="220" rx="110" /></clipPath>
+            <clipPath id={`${uid}-body`}><path data-membrane d={BASE_PATH} /></clipPath>
             <linearGradient id={`${uid}-cell`} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0" stopColor="#FCE7E4" />
               <stop offset="0.55" stopColor="#F8D5D2" />
@@ -202,6 +231,11 @@ export default function CellDiagram({ ratios, control }: {
               <stop offset="0" stopColor="#FFFFFF" />
               <stop offset="1" stopColor="#F4E4E0" />
             </linearGradient>
+            {/* Efek gooey: blur lalu pertajam tepi alfa, sehingga tetesan menyatu seperti cairan */}
+            <filter id={`${uid}-goo`} x="-150%" y="-150%" width="400%" height="400%">
+              <feGaussianBlur stdDeviation="4.5" />
+              <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -9" />
+            </filter>
             {CHANNELS.map(c => (
               <linearGradient key={c.id} id={`${uid}-ch-${c.id}`} x1="0" y1="0" x2="1" y2="0">
                 <stop offset="0" stopColor={c.dark} />
@@ -212,11 +246,11 @@ export default function CellDiagram({ ratios, control }: {
             ))}
           </defs>
 
-          <ellipse cx="320" cy="329" rx="218" ry="9" fill="#2B1F1D" fillOpacity="0.05" />
+          <g data-body>
 
           {/* Badan sel + miofibril dengan pola sarkomer */}
           <g {...hit('sarcomere')}>
-            <rect x="70" y="90" width="500" height="220" rx="110" fill={ref('cell')} />
+            <path data-membrane d={BASE_PATH} fill={ref('cell')} />
             <g clipPath={ref('body')} opacity={selected === 'sarcomere' ? 1 : 0.78} className={styles.lift}>
               {SARCOMERE_X.map(x => (
                 <g key={x}>
@@ -231,46 +265,54 @@ export default function CellDiagram({ ratios, control }: {
 
           {/* T-tubule: lipatan membran ke dalam sel */}
           <g {...hit('ttubule')}>
-            {TUBULES.map(t => (
-              <g key={t.x} strokeLinecap="round" fill="none">
-                <path d={`M${t.x} ${t.top[0]}V${t.top[1]}M${t.x} ${t.bottom[0]}V${t.bottom[1]}`} stroke="transparent" strokeWidth="18" />
-                <path d={`M${t.x} ${t.top[0]}V${t.top[1]}M${t.x} ${t.bottom[0]}V${t.bottom[1]}`} stroke={selected === 'ttubule' ? 'var(--action)' : '#DE8F90'} strokeWidth="6" className={styles.lift} />
-                <path d={`M${t.x} ${t.top[0]}V${t.top[1]}M${t.x} ${t.bottom[0]}V${t.bottom[1]}`} stroke="#FFF3F0" strokeWidth="2.6" />
+            {TUBULES.flatMap(t => [
+              { key: `${t.x}-top`, s: edgeS(t.x, true), d: `M${t.x} ${t.top[0]}V${t.top[1]}` },
+              { key: `${t.x}-bottom`, s: edgeS(t.x, false), d: `M${t.x} ${t.bottom[0]}V${t.bottom[1]}` },
+            ]).map(tube => (
+              // Setiap lipatan ikut bergerak bersama titik membran tempatnya berawal
+              <g key={tube.key} data-edge-s={tube.s} strokeLinecap="round" fill="none">
+                <path d={tube.d} stroke="transparent" strokeWidth="18" />
+                <path d={tube.d} stroke={selected === 'ttubule' ? 'var(--action)' : '#DE8F90'} strokeWidth="6" className={styles.lift} />
+                <path d={tube.d} stroke="#FFF3F0" strokeWidth="2.6" />
               </g>
             ))}
           </g>
 
           <g {...hit('mito')}>
-            <Mitochondrion cx={166} cy={162} w={76} h={26} angle={-18} fill={ref('mito')} active={selected === 'mito'} />
-            <Mitochondrion cx={472} cy={158} w={76} h={26} angle={26} fill={ref('mito')} active={selected === 'mito'} />
-            <Mitochondrion cx={438} cy={270} w={54} h={21} angle={-14} fill={ref('mito')} active={selected === 'mito'} />
-            <Mitochondrion cx={166} cy={254} w={58} h={22} angle={14} fill={ref('mito')} active={selected === 'mito'} />
+            <g data-floater><Mitochondrion cx={166} cy={162} w={76} h={26} angle={-18} fill={ref('mito')} active={selected === 'mito'} /></g>
+            <g data-floater><Mitochondrion cx={472} cy={158} w={76} h={26} angle={26} fill={ref('mito')} active={selected === 'mito'} /></g>
+            <g data-floater><Mitochondrion cx={438} cy={270} w={54} h={21} angle={-14} fill={ref('mito')} active={selected === 'mito'} /></g>
+            <g data-floater><Mitochondrion cx={166} cy={254} w={58} h={22} angle={14} fill={ref('mito')} active={selected === 'mito'} /></g>
           </g>
 
           {/* SR: kantong penyimpan kalsium dengan cabang tubulus */}
           <g {...hit('sr')}>
+            <g data-floater>
             <path d="M516 238c14-5 24-2 34 6M438 262c-12 3-22 2-32-5" stroke="#FFFFFF" strokeWidth="3.4" strokeLinecap="round" fill="none" />
             <g transform="rotate(-14 478 251)">
               <rect x="438" y="239" width="80" height="24" rx="12" fill={ref('sr')} stroke={selected === 'sr' ? 'var(--action)' : '#E5A9A8'} strokeWidth="1.5" />
               {[450, 460, 497, 507].map((x, i) => <circle key={x} cx={x} cy={i % 2 ? 255 : 247} r="2.1" fill={CA} fillOpacity="0.78" />)}
             </g>
+            </g>
           </g>
 
           {/* Inti: selubung, pori, kromatin, nukleolus */}
           <g {...hit('nucleus')}>
+            <g data-floater>
             <ellipse cx="320" cy="200" rx="80" ry="54" fill={ref('nucleus')} stroke={selected === 'nucleus' ? 'var(--action)' : '#D98484'} strokeWidth="1.6" />
             <ellipse cx="320" cy="200" rx="75" ry="49.5" fill="none" stroke="#FBE0DC" strokeOpacity="0.8" />
             {PORES.map(p => <circle key={`${p.x}-${p.y}`} cx={p.x} cy={p.y} r="1.5" fill="#FBE7E3" />)}
             {CHROMATIN.map(c => <circle key={`${c.x}-${c.y}`} cx={c.x} cy={c.y} r={c.r} fill="#C76F75" fillOpacity="0.42" />)}
             <circle cx="352" cy="198" r="15" fill={ref('nucleolus')} />
             <circle cx="347" cy="192" r="3.6" fill="#FFFFFF" fillOpacity="0.32" />
+            </g>
           </g>
 
           {/* Membran: dua lapis, kepala fosfolipid sebagai titik */}
           <g {...hit('membrane')}>
-            <rect x="70" y="90" width="500" height="220" rx="110" fill="none" stroke="transparent" strokeWidth="16" pointerEvents="stroke" />
-            <rect x="70" y="90" width="500" height="220" rx="110" fill="none" stroke={selected === 'membrane' ? 'var(--action)' : '#E49A9A'} strokeWidth="8" pointerEvents="none" className={styles.lift} />
-            <rect x="70" y="90" width="500" height="220" rx="110" fill="none" stroke="#FFF6F3" strokeWidth="2" strokeLinecap="round" strokeDasharray="0.1 5.4" pointerEvents="none" />
+            <path data-membrane d={BASE_PATH} fill="none" stroke="transparent" strokeWidth="16" pointerEvents="stroke" />
+            <path data-membrane d={BASE_PATH} fill="none" stroke={selected === 'membrane' ? 'var(--action)' : '#E49A9A'} strokeWidth="8" pointerEvents="none" className={styles.lift} />
+            <path data-membrane d={BASE_PATH} fill="none" stroke="#FFF6F3" strokeWidth="2" strokeLinecap="round" strokeDasharray="0.1 5.4" pointerEvents="none" />
           </g>
 
           {HOTSPOTS.map(h => <Plus key={h.id} x={h.x} y={h.y} active={selected === h.id} />)}
@@ -282,7 +324,7 @@ export default function CellDiagram({ ratios, control }: {
             const fill = ref(`ch-${c.id}`);
             const helix = [-16, -4, 8].map(o => `M${c.x - 16} ${c.edge + o + 5}l12 -5M${c.x + 4} ${c.edge + o + 5}l12 -5`).join('');
             return (
-              <g key={c.id} {...hit(c.id)} opacity={dim(c.id)}>
+              <g key={c.id} data-edge-s={edgeS(c.x, top)} {...hit(c.id)} opacity={dim(c.id)}>
                 <rect className={styles.focus} x={c.x - 44} y={c.edge - (top ? 66 : 38)} width="88" height="104" rx="16" fill="transparent" />
                 {active && <circle className={styles.halo} cx={c.x} cy={c.edge} r="40" fill={c.color} fillOpacity="0.13" />}
                 <ellipse cx={c.x} cy={c.edge} rx="27" ry="7" fill={c.dark} fillOpacity="0.2" />
@@ -312,6 +354,24 @@ export default function CellDiagram({ ratios, control }: {
               </g>
             );
           })}
+          </g>
+
+          {splash && (
+            <g
+              key={splash.key}
+              transform={`translate(${splash.x.toFixed(1)} ${splash.y.toFixed(1)})`}
+              filter={`url(#${uid}-goo)`}
+              fill={splash.color}
+              pointerEvents="none"
+              className={styles.goo}
+              aria-hidden="true"
+            >
+              <circle r="14" className={styles.gooCore} />
+              {GOO_DROPS.map((d, i) => (
+                <circle key={i} r={d.r} className={styles.gooDrop} style={{ '--a': `${d.angle}deg`, '--d': `${d.dist}px` } as React.CSSProperties} />
+              ))}
+            </g>
+          )}
         </svg>
 
         <div aria-live="polite" className="min-w-0 md:min-h-[21rem] md:border-l md:border-foreground/10 md:pl-10 flex flex-col justify-center">

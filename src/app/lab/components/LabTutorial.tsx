@@ -37,7 +37,7 @@ const CustomTooltip = ({
             </span>
           </div>
           
-          <button {...closeProps} className="p-1.5 text-neutral-300 hover:text-foreground hover:bg-neutral-100 rounded-control transition-colors outline-none group" title="Skip Tour">
+          <button {...closeProps} className="p-1.5 text-neutral-300 hover:text-foreground hover:bg-neutral-100 rounded-full transition-colors outline-none group" title="Skip Tour">
             <X className="w-4 h-4 transition-transform group-hover:rotate-90" />
           </button>
         </div>
@@ -54,7 +54,7 @@ const CustomTooltip = ({
             </button>
           ) : <div />}
 
-          <button {...primaryProps} className="group flex items-center gap-2 px-5 py-2.5 bg-action hover:bg-action-dark text-white text-[11px] font-bold uppercase tracking-widest rounded-control transition-all duration-300 shadow-sm hover:shadow-[0_8px_20px_rgba(42,42,42,0.2)] hover:-translate-y-0.5 outline-none">
+          <button {...primaryProps} className="group flex items-center gap-2 px-5 py-2.5 bg-action hover:bg-action-dark text-white text-[11px] font-bold uppercase tracking-widest rounded-full transition-all duration-300 shadow-sm hover:shadow-[0_8px_20px_rgba(42,42,42,0.2)] hover:-translate-y-0.5 outline-none">
             {isLastStep ? 'Get Started' : 'Next'}
             {!isLastStep && <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />}
           </button>

@@ -20,7 +20,7 @@ const EFFECTS = [
   { icon: RotateCcw, title: 'An admin can restore it', text: 'Ask an administrator if you want the account back later.' },
 ];
 
-const dangerBtn = 'inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-control bg-accent text-surface-white text-sm font-medium shadow-sm shadow-accent/20 hover:bg-accent-dark active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent';
+const dangerBtn = 'inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-accent text-surface-white text-sm font-medium shadow-sm shadow-accent/20 hover:bg-accent-dark active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent';
 
 /** Menonaktifkan akun sendiri (khusus user): pahami akibatnya -> kode ke email -> konfirmasi. */
 export default function DeactivateSection({ email }: { email: string }) {

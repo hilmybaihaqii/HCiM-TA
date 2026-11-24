@@ -71,7 +71,7 @@ export default function HowItWorks() {
          */
         const tl = gsap.timeline({
           defaults: { immediateRender: false },
-          scrollTrigger: { trigger: scope.current, start: 'top top', end: 'bottom bottom', scrub: 1 },
+          scrollTrigger: { trigger: scope.current, start: 'top top', end: 'bottom bottom', scrub: 1.6 },
         });
 
         tl.to({}, { duration: 1.4 }); // baca intro dulu

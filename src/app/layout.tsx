@@ -47,7 +47,7 @@ export default function RootLayout({
         {/* Pengguna bahasa Indonesia: tahan tampilan sampai teks diganti; batas waktu mencegah layar kosong */}
         <script
           dangerouslySetInnerHTML={{
-            __html: "try{if(localStorage.getItem('cardivex-lang')==='id'){var h=document.documentElement;h.lang='id';h.setAttribute('data-i18n-pending','');setTimeout(function(){h.removeAttribute('data-i18n-pending')},2500)}}catch(e){}",
+            __html: "try{var l=localStorage.getItem('cardivex-lang');if(l==='id'||l==='ko'){var h=document.documentElement;h.lang=l;h.setAttribute('data-i18n-pending','');setTimeout(function(){h.removeAttribute('data-i18n-pending')},2500)}}catch(e){}",
           }}
         />
       </head>

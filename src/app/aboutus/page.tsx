@@ -30,7 +30,7 @@ export default function AboutPage() {
           </div>
           <Link
             href="/articles"
-            className="inline-flex min-h-12 w-fit items-center gap-8 rounded-sm border border-background/40 px-5 py-3 text-sm font-medium transition-colors hover:border-background hover:bg-background hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-background"
+            className="inline-flex min-h-12 w-fit items-center gap-8 rounded-full border border-background/40 px-5 py-3 text-sm font-medium transition-colors hover:border-background hover:bg-background hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-background"
           >
             Explore the research <span aria-hidden="true" className="text-xl">↗</span>
           </Link>

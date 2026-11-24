@@ -263,7 +263,7 @@ export default function ProblemStory() {
         // Bab pertama muncul saat section mendekati atas layar, sebelum panel menempel.
         const intro = gsap.timeline({
           defaults: { immediateRender: false },
-          scrollTrigger: { trigger: scope.current, start: 'top 80%', end: 'top top', scrub: 1 },
+          scrollTrigger: { trigger: scope.current, start: 'top 80%', end: 'top top', scrub: 1.6 },
         });
         enter(intro, 0, 0);
 
@@ -274,7 +274,7 @@ export default function ProblemStory() {
          */
         const tl = gsap.timeline({
           defaults: { immediateRender: false },
-          scrollTrigger: { trigger: scope.current, start: 'top top', end: 'bottom bottom', scrub: 1 },
+          scrollTrigger: { trigger: scope.current, start: 'top top', end: 'bottom bottom', scrub: 1.6 },
         });
 
         chapters.forEach((_, i) => {

@@ -96,10 +96,10 @@ export default function LabBottomNav({ items, pathname, id }: { items: LabNavIte
       <nav
         id={id}
         aria-label="Lab sections"
-        className="pointer-events-auto mx-auto max-w-md rounded-full border border-foreground/8 bg-surface-white p-1.5 shadow-[0_12px_32px_rgba(43,31,29,0.2)]"
+        className="pointer-events-auto mx-auto max-w-[22rem] rounded-full border border-foreground/8 bg-surface-white p-[3px] shadow-[0_10px_26px_rgba(43,31,29,0.18)]"
       >
-        {/* Mangkuk: rel abu-abu cekung di dalam bingkai putih */}
-        <div className="rounded-full bg-[color-mix(in_srgb,var(--foreground)_10%,var(--background))] p-1 shadow-[inset_0_2px_5px_rgba(43,31,29,0.2),inset_0_-1px_1px_rgba(255,255,255,0.75)]">
+        {/* Mangkuk: rel abu-abu cekung di dalam bingkai putih tipis */}
+        <div className="rounded-full bg-[color-mix(in_srgb,var(--foreground)_10%,var(--background))] p-[3px] shadow-[inset_0_2px_4px_rgba(43,31,29,0.18),inset_0_-1px_1px_rgba(255,255,255,0.75)]">
         <div
           ref={trackRef}
           onPointerDown={onPointerDown}
@@ -134,12 +134,12 @@ export default function LabBottomNav({ items, pathname, id }: { items: LabNavIte
                 draggable={false}
                 aria-current={current ? 'page' : undefined}
                 onClick={() => setPending({ from: pathname, index: i })}
-                className={`relative z-10 flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-full text-[11px] transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action ${
+                className={`relative z-10 flex min-h-11 flex-col items-center justify-center gap-px rounded-full text-[10.5px] transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action ${
                   active ? 'font-semibold text-foreground' : 'font-medium text-foreground/55'
                 }`}
               >
                 <Icon
-                  className={`h-4 w-4 transition-transform duration-300 ease-[cubic-bezier(0.3,1.35,0.55,1)] motion-reduce:transition-none ${active ? '-translate-y-px scale-110' : ''}`}
+                  className={`h-[15px] w-[15px] transition-transform duration-300 ease-[cubic-bezier(0.3,1.35,0.55,1)] motion-reduce:transition-none ${active ? '-translate-y-px scale-110' : ''}`}
                   aria-hidden="true"
                 />
                 <span>{item.short}</span>

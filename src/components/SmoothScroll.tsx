@@ -17,8 +17,8 @@ gsap.registerPlugin(ScrollTrigger);
 export default function SmoothScroll() {
   useEffect(() => {
     const lenis = new Lenis({
-      lerp: 0.1, // makin kecil makin "meluncur"; 0.1 tetap halus tapi tidak terasa telat
-      wheelMultiplier: 0.9,
+      lerp: 0.085, // makin kecil makin "meluncur"; 0.085 terasa tenang tanpa terlambat
+      wheelMultiplier: 0.85,
       anchors: true, // link #about, #architecture ikut meluncur halus
       autoRaf: false,
     });

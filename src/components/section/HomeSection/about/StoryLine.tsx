@@ -53,6 +53,7 @@ const THICKNESS: Partial<Record<Effect, string>> = { highlight: '0.42em', strike
 const TIER_COLOR: Record<string, string> = {
   'Low,': 'var(--accent-teal)', Intermediate: 'var(--accent-amber)', High: 'var(--accent-red)',
   'Rendah,': 'var(--accent-teal)', 'Menengah,': 'var(--accent-amber)', 'Tinggi.': 'var(--accent-red)',
+  '낮음,': 'var(--accent-teal)', '중간': 'var(--accent-amber)', '높음': 'var(--accent-red)',
 };
 
 function toSegments(text: string) {
@@ -129,7 +130,7 @@ export default function StoryLine() {
         // Kalimat pertama muncul saat section masuk layar (sebelum panel menempel).
         const intro = gsap.timeline({
           defaults: { immediateRender: false },
-          scrollTrigger: { trigger: scope.current, start: 'top 80%', end: 'top 0%', scrub: 1 },
+          scrollTrigger: { trigger: scope.current, start: 'top 80%', end: 'top 0%', scrub: 1.6 },
         });
         enter(intro, 0);
 
@@ -142,7 +143,7 @@ export default function StoryLine() {
          */
         const tl = gsap.timeline({
           defaults: { immediateRender: false },
-          scrollTrigger: { trigger: scope.current, start: 'top top', end: 'bottom bottom', scrub: 1 },
+          scrollTrigger: { trigger: scope.current, start: 'top top', end: 'bottom bottom', scrub: 1.6 },
         });
 
         beats.forEach((_, i) => {

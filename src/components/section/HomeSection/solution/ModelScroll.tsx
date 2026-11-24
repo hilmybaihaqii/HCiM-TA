@@ -126,7 +126,7 @@ export default function ModelScroll() {
         </div>
       </div>
 
-      <div ref={track} className="relative mt-10 motion-safe:h-[840svh] md:mt-16">
+      <div ref={track} className="relative mt-10 motion-safe:h-[1080svh] md:mt-16">
         <div className="motion-safe:sticky motion-safe:top-0 motion-safe:h-dvh motion-safe:overflow-hidden">
           <div className="relative mx-auto h-full w-full max-w-7xl">
             {MODES.map((m, i) => (
@@ -170,17 +170,16 @@ function ModeScene({ mode, index, progress, animated }: { mode: (typeof MODES)[n
 
       {/* ---------- alur 5 tahap ---------- */}
       <ol className="relative lg:col-span-8">
-        <Row animated={animated} t={t} i={0} title="Your input" desc={mode.inputNote}>
+        <Row t={t} i={0} title="Your input" desc={mode.inputNote}>
           {(sp) => <InputVisual mode={mode} sp={sp} />}
         </Row>
-        <Row animated={animated} t={t} i={1} title="Virtual heart cell" tag={{ text: 'FDA CiPA' }} desc="The drug is applied to a simulated human heart cell at 1, 2, 3 and 4 times its plasma level.">
+        <Row t={t} i={1} title="Virtual heart cell" tag={{ text: 'FDA CiPA' }} desc="The drug is applied to a simulated human heart cell at 1, 2, 3 and 4 times its plasma level.">
           {(sp) => <SimVisual sp={sp} />}
         </Row>
-        <Row animated={animated} t={t} i={2} title="11 biomarkers" desc="Each run gives 11 readings, like charge per beat and recovery time. The four runs are averaged.">
+        <Row t={t} i={2} title="11 biomarkers" desc="Each run gives 11 readings, like charge per beat and recovery time. The four runs are averaged.">
           {(sp) => <BioVisual sp={sp} />}
         </Row>
         <Row
-          animated={animated}
           t={t}
           i={3}
           title="400 trees vote"
@@ -190,7 +189,6 @@ function ModeScene({ mode, index, progress, animated }: { mode: (typeof MODES)[n
           {(sp) => <TreesVisual mode={mode.id} sp={sp} />}
         </Row>
         <Row
-          animated={animated}
           t={t}
           i={4}
           title="Risk level"
@@ -199,7 +197,6 @@ function ModeScene({ mode, index, progress, animated }: { mode: (typeof MODES)[n
           {(sp) => <RiskMeter mode={mode.id} sp={sp} />}
         </Row>
         <Row
-          animated={animated}
           t={t}
           i={5}
           last
@@ -224,7 +221,6 @@ function Row({
   desc,
   tag,
   last = false,
-  animated,
   children,
 }: {
   t: MotionValue<number>;
@@ -233,7 +229,6 @@ function Row({
   desc: string;
   tag?: { text: string; ours?: boolean };
   last?: boolean;
-  animated: boolean;
   children: (sp: MotionValue<number>) => ReactNode;
 }) {
   const sp = useTransform(t, [STAGE_AT[i], STAGE_AT[i] + STAGE_LEN], [0, 1]);
@@ -242,10 +237,6 @@ function Row({
   const glow = useTransform(t, [STAGE_AT[i] - 0.02, STAGE_AT[i], last ? 0.95 : end + 0.05, last ? 1 : end + 0.1], [0, 1, 1, last ? 1 : 0]);
   const lineEnd = last ? 1 : STAGE_AT[i + 1];
   const line = useTransform(t, [STAGE_AT[i] + STAGE_LEN, lineEnd], [0, 1]);
-  // HP: visual hanya terbuka selama tahap ini berjalan (tahap terakhir tetap terbuka), supaya muat satu layar.
-  const next = last ? 1 : STAGE_AT[i + 1];
-  const open = useTransform(t, [STAGE_AT[i] - 0.01, STAGE_AT[i] + 0.02, next, last ? 1 : next + 0.03], [0, 1, 1, last ? 1 : 0]);
-  const openHeight = useTransform(open, [0, 1], ['0px', '104px']);
   const opacity = useTransform(sp, [0, 0.35], [0.28, 1]);
   const dotBg = useTransform(sp, [0, 0.3], ['#F6F4F3', INK]);
   const dotFg = useTransform(sp, [0, 0.3], ['#7C7B7B', '#FFFFFF']);
@@ -284,10 +275,8 @@ function Row({
           )}
         </span>
         <span className="mt-0.5 hidden max-w-sm text-xs leading-relaxed text-muted md:block [@media(min-height:760px)]:text-sm">{desc}</span>
-        {/* di HP visual berada di bawah judul */}
-        <motion.div style={animated ? { maxHeight: openHeight, opacity: open } : undefined} className="overflow-hidden lg:hidden">
-          <div className="pt-2">{children(sp)}</div>
-        </motion.div>
+        {/* HP & tablet: visual di bawah judul dan tetap terbuka; isinya muncul bertahap mengikuti scroll */}
+        <div className="pt-2 lg:hidden">{children(sp)}</div>
       </motion.div>
       <motion.div style={{ opacity }} className="hidden items-center lg:flex">
         {children(sp)}

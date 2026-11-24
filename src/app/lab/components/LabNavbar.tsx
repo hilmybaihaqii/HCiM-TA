@@ -139,12 +139,14 @@ export default function LabNavbar() {
                       href={item.path}
                       title={item.name}
                       aria-current={pathname === item.path ? 'page' : undefined}
-                      className={`relative z-10 px-3 py-2 md:px-4 md:py-1.5 rounded-full text-xs font-medium transition-colors duration-300 flex items-center justify-center gap-2 ${
+                      className={`relative z-10 px-3 py-2 md:px-3 lg:px-4 md:py-1.5 rounded-full text-xs font-medium transition-colors duration-300 flex items-center justify-center gap-2 ${
                         isActive ? 'text-foreground' : 'text-foreground/60 hover:text-foreground'
                       }`}
                     >
                       <Icon className="w-4 h-4 md:w-3.5 md:h-3.5" />
-                      <span className="hidden md:block">{item.name}</span>
+                      {/* Tablet: label pendek supaya navbar tidak meluber; layar lebar: nama lengkap */}
+                      <span className="hidden md:block lg:hidden">{item.short}</span>
+                      <span className="hidden lg:block">{item.name}</span>
                     </Link>
                   );
                 })}
@@ -164,7 +166,7 @@ export default function LabNavbar() {
               onClick={() => setShowProfileMenu(!showProfileMenu)}
               className="flex items-center gap-2 pl-3 pr-1 py-1 rounded-full hover:bg-foreground/4 transition-colors focus:outline-none"
             >
-              <div className="hidden sm:flex flex-col items-end mr-1">
+              <div className="hidden sm:flex md:hidden xl:flex flex-col items-end mr-1">
                 <span className="text-xs font-medium text-foreground leading-none truncate max-w-30">
                   {getFirstName(user.display_name)}
                 </span>
@@ -194,7 +196,7 @@ export default function LabNavbar() {
                   <Link 
                     href="/lab/profile" 
                     onClick={() => setShowProfileMenu(false)} 
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-control text-xs font-medium text-muted hover:text-foreground hover:bg-foreground/3 transition-colors"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-full text-xs font-medium text-muted hover:text-foreground hover:bg-foreground/3 transition-colors"
                   >
                     <User className="w-4 h-4" /> Profile
                   </Link>
@@ -207,7 +209,7 @@ export default function LabNavbar() {
                         <Link 
                           href="/lab/admin" 
                           onClick={() => setShowProfileMenu(false)} 
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-control text-xs font-medium text-muted hover:text-foreground hover:bg-foreground/3 transition-colors"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-full text-xs font-medium text-muted hover:text-foreground hover:bg-foreground/3 transition-colors"
                         >
                           <Shield className="w-4 h-4" /> Admin Panel
                         </Link>
@@ -215,7 +217,7 @@ export default function LabNavbar() {
                         <Link 
                           href="/lab" 
                           onClick={() => { setShowProfileMenu(false); startUserViewSplash(); }} 
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-control text-xs font-medium text-muted hover:text-foreground hover:bg-foreground/3 transition-colors"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-full text-xs font-medium text-muted hover:text-foreground hover:bg-foreground/3 transition-colors"
                         >
                           <MonitorPlay className="w-4 h-4" /> User View
                         </Link>
@@ -227,7 +229,7 @@ export default function LabNavbar() {
                   
                   <button 
                     onClick={handleLogoutClick} 
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-control text-xs font-medium text-accent hover:bg-accent/10 transition-colors w-full text-left"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-full text-xs font-medium text-accent hover:bg-accent/10 transition-colors w-full text-left"
                   >
                     <LogOut className="w-4 h-4" /> Sign out
                   </button>
@@ -276,14 +278,14 @@ export default function LabNavbar() {
                 <button 
                   onClick={executeLogout}
                   disabled={isLoggingOut}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-control bg-accent text-white text-xs font-semibold tracking-wide hover:bg-accent/90 hover:scale-[1.02] transition-all duration-300 shadow-sm disabled:opacity-70 disabled:hover:scale-100"
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-full bg-accent text-white text-xs font-semibold tracking-wide hover:bg-accent/90 hover:scale-[1.02] transition-all duration-300 shadow-sm disabled:opacity-70 disabled:hover:scale-100"
                 >
                   {isLoggingOut ? 'Signing out…' : 'Sign out'}
                 </button>
                 <button 
                   onClick={() => setShowLogoutModal(false)}
                   disabled={isLoggingOut}
-                  className="w-full py-3 rounded-control border border-foreground/10 bg-transparent text-foreground text-xs font-semibold tracking-wide hover:bg-foreground/3 transition-colors disabled:opacity-50"
+                  className="w-full py-3 rounded-full border border-foreground/10 bg-transparent text-foreground text-xs font-semibold tracking-wide hover:bg-foreground/3 transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>

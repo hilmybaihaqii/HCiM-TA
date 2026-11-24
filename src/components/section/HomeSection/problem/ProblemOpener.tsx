@@ -59,7 +59,7 @@ export default function ProblemOpener() {
           gsap
             .timeline({
               defaults: { ease: 'none' },
-              scrollTrigger: { trigger: scope.current, start: 'top top', end: 'bottom bottom', scrub: 1 },
+              scrollTrigger: { trigger: scope.current, start: 'top top', end: 'bottom bottom', scrub: 1.6 },
             })
             .to({}, { duration: 0.3 }) // foto penuh sebentar sebelum mulai mengecil
             .fromTo('.po-frame', { clipPath: 'inset(0% 0% 0% 0% round 0px)' }, { clipPath: end, duration: 1.2, ease: 'power2.inOut' })
