@@ -717,7 +717,7 @@ function useHeartReactions() {
 }
 
 // Desktop: jantung di kiri, monitor di kanan (port di sisi kiri monitor)
-const WIDE = { hx: 34, hy: 40, s: 1.18, mx: 380, my: 24, mw: 596, mh: 272, bubble: { x: 150, y: -14, w: 170, font: 15 } };
+const WIDE = { hx: 34, hy: 40, s: 1.18, mx: 380, my: 24, mw: 596, mh: 272, bubble: { x: 150, y: -6 }, viewBox: [0, -70, 1000, 390] };
 const WIDE_LAYOUT: SceneLayout = {
   hx: WIDE.hx, hy: WIDE.hy, s: WIDE.s,
   // Kanan -> port atas, tengah -> port tengah, kiri -> port bawah (kabel tidak bersilangan)
@@ -726,7 +726,7 @@ const WIDE_LAYOUT: SceneLayout = {
   slack: 1.22,
 };
 // HP: jantung di atas, monitor di bawah (port di sisi atas monitor)
-const TALL = { hx: 186, hy: 36, s: 1.08, mx: 24, my: 340, mw: 552, mh: 240, bubble: { x: 128, y: -44, w: 230, font: 22 } };
+const TALL = { hx: 186, hy: 36, s: 1.08, mx: 24, my: 340, mw: 552, mh: 240, bubble: { x: 140, y: -18 }, viewBox: [0, -90, 600, 690] };
 const TALL_LAYOUT: SceneLayout = {
   hx: TALL.hx, hy: TALL.hy, s: TALL.s,
   ports: [236, 300, 364].map(p => ({ x: TALL.mx + p, y: TALL.my })),
@@ -737,8 +737,8 @@ const TALL_LAYOUT: SceneLayout = {
 };
 
 /** Satu tata letak adegan: monitor, jantung interaktif, kabel, elektroda, port, dan balon dialog */
-function SceneLayer({ uid, live, layout, box, viewBox, className }: {
-  uid: string; live: boolean; layout: SceneLayout; box: typeof WIDE; viewBox: string; className: string;
+function SceneLayer({ uid, live, layout, box, className }: {
+  uid: string; live: boolean; layout: SceneLayout; box: typeof WIDE; className: string;
 }) {
   const ref = useRef<SVGSVGElement>(null);
   const poke = useHeartPhysics(ref, layout, live);
@@ -747,9 +747,14 @@ function SceneLayer({ uid, live, layout, box, viewBox, className }: {
     poke.current(react());
   };
   const heartSpace = `translate(${layout.hx} ${layout.hy}) scale(${layout.s})`;
+  const [vx, vy, vw, vh] = box.viewBox;
+  // Posisi balon dalam persen dari kotak SVG, jadi ikut skala tanpa memperbesar hurufnya
+  const bubbleLeft = ((layout.hx + box.bubble.x * layout.s - vx) / vw) * 100;
+  const bubbleTop = ((layout.hy + box.bubble.y * layout.s - vy) / vh) * 100;
 
   return (
-    <svg ref={ref} viewBox={viewBox} className={className} role="group" aria-label="A smiling heart connected to an ECG monitor">
+    <div className={`relative ${className}`}>
+    <svg ref={ref} viewBox={box.viewBox.join(' ')} className="block w-full touch-manipulation" role="group" aria-label="A smiling heart connected to an ECG monitor">
       <SceneDefs uid={uid} />
       <Monitor uid={uid} live={live} x={box.mx} y={box.my} w={box.mw} h={box.mh} />
 
@@ -787,21 +792,23 @@ function SceneLayer({ uid, live, layout, box, viewBox, className }: {
         <rect key={i} x={p.x - 7} y={p.y - 6} width="14" height="12" rx="4" fill="#d6cdcb" />
       ))}
 
-      <g transform={heartSpace}>
-        {/* Balon dialog: pil putih kecil dengan ekor dua bulatan ke arah hati */}
-        {line && (
-          <foreignObject x={box.bubble.x} y={box.bubble.y} width={box.bubble.w} height="80" overflow="visible">
-            <div key={line} className="comic-pop relative w-max max-w-full" style={{ fontSize: box.bubble.font }} role="status">
-              <span className="block rounded-full border border-[#3b2226]/10 bg-white px-[0.95em] py-[0.5em] font-medium leading-tight text-[#3b2226] shadow-[0_6px_16px_-8px_rgba(43,31,29,0.45)]">
-                {line}
-              </span>
-              <span aria-hidden="true" className="absolute -bottom-[0.55em] left-[0.7em] h-[0.6em] w-[0.6em] rounded-full border border-[#3b2226]/10 bg-white shadow-[0_3px_6px_-3px_rgba(43,31,29,0.4)]" />
-              <span aria-hidden="true" className="absolute -bottom-[1.05em] left-[0.25em] h-[0.35em] w-[0.35em] rounded-full border border-[#3b2226]/10 bg-white" />
-            </div>
-          </foreignObject>
-        )}
-      </g>
     </svg>
+      {/* Balon dialog: lapisan HTML di atas gambar (animasi dikerjakan GPU, ukuran huruf tetap) */}
+      {line && (
+        <div
+          key={line}
+          role="status"
+          className="comic-pop pointer-events-none absolute w-max max-w-[60%] sm:max-w-[16rem]"
+          style={{ left: `${bubbleLeft}%`, top: `${bubbleTop}%`, translate: '0 -100%' }}
+        >
+          <span className="block rounded-full border border-[#3b2226]/10 bg-white px-3 py-1.5 text-xs font-medium leading-snug text-[#3b2226] shadow-[0_6px_16px_-8px_rgba(43,31,29,0.45)] sm:text-[13px]">
+            {line}
+          </span>
+          <span aria-hidden="true" className="absolute -bottom-1.5 left-2.5 h-2 w-2 rounded-full border border-[#3b2226]/10 bg-white" />
+          <span aria-hidden="true" className="absolute -bottom-3.5 left-1 h-1 w-1 rounded-full border border-[#3b2226]/10 bg-white" />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -810,8 +817,8 @@ function EcgScene({ live }: { live: boolean }) {
   const uid = useId().replace(/:/g, '');
   return (
     <>
-      <SceneLayer uid={`${uid}w`} live={live} layout={WIDE_LAYOUT} box={WIDE} viewBox="0 -70 1000 390" className="hidden w-full sm:block" />
-      <SceneLayer uid={`${uid}t`} live={live} layout={TALL_LAYOUT} box={TALL} viewBox="0 -90 600 690" className="w-full sm:hidden" />
+      <SceneLayer uid={`${uid}w`} live={live} layout={WIDE_LAYOUT} box={WIDE} className="hidden w-full sm:block" />
+      <SceneLayer uid={`${uid}t`} live={live} layout={TALL_LAYOUT} box={TALL} className="w-full sm:hidden" />
     </>
   );
 }
@@ -884,6 +891,7 @@ export default function HeartbeatLoader({ eyebrow, title, detail, steps, since }
     </div>
   );
 }
+
 
 
 
