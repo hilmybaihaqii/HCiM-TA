@@ -12,7 +12,7 @@ export default function TeamGrid() {
             <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.16em] text-muted">03 / Core team</p>
             <h2 id="core-team-title" className="text-3xl font-medium tracking-tight sm:text-4xl">Different skills.<br className="sm:hidden" /> <span className="font-serif font-normal italic text-accent">One project.</span></h2>
           </div>
-          <p className="max-w-xs text-sm leading-relaxed text-muted">The students turning research questions into the Cardivex experience.</p>
+          <p className="max-w-xs text-sm leading-relaxed text-muted">The students who built Cardivex from their own research questions.</p>
         </div>
 
         <div className="grid gap-x-7 gap-y-12 md:grid-cols-3 lg:gap-x-10">

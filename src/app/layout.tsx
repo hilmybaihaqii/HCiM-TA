@@ -1,3 +1,4 @@
+import BubbleOrigin from '@/components/ui/BubbleOrigin';
 import type { Metadata, Viewport } from "next";
 import { Figtree } from "next/font/google";
 import SplashScreen from "@/components/SplashScreen";
@@ -56,6 +57,7 @@ export default function RootLayout({
           <SplashProvider>
             <SplashScreen />
             <CustomCursor />
+            <BubbleOrigin />
             {children}
           </SplashProvider>
         </LanguageProvider>

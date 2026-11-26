@@ -48,7 +48,7 @@ const CHAPTERS: Chapter[] = [
   {
     kicker: 'Still tested on animals',
     title: <>Animal use is {em('going up, not down.')}</>,
-    body: 'In Great Britain, animals used in heart and blood research rose by almost 40% in just two years.',
+    body: 'In Great Britain, animals used in heart and blood research rose by almost 40% in two years.',
     source: 'UK Home Office, statistics of scientific procedures, 2021–2023',
     Visual: AnimalsVisual,
   },

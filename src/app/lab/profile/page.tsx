@@ -12,7 +12,7 @@ import PasswordSection from './components/PasswordSection';
 import DeactivateSection from './components/DeactivateSection';
 
 /*
- * Profil: kartu identitas & ringkasan aktivitas di kiri (menempel saat digulir di layar lebar),
+ * Profil: kartu identitas di kiri (menempel saat digulir di layar lebar),
  * pengaturan di kanan sebagai baris berjudul yang dipisah garis tipis (bukan tab), supaya semua
  * pilihan terlihat sekaligus.
  */
@@ -57,7 +57,7 @@ function ProfileContent() {
           eyebrow="Profile"
           title="Your account"
           accent="and sign-in."
-          description="Your details, your activity on Cardivex, and how you sign in."
+          description="Your details on Cardivex and how you sign in."
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,24rem)_1fr] gap-12 lg:gap-16 items-start">

@@ -6,7 +6,6 @@ import { normalizeTier } from '@/lib/tierColor';
 import type { PredictionOutput, ShapData } from '@/lib/predict';
 import RiskVerdict from './RiskVerdict';
 import BiomarkerList from './BiomarkerList';
-import CellDiagram from './CellDiagram';
 
 /*
  * Tampilan satu catatan riwayat di panel admin, dibuat dari komponen yang sama dengan hasil
@@ -85,8 +84,8 @@ export default function LogReport({ tier, prediction, ratios, shap, note, meta }
   /** 11 rasio biomarker; nilai bukan angka ditampilkan sebagai "—" */
   ratios: number[];
   shap?: ShapData | null;
-  /** Satu kalimat: apa yang diterima model untuk catatan ini */
-  note: React.ReactNode;
+  /** Satu kalimat: apa yang diterima model untuk catatan ini (tidak ditampilkan untuk Digital Lab) */
+  note?: React.ReactNode;
   meta: MetaItem[];
 }) {
   const known = !!tier && /high|inter|low|medium|moderate/i.test(tier);
@@ -97,22 +96,20 @@ export default function LogReport({ tier, prediction, ratios, shap, note, meta }
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 md:gap-14">
       <RiskVerdict tier={level} prediction={prediction} compact />
 
-      <section aria-label="What the model received" className="border-y border-foreground/10 py-6">
+      {note && <section aria-label="What the model received" className="border-y border-foreground/10 py-6">
         <h3 className="text-base font-medium tracking-tight text-foreground md:text-lg">What the model received</h3>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground/70">{note}</p>
-      </section>
+      </section>}
 
       {hasRatios ? (
-        <>
-          <BiomarkerList
-            ratios={ratios}
-            tier={level}
-            shap={shap ?? undefined}
-            explaining={false}
-            emptyDriversMessage="No driver analysis (SHAP) is stored with this record."
-          />
-          <CellDiagram ratios={ratios} />
-        </>
+        // Catatan ini hanya menyimpan 11 rasio + SHAP (tanpa simulasi per channel), jadi tanpa visual sel
+        <BiomarkerList
+          ratios={ratios}
+          tier={level}
+          shap={shap ?? undefined}
+          explaining={false}
+          emptyDriversMessage="No driver analysis (SHAP) is stored with this record."
+        />
       ) : (
         <p className="text-sm text-foreground/70">No biomarker values were stored with this record.</p>
       )}

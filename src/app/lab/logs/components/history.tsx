@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronDown, ChevronLeft, ChevronRight, ListFilter, Search, X } from 'lucide-react';
 import { cachedGet } from '@/lib/historyCache';
@@ -226,7 +226,21 @@ export function FilterPanel({ groups, onToggle, onClear, onOpen }: {
   // tombol sempit, dan tidak pernah lebih tinggi dari ruang yang tersedia.
   const [place, setPlace] = useState<{ up: boolean; max: number }>({ up: false, max: 544 });
   const root = useRef<HTMLDivElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
   const count = groups.reduce((n, g) => n + g.selected.length, 0);
+
+  // Panel yang membuka ke bawah bisa lebih panjang dari isi halaman (mis. hasil filter tinggal satu).
+  // Halaman dipanjangkan selama panel terbuka, jadi footer tetap di bawah panel, bukan tertimpa.
+  useLayoutEffect(() => {
+    if (!open || place.up) return;
+    const main = root.current?.closest('main');
+    const box = panel.current;
+    if (!main || !box) return;
+    // Tinggi minimum dari atas <main> sampai bawah panel: tetap benar walau daftar di bawahnya berubah
+    const need = box.getBoundingClientRect().bottom + 32 - main.getBoundingClientRect().top;
+    main.style.minHeight = `${Math.ceil(need)}px`;
+    return () => { main.style.minHeight = ''; };
+  }, [open, place.up, groups]);
 
   useEffect(() => {
     if (!open) return;
@@ -263,7 +277,7 @@ export function FilterPanel({ groups, onToggle, onClear, onOpen }: {
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={count ? `Filter, ${count} active` : 'Filter'}
-        className={`h-11 inline-flex items-center gap-2 rounded-full border px-3.5 sm:px-4 text-sm font-medium
+        className={`bubble ${count ? '' : 'bubble-ink'} h-11 inline-flex items-center gap-2 rounded-full border px-3.5 sm:px-4 text-sm font-medium
           transition-[background-color,border-color,color,scale] duration-200 ease-out active:scale-[0.97]
           focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action
           ${count
@@ -282,6 +296,7 @@ export function FilterPanel({ groups, onToggle, onClear, onOpen }: {
       <AnimatePresence>
         {open && (
           <motion.div
+            ref={panel}
             role="dialog"
             aria-label="Filters"
             initial={{ opacity: 0, y: place.up ? 6 : -6 }}
@@ -343,7 +358,7 @@ export function FilterPanel({ groups, onToggle, onClear, onOpen }: {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="h-9 rounded-full bg-action px-4 text-sm font-medium text-surface-white transition-[background-color,scale] duration-200 hover:bg-action-dark active:scale-[0.97]"
+                className="bubble h-9 rounded-full bg-action px-4 text-sm font-medium text-surface-white transition-[background-color,scale] duration-200 hover:bg-action-dark active:scale-[0.97]"
               >
                 Done
               </button>

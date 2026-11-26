@@ -13,9 +13,11 @@ import GuideLink from '../GuideLink';
 import { SectionHead, TabRail, secondaryBtn } from './ui';
 
 /*
- * 11 biomarker dalam dua slide yang bisa digeser:
+ * 11 biomarker:
  *   1. Main drivers : urutan SHAP, biomarker yang paling menggerakkan model (dari /explain)
- *   2. Drug effect  : perubahan tiap biomarker dari sel tanpa obat (dari simulasi / input user)
+ *   2. Drug effect  : perubahan tiap biomarker dari sel tanpa obat. Hanya ada bila hasil simulasi
+ *      (nilai sel tanpa obat & dengan obat) dikirim backend, yaitu Full Pipeline. Digital Lab dan
+ *      catatan admin hanya menyimpan 11 rasio + SHAP, jadi slide ini tidak ditampilkan di sana.
  * Ketuk satu baris di slide mana pun untuk membaca artinya & angka lengkapnya.
  * Merah hanya untuk perubahan kuat (isStrongChange); warna tier untuk dorongan SHAP ke arah hasil.
  */
@@ -156,6 +158,8 @@ export default function BiomarkerList({ ratios, control, drug, tier, shap, expla
   const settle = useRef(0);
   useEffect(() => () => window.clearTimeout(settle.current), []);
   const hasRaw = !!(control || drug);
+  // Tanpa data simulasi tidak ada "efek obat" yang bisa ditunjukkan; cukup slide SHAP
+  const showChange = hasRaw;
   const knownTier = tier && tier !== 'unknown' ? tier : undefined;
   const tierColor = knownTier ? getTierCssVar(knownTier) : undefined;
 
@@ -216,17 +220,14 @@ export default function BiomarkerList({ ratios, control, drug, tier, shap, expla
           {/* Di sinilah orang bertanya "biomarker ini apa?", jadi tombolnya ke daftar definisi */}
           <span className="mt-4 flex"><GuideLink topic="biomarkers" /></span>
         </p>
-        <dl className="grid grid-cols-3 md:grid-cols-1 gap-2 md:gap-0 py-3 md:py-1 md:px-4 rounded-card bg-surface-white/70 md:divide-y md:divide-foreground/10">
+        <dl className={`grid ${hasRaw ? 'grid-cols-3' : 'grid-cols-2'} md:grid-cols-1 gap-2 md:gap-0 py-3 md:py-1 md:px-4 rounded-card bg-surface-white/70 md:divide-y md:divide-foreground/10`}>
           {hasRaw ? (
             <>
               <Stat label="Without drug" value={fmtNum(control?.[r.key])} />
               <Stat label="With drug" value={fmtNum(drug?.[r.key])} />
             </>
           ) : (
-            <>
-              <Stat label="Ratio entered" value={fmtNum(r.ratio)} />
-              <Stat label="Change" value={formatChange(r.change)} accent={strong} />
-            </>
+            <Stat label="Ratio entered" value={fmtNum(r.ratio)} accent={strong} />
           )}
           <Stat label="Influence" value={rank > 0 ? `#${rank} of 11` : '—'} />
         </dl>
@@ -353,6 +354,26 @@ export default function BiomarkerList({ ratios, control, drug, tier, shap, expla
     </>
   );
 
+  const driversIntro = (
+    <p className="mb-4 text-sm text-foreground/70 leading-relaxed">
+      Which biomarkers moved the risk model most, from SHAP. Bars to the right pushed it toward this result.{' '}
+      <span className="text-foreground/70" style={tierColor ? { color: tierColor } : undefined}>●</span> marks the top three.{' '}
+      {driversNote && <span className="block mt-1 text-xs text-foreground/60">{driversNote}</span>}
+    </p>
+  );
+
+  if (!showChange) {
+    return (
+      <section aria-labelledby="biomarkers-heading">
+        <SectionHead id="biomarkers-heading" title="11 biomarkers" guideTopic="shap" meta={meta} />
+        <div className="mt-5">
+          {driversIntro}
+          {driversBody}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section aria-labelledby="biomarkers-heading">
       <SectionHead id="biomarkers-heading" title="11 biomarkers" guideTopic={slide === 0 ? "shap" : "ratios"} meta={meta ?? <span className="sm:hidden">Swipe to switch</span>} />
@@ -376,12 +397,7 @@ export default function BiomarkerList({ ratios, control, drug, tier, shap, expla
         className="mt-5 flex items-start overflow-x-auto snap-x snap-mandatory overscroll-x-contain scrollbar-hide [scrollbar-width:none] [-webkit-overflow-scrolling:touch]"
       >
         <div id="slide-drivers" role="tabpanel" inert={slide !== 0} className="w-full shrink-0 snap-start snap-always">
-          <p className="mb-4 text-sm text-foreground/70 leading-relaxed">
-            Which biomarkers moved the risk model most, from SHAP. Bars to the right pushed it toward this result.{' '}
-            <span className="text-foreground/70" style={tierColor ? { color: tierColor } : undefined}>●</span> marks the top three.{' '}
-
-            {driversNote && <span className="block mt-1 text-xs text-foreground/60">{driversNote}</span>}
-          </p>
+          {driversIntro}
           {driversBody}
         </div>
         <div id="slide-change" role="tabpanel" inert={slide !== 1} className="w-full shrink-0 snap-start snap-always">

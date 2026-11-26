@@ -57,7 +57,7 @@ export default function ArticleHero() {
               <p className="mt-2 text-sm italic">{featured.journal} · {featured.year}</p>
               <p className="mt-6 text-sm leading-relaxed text-muted">{featured.excerpt}</p>
               <div className="mt-8 pt-5 border-t border-foreground/10 flex flex-wrap items-center justify-between gap-4">
-                <a href={`https://doi.org/${featured.doi}`} target="_blank" rel="noopener noreferrer" aria-label={`View Publication: ${featured.title} (opens in a new tab)`} className="inline-flex min-h-11 items-center gap-3 rounded-full bg-foreground px-5 py-3 text-sm text-background hover:bg-accent transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
+                <a href={`https://doi.org/${featured.doi}`} target="_blank" rel="noopener noreferrer" aria-label={`View Publication: ${featured.title} (opens in a new tab)`} className="bubble inline-flex min-h-11 items-center gap-3 rounded-full bg-foreground px-5 py-3 text-sm text-background focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
                   View Publication <ArrowUpRight className="size-4" aria-hidden="true" />
                 </a>
                 <span className="text-[11px] text-muted break-all">DOI: {featured.doi}</span>

@@ -4,9 +4,11 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion, useAnimation } from 'framer-motion';
 import { api } from '@/lib/api';
+import { Send } from 'lucide-react';
 import {
-  AuthAlert, AuthButton, AuthDone, AuthField, AuthHeading, AuthSecondaryButton, AuthShell, authLink,
+  AuthAlert, AuthButton, AuthField, AuthHeading, AuthSecondaryButton, AuthShell, authLink,
 } from '@/components/auth/AuthShell';
+import { Celebration } from '@/components/auth/SignedInNotice';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -44,21 +46,29 @@ export default function ForgotPasswordPage() {
   if (sentTo) {
     return (
       <AuthShell aside={aside} close="/login">
-        <AuthDone
+        {/* Permintaan sudah terkirim saat animasi mulai: lingkarannya singkat, lalu surat "terbang" jadi centang */}
+        <Celebration
+          icon={<Send className="h-7 w-7 -translate-x-0.5 translate-y-0.5" />}
+          ready
+          load={1.2}
+          loadingLabel="Sending your reset link"
+          badge="Link sent"
           title="Check your email"
-          action={
-            <AuthSecondaryButton type="button" onClick={() => { setSentTo(null); setEmail(''); }}>
-              Use a different email
-            </AuthSecondaryButton>
+          subtitle={
+            // Backend tidak memberi tahu apakah email terdaftar, jadi kalimatnya juga tidak memastikan
+            <>
+              <p>
+                If an account uses <span className="font-medium text-white break-all" data-i18n-skip>{sentTo}</span>, a link to set a
+                new password is on its way. Open it on this device or any other.
+              </p>
+              <p className="mt-3 text-white/40">Nothing in your inbox after a few minutes? Check the spam folder.</p>
+            </>
           }
         >
-          {/* Backend tidak memberi tahu apakah email terdaftar, jadi kalimatnya juga tidak memastikan */}
-          <p>
-            If an account uses <span className="font-medium text-white break-all">{sentTo}</span>, a link to set a
-            new password is on its way. Open it on this device or any other.
-          </p>
-          <p className="mt-3 text-white/40">Nothing in your inbox after a few minutes? Check the spam folder.</p>
-        </AuthDone>
+          <AuthSecondaryButton type="button" onClick={() => { setSentTo(null); setEmail(''); }}>
+            Use a different email
+          </AuthSecondaryButton>
+        </Celebration>
       </AuthShell>
     );
   }

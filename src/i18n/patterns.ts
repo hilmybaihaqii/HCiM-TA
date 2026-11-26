@@ -60,6 +60,7 @@ const ID_PATTERNS: Pattern[] = [
   [/^At least (\d+) characters$/, m => `Minimal ${m[1]} karakter`],
   [/^Use at least (\d+) characters\.$/, m => `Gunakan minimal ${m[1]} karakter.`],
   [/^Welcome, (.+)\.$/, m => `Selamat datang, ${m[1]}.`],
+  [/^See you soon, (.+)\.$/, m => `Sampai jumpa lagi, ${m[1]}.`],
   [/^for (\S+)$/, m => `untuk ${m[1]}`],
   [/^Show (.+)$/, (m, tr) => `Tampilkan ${tr(m[1])}`],
 ];
@@ -116,6 +117,7 @@ const KO_PATTERNS: Pattern[] = [
   [/^At least (\d+) characters$/, m => `최소 ${m[1]}자`],
   [/^Use at least (\d+) characters\.$/, m => `최소 ${m[1]}자 이상 입력하세요.`],
   [/^Welcome, (.+)\.$/, m => `${m[1]} 님, 환영합니다.`],
+  [/^See you soon, (.+)\.$/, m => `${m[1]} 님, 곧 다시 만나요.`],
   [/^for (\S+)$/, m => `${m[1]} 결과`],
   [/^Show (.+)$/, (m, tr) => `${tr(m[1])} 보기`],
 ];

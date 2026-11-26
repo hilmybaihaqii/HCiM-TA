@@ -3,7 +3,7 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import * as THREE from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useGLTF, OrbitControls, Environment, Lightformer } from '@react-three/drei';
+import { useGLTF, OrbitControls, Environment, Lightformer, PerformanceMonitor } from '@react-three/drei';
 import { useSplash } from '../SplashProvider';
 
 /*
@@ -68,7 +68,20 @@ function useMassCenter(scene: THREE.Object3D) {
 function HeartControls() {
   // Dipasang langsung di canvas: area geser selalu sama dengan area jantung, dan touch-action-nya terkendali
   const canvas = useThree((state) => state.gl.domElement);
-  return <OrbitControls domElement={canvas} enableZoom enablePan={false} enableDamping={false} minDistance={2.6} maxDistance={6} />;
+  // Damping membuat putaran & cubitan meluncur halus, tidak patah-patah mengikuti tiap gerakan jari
+  return (
+    <OrbitControls
+      domElement={canvas}
+      enableZoom
+      enablePan={false}
+      enableDamping
+      dampingFactor={0.08}
+      rotateSpeed={0.85}
+      zoomSpeed={0.8}
+      minDistance={2.6}
+      maxDistance={6}
+    />
+  );
 }
 
 function AllowVerticalScroll() {
@@ -134,6 +147,17 @@ function detectLowEnd(): boolean {
   return (nav.hardwareConcurrency ?? 8) <= 4 || (nav.deviceMemory ?? 8) <= 4;
 }
 
+/**
+ * Rentang resolusi render. Layar HP rapat (2–3×), jadi render 1× membuat jantung buram dan bergerigi.
+ * Mulai dari resolusi tajam lalu turun bertahap bila FPS jatuh (PerformanceMonitor), tidak pernah di bawah `min`.
+ */
+function dprRange(isMobile: boolean, lowEnd: boolean) {
+  const screen = window.devicePixelRatio || 1;
+  const max = Math.min(screen, lowEnd ? 1.75 : 2);
+  const min = Math.min(screen, isMobile ? 1.25 : 1);
+  return { min, max };
+}
+
 export default function Heart3D() {
   const isMobile = useMediaQuery(MOBILE_QUERY);
   const [lowEnd] = useState(detectLowEnd);
@@ -142,6 +166,10 @@ export default function Heart3D() {
   // Jantung baru muncul setelah splash terbuka, supaya animasinya benar-benar terlihat.
   const show = ready && splashDone;
   const [inView, setInView] = useState(true);
+  const range = dprRange(isMobile, lowEnd);
+  // 0..1: 1 = resolusi penuh. Diturunkan PerformanceMonitor kalau perangkat tidak kuat.
+  const [quality, setQuality] = useState(1);
+  const dpr = Math.round((range.min + (range.max - range.min) * quality) * 4) / 4;
   const wrapRef = useRef<HTMLDivElement>(null);
 
   const handleLoaded = useCallback(() => {
@@ -177,14 +205,21 @@ export default function Heart3D() {
       />
       <Canvas
         camera={{ position: [0, 0, 4], fov: 45 }}
-        dpr={lowEnd ? 1 : isMobile ? [1, 1.5] : [1, 2]}
+        dpr={dpr}
         // Selama splash: 'demand' (model dimuat & shader dikompilasi sekali, lalu diam) supaya animasi splash
         // tidak berebut GPU. Setelah splash selesai baru render terus, dan berhenti saat hero tidak terlihat.
         frameloop={!inView ? 'never' : splashDone ? 'always' : 'demand'}
         // Ukur dari offsetWidth/Height (abaikan transform leluhur) supaya ukuran canvas selalu pas.
         resize={{ offsetSize: true }}
-        gl={{ powerPreference: 'high-performance', antialias: !lowEnd }}
+        gl={{ powerPreference: 'high-performance', antialias: true }}
       >
+        {/* Turunkan resolusi pelan-pelan bila FPS jatuh; kalau terus naik-turun, kunci di tingkat aman */}
+        <PerformanceMonitor
+          factor={1}
+          flipflops={3}
+          onChange={({ factor }) => setQuality(factor)}
+          onFallback={() => setQuality(0)}
+        />
         <Suspense fallback={null}>
           {/* Desktop: drag = putar, scroll = zoom. HP: geser samping = putar, cubit = zoom. */}
           <HeartControls />

@@ -155,14 +155,14 @@ export default function NotFound() {
           <button
             type="button"
             onClick={goBack}
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border border-black/12 bg-white px-6 text-sm font-medium transition-colors duration-200 hover:border-black/35 sm:w-auto"
+            className="bubble bubble-ink inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border border-black/12 bg-white px-6 text-sm font-medium transition-colors duration-200 hover:border-black/35 sm:w-auto"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             Go back
           </button>
           <Link
             href="/"
-            className="inline-flex h-12 w-full items-center justify-center rounded-full bg-[#0A0A0A] px-8 text-sm font-medium text-white transition-all duration-200 hover:bg-black/80 active:scale-[0.98] sm:w-auto"
+            className="bubble inline-flex h-12 w-full items-center justify-center rounded-full bg-[#0A0A0A] px-8 text-sm font-medium text-white transition-all duration-200 hover:bg-black/80 active:scale-[0.98] sm:w-auto"
           >
             Take me home
           </Link>

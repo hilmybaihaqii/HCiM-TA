@@ -1,12 +1,16 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUpRight, ChevronDown } from 'lucide-react';
-import Link from 'next/link';
+import { ChevronDown } from 'lucide-react';
 import styles from './guide.module.css';
 
-export default function GuideNavigation({ sections }: {
+/**
+ * Daftar isi panduan. Desktop: menempel di kiri, dikelompokkan (Simulasi, Prediksi, Catatan),
+ * bagian yang sedang dibaca ditandai. HP & tablet: satu baris yang bisa dibuka.
+ */
+export default function GuideNavigation({ sections, groups }: {
   sections: { id: string; title: string }[];
+  groups: { label: string; indexes: number[] }[];
 }) {
   const [active, setActive] = useState(sections[0].id);
   const mobileMenu = useRef<HTMLDetailsElement>(null);
@@ -36,35 +40,47 @@ export default function GuideNavigation({ sections }: {
     };
   }, [sections]);
 
-  const links = sections.map((section, index) => (
-    <a
-      key={section.id}
-      href={`#${section.id}`}
-      aria-current={active === section.id ? 'location' : undefined}
-      onClick={() => { if (mobileMenu.current) mobileMenu.current.open = false; }}
-      className={styles.chapterLink}
-    >
-      <span className={styles.chapterNumber} aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
-      <span>{section.title.replace(/^\d+\. /, '')}</span>
-    </a>
-  ));
+  const activeIndex = sections.findIndex(s => s.id === active);
+  const label = (title: string) => title.replace(/^\d+\. /, '');
+
+  const list = (
+    <nav aria-label="Table of contents">
+      {groups.map(group => (
+        <div key={group.label} className={styles.navGroup}>
+          <p className={styles.navGroupLabel}>{group.label}</p>
+          {group.indexes.map(i => {
+            const section = sections[i];
+            return (
+              <a
+                key={section.id}
+                href={`#${section.id}`}
+                aria-current={active === section.id ? 'location' : undefined}
+                onClick={() => { if (mobileMenu.current) mobileMenu.current.open = false; }}
+                className={styles.chapterLink}
+              >
+                <span className={styles.chapterNumber} aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+                <span>{label(section.title)}</span>
+              </a>
+            );
+          })}
+        </div>
+      ))}
+    </nav>
+  );
 
   return (
     <aside className={styles.navigation}>
       <div className={styles.desktopNavigation}>
-        <div className={styles.navLabel}>Guide Sections</div>
-        <nav aria-label="Table of contents">{links}</nav>
-        <div className={styles.navFooter}>
-          <span>Ready to explore your results?</span>
-          <Link href="/lab/pipeline">Open Full Pipeline <ArrowUpRight size={15} aria-hidden="true" /></Link>
-        </div>
+        <p className={styles.navLabel}>On this page</p>
+        {list}
       </div>
       <details ref={mobileMenu} className={styles.mobileNavigation}>
         <summary>
-          <span>Guide Sections</span>
+          <span className={styles.chapterNumber} aria-hidden="true">{String(activeIndex + 1).padStart(2, '0')}</span>
+          <span>{label(sections[Math.max(0, activeIndex)].title)}</span>
           <ChevronDown size={17} aria-hidden="true" />
         </summary>
-        <nav aria-label="Table of contents">{links}</nav>
+        {list}
       </details>
     </aside>
   );

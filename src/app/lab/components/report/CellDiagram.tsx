@@ -93,6 +93,14 @@ const CHANNELS: { id: PartId; label: string; x: number; edge: number; light: str
   { id: 'k', label: 'K⁺', x: 435, edge: 310, light: '#DE8B92', color: K, dark: '#7F4046', ion: K },
 ];
 
+/** Butiran sitoplasma: posisi tetap (deret sederhana, bukan acak) supaya render stabil */
+const GRANULES = Array.from({ length: 30 }, (_, i) => ({
+  x: 92 + ((i * 97) % 456),
+  y: 104 + ((i * 59) % 192),
+  r: 1.3 + (i % 4) * 0.45,
+  o: 0.22 + (i % 3) * 0.1,
+}));
+
 /** Tetesan cipratan gooey: arah, jarak, ukuran (sedikit acak supaya terasa organik) */
 const GOO_DROPS = [
   { angle: 12, dist: 36, r: 7.5 }, { angle: 75, dist: 29, r: 6 }, { angle: 138, dist: 38, r: 8 },
@@ -214,6 +222,11 @@ export default function CellDiagram({ ratios, control }: {
               <stop offset="0.55" stopColor="#F8D5D2" />
               <stop offset="1" stopColor="#F2C1BF" />
             </linearGradient>
+            {/* Kilap agar-agar di bagian atas sel */}
+            <radialGradient id={`${uid}-gloss`} cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0" stopColor="#FFFFFF" stopOpacity="0.75" />
+              <stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
+            </radialGradient>
             <radialGradient id={`${uid}-nucleus`} cx="0.38" cy="0.32" r="0.8">
               <stop offset="0" stopColor="#F7CFCC" />
               <stop offset="0.65" stopColor="#ECA9A8" />
@@ -263,6 +276,11 @@ export default function CellDiagram({ ratios, control }: {
             </g>
           </g>
 
+          {/* Butiran sitoplasma (ribosom, glikogen) yang melayang pelan di dalam sel */}
+          <g clipPath={ref('body')} pointerEvents="none" aria-hidden="true">
+            {GRANULES.map((g, i) => <circle key={i} data-granule cx={g.x} cy={g.y} r={g.r} fill="#C9787C" fillOpacity={g.o} />)}
+          </g>
+
           {/* T-tubule: lipatan membran ke dalam sel */}
           <g {...hit('ttubule')}>
             {TUBULES.flatMap(t => [
@@ -306,6 +324,14 @@ export default function CellDiagram({ ratios, control }: {
             <circle cx="352" cy="198" r="15" fill={ref('nucleolus')} />
             <circle cx="347" cy="192" r="3.6" fill="#FFFFFF" fillOpacity="0.32" />
             </g>
+          </g>
+
+          {/* Kesan jeli tembus pandang: cahaya tepi di dalam membran, bayangan lembut di bawah, dan kilap di atas */}
+          <g clipPath={ref('body')} pointerEvents="none" aria-hidden="true">
+            <path data-membrane d={BASE_PATH} fill="none" stroke="#7A2E36" strokeOpacity="0.07" strokeWidth="34" transform="translate(0 -12)" />
+            <path data-membrane d={BASE_PATH} fill="none" stroke="#FFFFFF" strokeOpacity="0.32" strokeWidth="26" />
+            <ellipse cx="250" cy="118" rx="150" ry="30" fill={ref('gloss')} opacity="0.55" />
+            <ellipse cx="196" cy="112" rx="34" ry="9" fill="#FFFFFF" opacity="0.5" />
           </g>
 
           {/* Membran: dua lapis, kepala fosfolipid sebagai titik */}

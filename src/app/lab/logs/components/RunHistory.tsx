@@ -18,9 +18,7 @@ import { normalizeTier } from '@/lib/tierColor';
 import type { PredictionOutput, ShapData } from '@/lib/predict';
 import RiskVerdict from '../../components/report/RiskVerdict';
 import BiomarkerList from '../../components/report/BiomarkerList';
-import CellDiagram from '../../components/report/CellDiagram';
 import { secondaryBtn } from '../../components/report/ui';
-import { ManualInputNote } from '../../components/report/ModelInputNote';
 import { Bone } from '../../components/Skeletons';
 import PipelineResult, { type TracesStatus } from '../../pipeline/components/PipelineResult';
 import {
@@ -292,7 +290,12 @@ function RecordMeta({ log, pred, pipeline, owner }: {
   );
 }
 
-export function RunDetail({ log, owner }: { log: RunLog; owner?: React.ReactNode }) {
+export function RunDetail({ log, owner, fallback }: {
+  log: RunLog;
+  owner?: React.ReactNode;
+  /** Tampilan pengganti bila detail run tidak bisa dimuat (mis. admin membuka run milik akun lain) */
+  fallback?: React.ReactNode;
+}) {
   const [detail, setDetail] = useState<RunDetailResponse | null>(null);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -320,6 +323,7 @@ export function RunDetail({ log, owner }: { log: RunLog; owner?: React.ReactNode
   const pipe = traces.pipe ?? pipelineBase;
   const job = useMemo(() => (pred && pipe ? toJob(log.id, pred, pipe) : null), [log.id, pred, pipe]);
 
+  if (failed && fallback) return <>{fallback}</>;
   if (failed) {
     return (
       <div className="py-10 flex flex-col items-center gap-4 text-center">
@@ -361,7 +365,6 @@ export function RunDetail({ log, owner }: { log: RunLog; owner?: React.ReactNode
         {when}
       </div>
       <RiskVerdict tier={tier} prediction={prediction} />
-      <ManualInputNote />
       <BiomarkerList
         ratios={input}
         tier={tier}
@@ -369,7 +372,6 @@ export function RunDetail({ log, owner }: { log: RunLog; owner?: React.ReactNode
         explaining={false}
         emptyDriversMessage="No driver analysis (SHAP) was recorded for this run."
       />
-      {input.length > 0 && <CellDiagram ratios={input} />}
       {meta}
     </div>
   );
@@ -383,21 +385,28 @@ export function RunDetail({ log, owner }: { log: RunLog; owner?: React.ReactNode
 const ROW = 'grid grid-cols-[1fr_auto_1.75rem] sm:grid-cols-[11rem_1fr_8rem_6rem_1.75rem] items-center gap-3 sm:gap-4';
 
 /** Filter multi-pilih: daftar kosong = tidak disaring. Di dalam grup = ATAU, antar grup = DAN. */
-type RunFilter = { drug: string[]; method: string[]; tier: string[] };
+export type RunFilter = { drug: string[]; method: string[]; tier: string[] };
 type GroupId = keyof RunFilter;
-const ALL_RUNS: RunFilter = { drug: [], method: [], tier: [] };
-const isAllRuns = (f: RunFilter) => !f.drug.length && !f.method.length && !f.tier.length;
+export const ALL_RUNS: RunFilter = { drug: [], method: [], tier: [] };
+export const isAllRuns = (f: RunFilter) => !f.drug.length && !f.method.length && !f.tier.length;
 
 const isDigitalLab = (log: RunLog) => log.input_method?.method === 'digital_lab' || log.source === 'digital_lab';
-/** Nama metode untuk filter: Digital Lab, atau mode pipeline (CiPA drug, New drug, ...) */
-const methodOf = (log: RunLog) => (isDigitalLab(log) ? 'Digital Lab' : log.input_method?.mode_label || 'Pipeline');
-const drugOf = (log: RunLog) => (isDigitalLab(log) ? null : log.input_method?.drug?.trim().toLowerCase() || null);
+/** Catatan tanpa keterangan asal (tidak ada method, source, atau job) tidak ditebak metodenya */
+const hasMethodInfo = (log: RunLog) => !!(log.input_method?.method || log.source || log.job_id);
+/** Nama metode untuk filter: Digital Lab, atau mode pipeline (CiPA drug, New drug, ...); null bila tidak diketahui */
+export const methodOf = (log: RunLog) =>
+  isDigitalLab(log) ? 'Digital Lab' : hasMethodInfo(log) ? log.input_method?.mode_label || 'Pipeline' : null;
+export const drugOf = (log: RunLog) => (isDigitalLab(log) ? null : log.input_method?.drug?.trim().toLowerCase() || null);
+/** Label baris: metode (+ obat), atau "—" bila backend tidak mengirim keterangannya */
+export const methodLabel = (log: RunLog) => (hasMethodInfo(log) || log.input_method?.drug ? formatInputMethod(log) : '—');
 
-const matchRun = (log: RunLog, query: string, f: RunFilter) => {
+/** Pencocokan filter & pencarian; `extra` = teks tambahan yang bisa dicari (mis. nama/email akun di admin) */
+export const matchRunWith = (extra?: (log: RunLog) => (string | null | undefined)[]) => (log: RunLog, query: string, f: RunFilter) => {
   if (f.tier.length && !f.tier.some(t => matchesTier(log.predicted_tier, t as TierFilterValue))) return false;
-  if (f.method.length && !f.method.includes(methodOf(log))) return false;
+  if (f.method.length && !f.method.includes(methodOf(log) ?? '')) return false;
   if (f.drug.length && !f.drug.includes(drugOf(log) ?? '')) return false;
   return matchesQuery(query, [
+    ...(extra?.(log) ?? []),
     log.id,
     log.predicted_tier,
     formatWhen(log.created_at),
@@ -408,9 +417,10 @@ const matchRun = (log: RunLog, query: string, f: RunFilter) => {
     log.input_method?.drug,
   ]);
 };
+const matchRun = matchRunWith();
 
 /** Pilihan filter obat & metode dari seluruh riwayat; dimuat saat pill pertama kali dibuka */
-function useRunOptions(endpoint: string) {
+export function useRunOptions(endpoint: string) {
   const [items, setItems] = useState<RunLog[] | null>(null);
   const requested = useRef(false);
   const load = () => {
@@ -426,7 +436,8 @@ function useRunOptions(endpoint: string) {
     for (const log of items ?? []) {
       const d = drugOf(log);
       if (d) drugs.add(d);
-      methods.add(methodOf(log));
+      const m = methodOf(log);
+      if (m) methods.add(m);
     }
     return {
       drugs: [...drugs].sort().map(d => ({ id: d, label: formatDrugName(d) })),
@@ -537,7 +548,7 @@ export default function RunHistory() {
                   <>
                     <span className="hidden sm:block text-sm text-foreground truncate">{formatWhen(log.created_at)}</span>
                     <span className="flex flex-col min-w-0">
-                      <span className="text-sm font-medium text-foreground truncate">{formatInputMethod(log)}</span>
+                      <span className="text-sm font-medium text-foreground truncate">{methodLabel(log)}</span>
                       <span className="sm:hidden text-xs text-foreground/55 truncate">{formatWhen(log.created_at)}</span>
                     </span>
                     <span className="justify-self-end sm:justify-self-start">

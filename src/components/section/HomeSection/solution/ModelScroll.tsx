@@ -23,7 +23,7 @@ const MODES: { id: ModeId; name: string; have: string; you: string; purpose: str
     id: 'known',
     name: 'CiPA drug',
     have: 'I have a drug name',
-    you: 'just the drug name',
+    you: 'only the drug name',
     purpose: 'Pick one of the 28 CiPA reference drugs. Cardivex fills in all of its lab values for you.',
     best: 'Checking or comparing well-known drugs.',
     inputs: [
