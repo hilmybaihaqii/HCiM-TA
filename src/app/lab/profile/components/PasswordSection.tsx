@@ -2,10 +2,10 @@
 
 import React, { useId, useState } from 'react';
 import { AnimatePresence, motion, useAnimation } from 'framer-motion';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, LockKeyhole } from 'lucide-react';
 import { api } from '@/lib/api';
 import { readApiError } from '@/lib/pipeline';
-import { DrawnCheck } from '@/components/auth/AuthShell';
+import { Celebration } from '@/components/auth/SignedInNotice';
 import { primaryBtn, secondaryBtn } from '../../components/report/ui';
 import OtpInput, { useCooldown } from './OtpInput';
 
@@ -269,13 +269,19 @@ export default function PasswordSection({ email, initialStep }: { email: string;
           )}
 
           {step === 'success' && (
-            <div className="flex flex-col items-start gap-5">
-              <span className="text-foreground"><DrawnCheck size={48} /></span>
-              <div>
-                <p className="text-base font-medium text-foreground">Password updated</p>
-                <p className="mt-1 text-sm text-foreground/70">Use your new password the next time you sign in.</p>
-              </div>
-              <button type="button" onClick={reset} className={secondaryBtn}>Done</button>
+            <div className="py-4">
+              <Celebration
+                tone="light"
+                icon={<LockKeyhole className="h-7 w-7" />}
+                ready
+                load={1.1}
+                loadingLabel="Saving your new password"
+                badge="Password updated"
+                title="All set."
+                subtitle="Use your new password the next time you sign in."
+              >
+                <button type="button" onClick={reset} className={secondaryBtn}>Done</button>
+              </Celebration>
             </div>
           )}
       </motion.div>

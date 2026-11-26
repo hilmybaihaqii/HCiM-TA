@@ -43,7 +43,7 @@ export const STANDARDS_DATA: StandardItem[] = [
     slug: 'ich-s7b-e14-software-quality',
     number: '01',
     level: 'International',
-    title: 'ICH S7B and E14 — the 2022 Q&A',
+    title: 'ICH S7B and E14: the 2022 Q&A',
     subtitle: 'The guidance that lets a simulated heart cell count as evidence.',
     excerpt:
       'Since 2022, the international guidance that governs cardiac safety testing recognises in-silico models of the human heart cell as supporting evidence, provided the model and its inputs are documented and reproducible.',
@@ -106,7 +106,7 @@ export const STANDARDS_DATA: StandardItem[] = [
       {
         clause: '§ 03',
         title: 'Records that survive the project',
-        body: 'Every prediction in Cardivex is stored with its inputs, its risk level, the vote share behind it and the SHAP explanation, under the account that ran it. A team can show not only what the result was, but what the model was given and why it decided that way, long after the run.',
+        body: 'Every prediction in Cardivex is stored with its inputs, its risk level, the vote share behind it and the SHAP explanation, under the account that ran it. Long after the run, a team can show the result, the inputs the model received and the reasons for its decision.',
       },
       {
         clause: '§ 04',
@@ -163,8 +163,8 @@ export const STANDARDS_DATA: StandardItem[] = [
     relatedTags: ['CiPA', '28 reference drugs', '11 biomarkers', 'Three risk tiers'],
     sources: [
       { label: 'CiPA initiative', href: 'https://cipaproject.org/' },
-      { label: 'Dutta et al. (2017) — the CiPA-optimised human ventricular model', href: 'https://doi.org/10.3389/fphys.2017.00616', note: 'DOI' },
-      { label: 'O’Hara et al. (2011) — the original O’Hara-Rudy model', href: 'https://doi.org/10.1371/journal.pcbi.1002061', note: 'DOI' },
+      { label: 'Dutta et al. (2017): the CiPA-optimised human ventricular model', href: 'https://doi.org/10.3389/fphys.2017.00616', note: 'DOI' },
+      { label: 'O’Hara et al. (2011): the original O’Hara-Rudy model', href: 'https://doi.org/10.1371/journal.pcbi.1002061', note: 'DOI' },
     ],
   },
   {
@@ -206,7 +206,7 @@ export const STANDARDS_DATA: StandardItem[] = [
     relatedTags: ['Random forest', 'Held-out drugs', 'Conformal prediction', 'SHAP'],
     sources: [
       { label: 'The papers this work builds on', href: '/articles' },
-      { label: 'Passini et al. (2017) — simulation outperformed animal hearts for this risk', href: 'https://doi.org/10.3389/fphys.2017.00668', note: 'DOI' },
+      { label: 'Passini et al. (2017): simulation outperformed animal hearts for this risk', href: 'https://doi.org/10.3389/fphys.2017.00668', note: 'DOI' },
     ],
   },
 ];

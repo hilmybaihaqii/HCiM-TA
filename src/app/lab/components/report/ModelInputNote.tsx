@@ -71,21 +71,3 @@ export default function ModelInputNote({ job }: { job: PipelineJob }) {
     </section>
   );
 }
-
-/** Digital Lab: 11 rasio dari pengguna langsung menjadi input model, tanpa simulasi dosis */
-export function ManualInputNote() {
-  return (
-    <section aria-labelledby="manual-input-heading" className="border-y border-foreground/10 py-6 md:py-8 flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
-      <div className="max-w-2xl">
-        <h3 id="manual-input-heading" className="text-base md:text-lg font-medium tracking-tight text-foreground">
-          What the model received
-        </h3>
-        <p className="mt-2 text-sm text-foreground/70 leading-relaxed">
-          The 11 ratios entered here went straight into the model; no doses were simulated for this result. If the values
-          come from several concentrations, they should already be averaged, the same way the Full Pipeline averages 1× to 4× Cmax.
-        </p>
-      </div>
-      <GuideLink topic="dose-averaging" />
-    </section>
-  );
-}

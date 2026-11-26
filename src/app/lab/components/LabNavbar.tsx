@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FlaskConical, ActivitySquare, User, LogOut, ChevronDown, Shield, MonitorPlay, Workflow, BookOpen } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -11,14 +11,18 @@ import { clearClientSession } from '@/lib/clientSession';
 import { startUserViewSplash } from './UserViewSplash';
 import LabBottomNav from './LabBottomNav';
 import LanguageSwitcher from '@/i18n/LanguageSwitcher';
+import { Celebration } from '@/components/auth/SignedInNotice';
 
 export default function LabNavbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const user = useSessionUser();
 
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  // Layar perpisahan: muncul begitu "Sign out" ditekan, menutup setelah backend selesai
+  const [farewell, setFarewell] = useState<{ ready: boolean } | null>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
   // Deteksi apakah user sedang berada di area admin
@@ -56,6 +60,82 @@ export default function LabNavbar() {
   const activePath = pathname;
   const activeIndex = navItems.findIndex(item => item.path === activePath);
 
+  /* ---------- Geser pil (desktop): tekan, geser ke menu tujuan, lepas ----------
+     Selama digeser, posisi pil diubah langsung lewat style (tanpa render ulang tiap gerakan);
+     lebarnya mengikuti menu terdekat. Klik biasa tetap jalan seperti link. */
+  const pillRef = useRef<HTMLSpanElement>(null);
+  const drag = useRef<{ pointer: number; startX: number; dragging: boolean; index: number } | null>(null);
+  const skipClick = useRef(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const shownIndex = dragIndex ?? activeIndex;
+
+  const nearestTab = (clientX: number) => {
+    const nav = navRef.current;
+    if (!nav) return null;
+    const left = nav.getBoundingClientRect().left;
+    const links = linkRefs.current.filter((l): l is HTMLAnchorElement => !!l);
+    if (!links.length) return null;
+    let index = 0;
+    let best = Infinity;
+    links.forEach((l, i) => {
+      const d = Math.abs(clientX - left - (l.offsetLeft + l.offsetWidth / 2));
+      if (d < best) { best = d; index = i; }
+    });
+    const first = links[0];
+    const last = links[links.length - 1];
+    const w = links[index].offsetWidth;
+    const x = Math.min(last.offsetLeft + last.offsetWidth - w, Math.max(first.offsetLeft, clientX - left - w / 2));
+    return { index, x, w };
+  };
+
+  const onNavPointerDown = (e: React.PointerEvent<HTMLElement>) => {
+    if (e.button !== 0) return;
+    skipClick.current = false;
+    drag.current = { pointer: e.pointerId, startX: e.clientX, dragging: false, index: activeIndex };
+  };
+  const onNavPointerMove = (e: React.PointerEvent<HTMLElement>) => {
+    const g = drag.current;
+    const pillEl = pillRef.current;
+    if (!g || g.pointer !== e.pointerId || !pillEl) return;
+    if (!g.dragging) {
+      if (Math.abs(e.clientX - g.startX) < 6) return;
+      g.dragging = true;
+      // Pointer bisa sudah dilepas sebelum gerakan pertama diproses; tanpa capture geser tetap jalan
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* abaikan */ }
+      // Saat digeser: posisi langsung mengikuti kursor, hanya lebar & skala yang dihaluskan
+      pillEl.style.transition = 'width 220ms cubic-bezier(0.22,1,0.36,1), scale 200ms ease';
+      pillEl.style.scale = '1.05';
+    }
+    const t = nearestTab(e.clientX);
+    if (!t) return;
+    pillEl.style.width = `${t.w}px`;
+    pillEl.style.transform = `translateX(${t.x.toFixed(1)}px)`;
+    if (t.index !== g.index) {
+      g.index = t.index;
+      setDragIndex(t.index);
+    }
+  };
+  const endDrag = (go: boolean) => {
+    const g = drag.current;
+    drag.current = null;
+    const pillEl = pillRef.current;
+    if (!g?.dragging || !pillEl) return;
+    skipClick.current = true;
+    const link = linkRefs.current[g.index];
+    // Lepas: pil meluncur dengan pantulan kecil ke menu tujuan
+    pillEl.style.removeProperty('transition');
+    pillEl.style.removeProperty('scale');
+    if (link) {
+      const next = { x: link.offsetLeft, w: link.offsetWidth };
+      pillEl.style.width = `${next.w}px`;
+      pillEl.style.transform = `translateX(${next.x}px)`;
+      setPill(next);
+    }
+    setDragIndex(null);
+    const target = navItems[g.index];
+    if (go && target && target.path !== pathname) router.push(target.path);
+  };
+
   useLayoutEffect(() => {
     const measure = () => {
       const el = linkRefs.current[activeIndex];
@@ -76,18 +156,21 @@ export default function LabNavbar() {
 
   const executeLogout = async () => {
     setIsLoggingOut(true);
+    setShowLogoutModal(false);
+    setFarewell({ ready: false });
     try {
-      await api("/auth/logout", { method: "POST" }); 
+      await api("/auth/logout", { method: "POST" });
     } catch (error) {
       console.error("Logout failed:", error);
     } finally {
-      setShowLogoutModal(false);
-      setIsLoggingOut(false);
       // Hasil lab yang diingat per tab jangan terlihat oleh akun berikutnya; halaman publik bisa dibuka lagi
       clearClientSession();
-      window.location.href = '/login';
+      setFarewell({ ready: true });
     }
   };
+
+  // Setelah animasi perpisahan selesai: muat ulang penuh ke halaman login (membersihkan state sesi lama)
+  const leave = React.useCallback(() => { window.location.replace('/login'); }, []);
 
   const getFirstName = (name?: string) => {
     if (!name) return '...';
@@ -119,24 +202,37 @@ export default function LabNavbar() {
               <nav
                 ref={navRef}
                 id="tour-navbar-menu"
-                className="relative flex items-center gap-1 md:gap-1.5 bg-foreground/5 p-1 rounded-full border border-foreground/8"
+                onPointerDown={onNavPointerDown}
+                onPointerMove={onNavPointerMove}
+                onPointerUp={() => endDrag(true)}
+                onPointerCancel={() => endDrag(false)}
+                onClickCapture={e => {
+                  // Klik yang menutup gerakan geser tidak ikut membuka link di bawah kursor
+                  if (!skipClick.current) return;
+                  skipClick.current = false;
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                className="relative flex items-center gap-1 md:gap-1.5 bg-foreground/5 p-1 rounded-full border border-foreground/8 select-none touch-pan-y"
               >
                 {/* Satu pil bersama yang bergeser ke tab aktif */}
                 {pill && (
                   <span
+                    ref={pillRef}
                     aria-hidden="true"
-                    className="absolute top-1 bottom-1 left-0 rounded-full bg-surface-white shadow-sm border border-foreground/10 transition-[transform,width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                    className="absolute top-1 bottom-1 left-0 rounded-full bg-surface-white shadow-sm border border-foreground/10 transition-[transform,width,scale] duration-[420ms] ease-[cubic-bezier(0.3,1.35,0.55,1)] motion-reduce:transition-none"
                     style={{ width: pill.w, transform: `translateX(${pill.x}px)` }}
                   />
                 )}
                 {navItems.map((item, i) => {
-                  const isActive = activePath === item.path;
+                  const isActive = i === shownIndex;
                   const Icon = item.icon;
                   return (
                     <Link
                       key={item.name}
                       ref={el => { linkRefs.current[i] = el; }}
                       href={item.path}
+                      draggable={false}
                       title={item.name}
                       aria-current={pathname === item.path ? 'page' : undefined}
                       className={`relative z-10 px-3 py-2 md:px-3 lg:px-4 md:py-1.5 rounded-full text-xs font-medium transition-colors duration-300 flex items-center justify-center gap-2 ${
@@ -242,6 +338,32 @@ export default function LabNavbar() {
 
       {!isAdminRoute && <LabBottomNav id="tour-navbar-menu-mobile" items={navItems} pathname={pathname} />}
 
+      {/* Layar perpisahan setelah sign out: animasi yang sama dengan login, versi gelap */}
+      <AnimatePresence>
+        {farewell && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed inset-0 z-[300] flex items-center justify-center bg-[#0A0A0A] px-6 text-white"
+          >
+            <div className="w-full max-w-sm">
+              <Celebration
+                icon={<LogOut className="h-7 w-7 translate-x-0.5" />}
+                ready={farewell.ready}
+                load={1.2}
+                hold={1.6}
+                loadingLabel="Signing you out"
+                badge="Signed out"
+                title={user.display_name ? `See you soon, ${getFirstName(user.display_name)}.` : 'See you soon.'}
+                subtitle="Your work is saved to your account."
+                onDone={leave}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* =========================================================
           LOGOUT CONFIRMATION MODAL
           ========================================================= */}
@@ -278,14 +400,14 @@ export default function LabNavbar() {
                 <button 
                   onClick={executeLogout}
                   disabled={isLoggingOut}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-full bg-accent text-white text-xs font-semibold tracking-wide hover:bg-accent/90 hover:scale-[1.02] transition-all duration-300 shadow-sm disabled:opacity-70 disabled:hover:scale-100"
+                  className="bubble bubble-accent w-full flex items-center justify-center gap-2 py-3 rounded-full bg-accent text-white text-xs font-semibold tracking-wide hover:bg-accent/90 hover:scale-[1.02] transition-all duration-300 shadow-sm disabled:opacity-70 disabled:hover:scale-100"
                 >
                   {isLoggingOut ? 'Signing out…' : 'Sign out'}
                 </button>
                 <button 
                   onClick={() => setShowLogoutModal(false)}
                   disabled={isLoggingOut}
-                  className="w-full py-3 rounded-full border border-foreground/10 bg-transparent text-foreground text-xs font-semibold tracking-wide hover:bg-foreground/3 transition-colors disabled:opacity-50"
+                  className="bubble bubble-ink w-full py-3 rounded-full border border-foreground/10 bg-transparent text-foreground text-xs font-semibold tracking-wide hover:bg-foreground/3 transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>

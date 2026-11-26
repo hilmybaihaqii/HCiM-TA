@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { commaDecimal, formatComma, parseDecimal } from '@/lib/decimal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 // Asumsikan data ini diimpor dari src/data/compounds.ts
@@ -33,24 +34,29 @@ export default function LabForm({ onSubmit, initial }: {
   }, []);
 
   const injectPreset = (presetId: string, presetValues: number[]) => {
-    setValues(presetValues.map(v => v.toString()));
+    setValues(presetValues.map(formatComma));
     setActivePreset(presetId);
   };
 
   const handleManualInput = (idx: number, val: string) => {
     const newVals = [...values];
-    newVals[idx] = val;
+    // Desimal ditulis dengan koma (titik yang diketik ikut jadi koma); saat dikirim diubah ke angka
+    newVals[idx] = commaDecimal(val);
     setValues(newVals);
     setActivePreset(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(values.map(v => parseFloat(v) || 0));
+    const parsed = values.map(parseDecimal);
+    // Jangan pernah mengirim 0 diam-diam untuk nilai yang tidak terbaca
+    if (parsed.some(v => v === null)) return;
+    onSubmit(parsed as number[]);
   };
 
   const filledCount = values.filter(v => v !== '').length;
-  const isReady = filledCount === BIOMARKERS.length;
+  const invalid = values.map(v => v !== '' && parseDecimal(v) === null);
+  const isReady = filledCount === BIOMARKERS.length && !invalid.some(Boolean);
 
   // Logika pembagian data untuk paginasi 4 obat di mobile
   const itemsPerPage = isMobile ? 4 : 12;
@@ -100,7 +106,7 @@ export default function LabForm({ onSubmit, initial }: {
                 <div 
                   key={marker.id} 
                   className={`relative flex flex-col justify-between bg-foreground/1 border p-4 rounded-card transition-all duration-300 group
-                    ${hasValue ? 'border-foreground/8 bg-surface-white/50' : 'border-foreground/4 hover:bg-surface-white/80'}
+                    ${invalid[idx] ? 'border-rose-400/60 bg-surface-white/50' : hasValue ? 'border-foreground/8 bg-surface-white/50' : 'border-foreground/4 hover:bg-surface-white/80'}
                     focus-within:bg-surface-white focus-within:border-action/40 focus-within:ring-4 focus-within:ring-action/5 focus-within:shadow-[0_8px_20px_rgba(0,0,0,0.02)]
                   `}
                 >
@@ -115,7 +121,8 @@ export default function LabForm({ onSubmit, initial }: {
                   
                   <div className="relative flex items-center">
                     <input
-                      type="number" step="any" required placeholder="1.000"
+                      type="text" inputMode="decimal" autoComplete="off" spellCheck={false} required placeholder="1,000"
+                      aria-invalid={invalid[idx] || undefined}
                       value={values[idx]}
                       onChange={(e) => handleManualInput(idx, e.target.value)}
                       className="w-full bg-transparent border-none p-0 text-lg font-mono text-foreground font-medium placeholder:text-foreground/10 focus:outline-none focus:ring-0 transition-colors"
@@ -124,9 +131,13 @@ export default function LabForm({ onSubmit, initial }: {
                   </div>
 
                   <div className="mt-4 pt-3 border-t border-foreground/4 flex items-center justify-between">
-                    <span className="text-[9px] font-mono text-muted/40 tracking-widest uppercase line-clamp-1">
-                      {marker.cat}
-                    </span>
+                    {invalid[idx] ? (
+                      <span className="text-[10px] text-rose-600 line-clamp-1">Not a number</span>
+                    ) : (
+                      <span className="text-[9px] font-mono text-muted/40 tracking-widest uppercase line-clamp-1">
+                        {marker.cat}
+                      </span>
+                    )}
                   </div>
                 </div>
               );
@@ -299,7 +310,7 @@ export default function LabForm({ onSubmit, initial }: {
               id="tour-start-button"
               type="submit"
               disabled={!isReady}
-              className={`group flex items-center justify-center gap-3 w-full sm:w-auto px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.15em] transition-all duration-300 rounded-full shadow-lg 
+              className={`bubble group flex items-center justify-center gap-3 w-full sm:w-auto px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.15em] transition-all duration-300 rounded-full shadow-lg 
                 ${isReady
                   ? 'bg-accent text-surface-white hover:bg-accent-dark hover:shadow-accent/25 hover:scale-[1.02] active:scale-95 cursor-pointer'
                   : 'bg-foreground/10 text-muted/50 shadow-none cursor-not-allowed'

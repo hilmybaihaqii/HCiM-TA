@@ -28,6 +28,8 @@ function LoginForm() {
   const [via] = useState<'google' | 'email' | null>(() =>
     searchParams.get('login') === 'success' ? 'google' : searchParams.get('verified') === '1' ? 'email' : null);
   const [session, setSession] = useState<{ state: 'checking' | 'ready'; me?: Me } | null>(via ? { state: 'checking' } : null);
+  // Login email + password berhasil: tampilkan animasi yang sama dengan login Google sebelum masuk lab
+  const [passwordMe, setPasswordMe] = useState<Me | null>(null);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -94,8 +96,8 @@ function LoginForm() {
     try {
       await api('/auth/login', { method: 'POST', body: { email, password } });
       // Pastikan sesi sudah tersimpan sebelum masuk ke /lab
-      await api('/auth/me');
-      openLab();
+      const me = readMe(await api('/auth/me'));
+      setPasswordMe(me ?? {});
     } catch (error) {
       setIsLoading(false);
       api('/auth/logout', { method: 'POST' }).catch(() => {});
@@ -135,6 +137,14 @@ function LoginForm() {
           email={session.me?.email}
           onDone={openLab}
         />
+      </AuthShell>
+    );
+  }
+
+  if (passwordMe) {
+    return (
+      <AuthShell aside={LOGIN_ASIDE}>
+        <SignInCelebration via="password" ready name={passwordMe.display_name} email={passwordMe.email} onDone={openLab} />
       </AuthShell>
     );
   }

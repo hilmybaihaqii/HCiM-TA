@@ -198,7 +198,7 @@ export function RunningDetails({ job, notice }: { job: PipelineJob | null; notic
       <AnimatePresence>
         {showSlowNote && (
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-1 text-sm text-amber-700">
-            The server is busy or just waking up. This can take a little longer.
+            The server is busy or still starting up. This can take a little longer.
           </motion.p>
         )}
       </AnimatePresence>

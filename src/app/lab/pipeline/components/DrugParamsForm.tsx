@@ -11,6 +11,7 @@ import {
   FieldErrors, FormState, Mode, ParamValues, buildRequest, emptyParams, isEdited, paramsFromEntry, validateForm,
 } from '../form';
 import { Bone } from '../../components/Skeletons';
+import { normalizeDecimal } from '@/lib/decimal';
 import ModeSelector, { EnterList, STEP_LABEL, StepId, modeInfo } from './ModeSelector';
 
 const HERG_META: Record<HergKey, { label: string; unit?: string; placeholder: string }> = {
@@ -61,16 +62,17 @@ function NumberField({
       >
         <input
           id={id}
-          type="number"
-          step="any"
+          type="text"
           inputMode="decimal"
+          autoComplete="off"
+          spellCheck={false}
           value={value}
           placeholder={placeholder}
-          onChange={e => onChange(e.target.value)}
+          // Koma (keyboard Indonesia) langsung jadi titik, supaya yang dikirim ke backend selalu sah
+          onChange={e => onChange(normalizeDecimal(e.target.value))}
           onBlur={onBlur}
           aria-invalid={hasError || undefined}
-          className="w-full min-w-0 bg-transparent py-1.5 text-lg font-mono text-foreground placeholder:text-foreground/15 focus:outline-none
-            [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          className="w-full min-w-0 bg-transparent py-1.5 text-lg font-mono text-foreground placeholder:text-foreground/15 focus:outline-none"
         />
         {unit && <span className="shrink-0 text-xs font-mono text-muted/70">{unit}</span>}
       </div>
@@ -177,7 +179,10 @@ function DrugPicker({ db, value, onSelect, error }: {
         )}
       </AnimatePresence>
 
-      {error && !open && <p className="mt-2 text-[11px] text-rose-600">{error}</p>}
+      {/* Ruang pesan selalu ada, supaya kotak tidak melompat saat daftar dibuka/ditutup */}
+      <p aria-live="polite" className={`mt-2 min-h-4 text-[11px] leading-4 text-rose-600 transition-opacity duration-200 ${error && !open ? 'opacity-100' : 'opacity-0'}`}>
+        {error ?? ''}
+      </p>
     </div>
   );
 }
@@ -380,11 +385,10 @@ export default function DrugParamsForm({
         return (
           <>
             <DrugPicker db={db} value={form.drug} onSelect={selectDrug} error={revealed.has('drug') || form.drug ? errors.drug : undefined} />
-            {entry && (
-              <p className="mt-4 text-sm text-muted">
-                Cmax <span className="font-mono text-foreground">{dbParams.cmax} nM</span> · from the CiPA database
-              </p>
-            )}
+            {/* Baris Cmax disiapkan sejak awal dan hanya memudar masuk, jadi memilih obat tidak menggeser tata letak */}
+            <p className={`mt-2 h-5 truncate text-sm leading-5 text-muted transition-opacity duration-300 ${entry ? 'opacity-100' : 'opacity-0'}`} aria-hidden={!entry}>
+              {entry && <>Cmax <span className="font-mono text-foreground">{dbParams.cmax} nM</span> · from the CiPA database</>}
+            </p>
           </>
         );
 
@@ -578,7 +582,7 @@ export default function DrugParamsForm({
             type="button"
             onClick={back}
             disabled={submitting}
-            className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap px-5 py-3 rounded-full border border-action/30 bg-surface-white text-sm font-medium text-action hover:border-action hover:bg-action/5 active:scale-[0.98] transition-all duration-300 disabled:opacity-40"
+            className="bubble bubble-ink inline-flex shrink-0 items-center gap-2 whitespace-nowrap px-5 py-3 rounded-full border border-action/30 bg-surface-white text-sm font-medium text-action hover:border-action hover:bg-action/5 active:scale-[0.98] transition-all duration-300 disabled:opacity-40"
           >
             <span aria-hidden="true">←</span> {stepIndex === 0 ? 'Back to modes' : 'Back'}
           </button>
@@ -587,7 +591,7 @@ export default function DrugParamsForm({
             <button
               type="submit"
               disabled={!canSubmit}
-              className={`flex items-center justify-center gap-2.5 whitespace-nowrap border border-transparent px-6 sm:px-7 py-3 rounded-full text-sm font-medium transition-all duration-300
+              className={`bubble flex items-center justify-center gap-2.5 whitespace-nowrap border border-transparent px-6 sm:px-7 py-3 rounded-full text-sm font-medium transition-all duration-300
                 ${canSubmit ? 'bg-accent text-surface-white shadow-sm shadow-accent/20 hover:bg-accent-dark active:scale-[0.98]' : 'bg-foreground/8 text-muted/60 cursor-not-allowed'}`}
             >
               {submitting ? 'Starting…' : (
@@ -597,7 +601,7 @@ export default function DrugParamsForm({
           ) : (
             <button
               type="submit"
-              className="flex items-center gap-2 whitespace-nowrap border border-transparent px-6 sm:px-7 py-3 rounded-full bg-action text-surface-white text-sm font-medium shadow-sm shadow-action/20 hover:bg-action-dark active:scale-[0.98] transition-all duration-300"
+              className="bubble flex items-center gap-2 whitespace-nowrap border border-transparent px-6 sm:px-7 py-3 rounded-full bg-action text-surface-white text-sm font-medium shadow-sm shadow-action/20 hover:bg-action-dark active:scale-[0.98] transition-all duration-300"
             >
               {step === 'overview' ? 'Start' : 'Next'} <span aria-hidden="true">→</span>
             </button>

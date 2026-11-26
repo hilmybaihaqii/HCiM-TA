@@ -2,8 +2,8 @@ import { useEffect, type RefObject } from 'react';
 
 /*
  * Gerak "sel hidup" untuk CellDiagram: sel kenyal seperti jeli. Membran menggembung pelan,
- * badan sel memipih dan memanjang bergantian sambil sedikit miring, dan organel bergoyang
- * dengan jeda kecil. Satu requestAnimationFrame mengubah beberapa atribut SVG, tanpa render
+ * badan sel memipih dan memanjang dengan pegas teredam, organel dan butiran sitoplasma ikut
+ * bergoyang terlambat. Satu requestAnimationFrame mengubah beberapa atribut SVG, tanpa render
  * ulang React. Loop berhenti saat sel di luar layar atau pengguna memilih gerak minimal.
  */
 
@@ -18,7 +18,7 @@ const CY = 200;
 const STRAIGHT = RIGHT - LEFT;
 const ARC = Math.PI * R;
 const PERIMETER = 2 * STRAIGHT + 2 * ARC;
-const POINTS = 56;
+const POINTS = 64;
 
 type Pt = { x: number; y: number; nx: number; ny: number };
 
@@ -38,19 +38,23 @@ function stadium(s: number): Pt {
   return { x: LEFT + R * Math.cos(a), y: CY + R * Math.sin(a), nx: Math.cos(a), ny: Math.sin(a) };
 }
 
-/** Gembungan membran ke arah luar pada posisi s dan waktu t (detik): gelombang lebar yang berjalan pelan */
-function wobble(s: number, t: number) {
+/**
+ * Gembungan membran ke arah luar pada posisi s dan waktu t (detik): gelombang lebar yang berjalan pelan.
+ * `ripple` = simpangan riak setelah sel ditekan (mode 3 dan 4 yang ikut memantul lalu mereda).
+ */
+function wobble(s: number, t: number, ripple = 0) {
   const k = Math.PI * 2 * s;
-  return 4.2 * Math.sin(2 * k + 1.1 * t) + 2.6 * Math.sin(3 * k - 1.4 * t + 1.7) + 1.4 * Math.sin(5 * k + 0.9 * t + 0.4);
+  return 3.8 * Math.sin(2 * k + 0.8 * t) + 2.2 * Math.sin(3 * k - 1.05 * t + 1.7) + 1.1 * Math.sin(5 * k + 0.7 * t + 0.4)
+    + ripple * (Math.sin(3 * k + 0.6) + 0.6 * Math.sin(4 * k - 1.1));
 }
 
 /** Jalur tertutup yang halus (Catmull-Rom → Bezier) */
-export function membranePath(t: number) {
+export function membranePath(t: number, ripple = 0) {
   const pts: { x: number; y: number }[] = [];
   for (let i = 0; i < POINTS; i++) {
     const s = i / POINTS;
     const p = stadium(s);
-    const d = wobble(s, t);
+    const d = wobble(s, t, ripple);
     pts.push({ x: p.x + p.nx * d, y: p.y + p.ny * d });
   }
   const at = (i: number) => pts[(i + POINTS) % POINTS];
@@ -88,8 +92,20 @@ export function edgeS(x: number, top: boolean) {
  * Elemen yang digerakkan ditandai di dalam <svg>:
  *  data-membrane (path bentuk membran), data-body (wadah seluruh sel yang memipih/memanjang),
  *  data-edge-s (channel dan T-tubule yang menempel di membran),
- *  data-floater (organel yang bergoyang).
+ *  data-floater (organel yang bergoyang), data-granule (butiran sitoplasma yang melayang).
+ *
+ * Gerak jeli memakai pegas teredam (bukan sinus murni): badan sel mengejar target yang bergeser
+ * pelan lalu memantul melewatinya dan tenang kembali; organel mengikuti dengan pegas yang lebih
+ * lembek sehingga terlambat dan ikut bergoyang, seperti isi agar-agar.
  */
+
+type Spring = { x: number; v: number };
+/** Satu langkah pegas teredam (semi-implicit Euler) */
+function step(s: Spring, target: number, k: number, c: number, dt: number) {
+  s.v += (-k * (s.x - target) - c * s.v) * dt;
+  s.x += s.v * dt;
+}
+
 export function useLivingCell(root: RefObject<SVGSVGElement | null>) {
   useEffect(() => {
     const svg = root.current;
@@ -103,22 +119,34 @@ export function useLivingCell(root: RefObject<SVGSVGElement | null>) {
     // Pusat tiap organel, supaya ia berputar di tempatnya sendiri
     const floaters = [...svg.querySelectorAll<SVGGElement>('[data-floater]')].map(el => {
       const b = el.getBBox();
-      return { el, cx: b.x + b.width / 2, cy: b.y + b.height / 2 };
+      return { el, cx: b.x + b.width / 2, cy: b.y + b.height / 2, ox: { x: 0, v: 0 }, oy: { x: 0, v: 0 } };
     });
+    const granules = [...svg.querySelectorAll<SVGCircleElement>('[data-granule]')];
     const edges = [...svg.querySelectorAll<SVGGElement>('[data-edge-s]')].map(el => {
       const s = Number(el.dataset.edgeS);
       const { nx, ny } = stadium(s);
       return { el, s, nx, ny };
     });
 
+    // Pegas badan sel: squash (memipih/memanjang), shear (miring), geser horizontal, dan riak membran
+    const squash: Spring = { x: 0, v: 0 };
+    const shear: Spring = { x: 0, v: 0 };
+    const drift: Spring = { x: 0, v: 0 };
+    const ripple: Spring = { x: 0, v: 0 };
+
     let raf = 0;
     let last = 0;
+    let prev = 0;
     // Langsung jalan; observer hanya menjeda saat sel keluar layar (dan melanjutkan saat kembali)
     let visible = true;
     const start = performance.now();
-    // Saat sel ditekan: sel "membal" sebentar seperti jeli yang disentuh, lalu tenang lagi
-    let poke = -Infinity;
-    const onPoke = () => { poke = performance.now(); };
+
+    // Ditekan: dorongan ke pegas, jadi sel memantul beberapa kali lalu tenang
+    const onPoke = () => {
+      squash.v += 2.6;
+      shear.v -= 1.4;
+      ripple.v += 9;
+    };
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') onPoke(); };
     svg.addEventListener('pointerdown', onPoke);
     svg.addEventListener('keydown', onKey);
@@ -127,36 +155,47 @@ export function useLivingCell(root: RefObject<SVGSVGElement | null>) {
       raf = requestAnimationFrame(frame);
       if (minFrame && now - last < minFrame) return;
       last = now;
+      // dt dibatasi: setelah tab kembali aktif, pegas tidak meledak karena jeda panjang
+      const dt = prev ? Math.min((now - prev) / 1000, 1 / 24) : 1 / 60;
+      prev = now;
       const t = (now - start) / 1000;
 
-      const d = membranePath(t);
+      // Target bergeser pelan; pegas lembek (redaman rendah) membuatnya memantul seperti jeli
+      step(squash, 0.55 * Math.sin(t * 0.9) + 0.35 * Math.sin(t * 0.47 + 1.3), 26, 2.4, dt);
+      step(shear, 0.5 * Math.sin(t * 0.6 + 0.4), 18, 2.2, dt);
+      step(drift, 3.2 * Math.sin(t * 0.38), 10, 3, dt);
+      step(ripple, 0, 30, 2.6, dt);
+
+      const d = membranePath(t, ripple.x);
       membranes.forEach(el => el.setAttribute('d', d));
       edges.forEach(({ el, s, nx, ny }) => {
-        const w = wobble(s, t);
+        const w = wobble(s, t, ripple.x);
         el.setAttribute('transform', `translate(${(nx * w).toFixed(2)} ${(ny * w).toFixed(2)})`);
       });
 
-      // Kenyal: dua gelombang yang tidak seirama supaya goyangannya tidak terasa mekanis
-      const squish = 0.6 * Math.sin(t * 2.1) + 0.4 * Math.sin(t * 1.3 + 1);
-      const since = (now - poke) / 1000;
-      const kick = since < 1.4 ? Math.exp(-3.5 * since) * Math.sin(15 * since) : 0;
-      const sx = 1 + 0.03 * squish + 0.04 * kick;
-      const sy = 1 - 0.04 * squish - 0.05 * kick;
-      const tilt = 1.4 * Math.sin(t * 0.7);
-      const skew = 1.8 * Math.sin(t * 1.1 + 0.5);
-      const dx = 3 * Math.sin(t * 0.5);
+      const q = squash.x;
+      const sx = 1 + 0.034 * q;
+      const sy = 1 - 0.042 * q; // memipih saat melebar: volume terasa tetap, seperti jeli
       body?.setAttribute(
         'transform',
-        `translate(${(CX + dx).toFixed(2)} ${CY}) rotate(${tilt.toFixed(2)}) skewX(${skew.toFixed(2)}) scale(${sx.toFixed(4)} ${sy.toFixed(4)}) translate(${-CX} ${-CY})`,
+        `translate(${(CX + drift.x).toFixed(2)} ${CY}) skewX(${(shear.x * 2.6).toFixed(2)}) scale(${sx.toFixed(4)} ${sy.toFixed(4)}) translate(${-CX} ${-CY})`,
       );
 
-      // Organel bergoyang sedikit terlambat dari badan sel, seperti isi jeli
-      floaters.forEach(({ el, cx, cy }, i) => {
-        const lag = 0.6 * Math.sin(t * 2.1 - 0.9) + 0.4 * Math.sin(t * 1.3 + 0.1);
-        const x = 3.2 * Math.sin(t * 0.8 + i * 1.9) + 2.4 * lag;
-        const y = 2.6 * Math.cos(t * 0.65 + i * 2.3) - 1.6 * lag;
-        const r = 4 * Math.sin(t * 0.9 + i * 1.3);
-        el.setAttribute('transform', `translate(${x.toFixed(2)} ${y.toFixed(2)}) rotate(${r.toFixed(2)} ${cx.toFixed(1)} ${cy.toFixed(1)})`);
+      // Organel mengejar posisinya (ikut terdorong squash) dengan pegas lebih lembek -> terlambat & bergoyang
+      floaters.forEach((f, i) => {
+        const tx = 2.6 * Math.sin(t * 0.55 + i * 1.9) + q * ((f.cx - CX) / 250) * 7;
+        const ty = 2.2 * Math.cos(t * 0.47 + i * 2.3) - q * ((f.cy - CY) / 110) * 5;
+        step(f.ox, tx, 12, 1.6, dt);
+        step(f.oy, ty, 12, 1.6, dt);
+        const r = 3 * Math.sin(t * 0.6 + i * 1.3) + f.ox.v * 0.6;
+        f.el.setAttribute('transform', `translate(${f.ox.x.toFixed(2)} ${f.oy.x.toFixed(2)}) rotate(${r.toFixed(2)} ${f.cx.toFixed(1)} ${f.cy.toFixed(1)})`);
+      });
+
+      // Butiran sitoplasma melayang pelan (gerak Brown yang dihaluskan)
+      granules.forEach((g, i) => {
+        const x = 4 * Math.sin(t * (0.23 + (i % 5) * 0.04) + i * 2.1);
+        const y = 3 * Math.cos(t * (0.19 + (i % 3) * 0.05) + i * 1.7);
+        g.setAttribute('transform', `translate(${x.toFixed(2)} ${y.toFixed(2)})`);
       });
     };
 
@@ -164,6 +203,7 @@ export function useLivingCell(root: RefObject<SVGSVGElement | null>) {
       if (entry.isIntersecting === visible) return;
       visible = entry.isIntersecting;
       cancelAnimationFrame(raf);
+      prev = 0;
       if (visible) raf = requestAnimationFrame(frame);
     });
     io.observe(svg);

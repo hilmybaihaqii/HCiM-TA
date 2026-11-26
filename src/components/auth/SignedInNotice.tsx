@@ -2,21 +2,20 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail } from 'lucide-react';
+import { KeyRound, Mail } from 'lucide-react';
 import { GoogleMark } from './AuthShell';
 
 /*
- * Isi panel hitam halaman login setelah kembali dari Google atau dari link konfirmasi email:
- * logo di tengah -> lingkaran terisi pelan mengitarinya (minimal LOAD_S, jadi selalu selesai dengan
- * tenang walau backend cepat) -> saat penuh logo berganti centang, kembang api kecil memercik,
- * "Login successful" + sapaan -> setelah HOLD_S lab dibuka (lab menampilkan "Please wait").
- * Semua gerak hanya opacity & transform.
+ * Animasi "berhasil" yang dipakai bersama oleh semua alur akun (login Google/email/password,
+ * email terkonfirmasi, link reset terkirim, password diganti, logout):
+ * ikon di tengah -> lingkaran terisi pelan mengitarinya (minimal `load` detik, jadi selalu selesai
+ * dengan tenang walau backend cepat) -> saat penuh ikon berganti centang, kembang api kecil memercik,
+ * label + judul muncul -> setelah `hold` detik onDone dipanggil. Semua gerak hanya opacity & transform.
+ * `tone` "dark" untuk panel hitam halaman auth, "light" untuk halaman lab yang terang.
  */
 
 const EASE = [0.16, 1, 0.3, 1] as const;
-const LOAD_S = 2.6;
 const FINISH_S = 0.8;
-const HOLD_S = 2.4;
 const R = 62;
 
 /** Spinner sederhana untuk saat halaman masih dimuat (fallback Suspense) */
@@ -58,12 +57,12 @@ const DOTS = Array.from({ length: 12 }, (_, i) => ({
   color: ['#B8545C', '#FFFFFF', '#D98B1E'][i % 3],
 }));
 
-function Fireworks() {
+function Fireworks({ light = false }: { light?: boolean }) {
   return (
     <span aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1/2 h-0 w-0">
       {/* Gelombang cincin */}
       <motion.span
-        className="absolute -left-[62px] -top-[62px] h-[124px] w-[124px] rounded-full border border-white/50"
+        className={`absolute -left-[62px] -top-[62px] h-[124px] w-[124px] rounded-full border ${light ? 'border-foreground/30' : 'border-white/50'}`}
         initial={{ scale: 1, opacity: 0.7 }}
         animate={{ scale: 1.9, opacity: 0 }}
         transition={{ duration: 1.1, ease: EASE }}
@@ -72,7 +71,7 @@ function Fireworks() {
         <span key={`s${i}`} className="absolute left-0 top-0" style={{ transform: `rotate(${s.angle}deg)` }}>
           <motion.span
             className="absolute -left-px block h-3 w-[2px] rounded-full"
-            style={{ background: s.color }}
+            style={{ background: light && s.color === '#FFFFFF' ? '#2A2A2A' : s.color }}
             initial={{ y: -70, opacity: 0, scaleY: 0.3 }}
             animate={{ y: -s.far, opacity: [0, 1, 0], scaleY: [0.3, 1, 0.2] }}
             transition={{ duration: 1, ease: EASE, delay: 0.05 + s.delay }}
@@ -83,7 +82,7 @@ function Fireworks() {
         <span key={`d${i}`} className="absolute left-0 top-0" style={{ transform: `rotate(${d.angle}deg)` }}>
           <motion.span
             className="absolute -left-[2px] block h-1 w-1 rounded-full"
-            style={{ background: d.color }}
+            style={{ background: light && d.color === '#FFFFFF' ? '#2A2A2A' : d.color }}
             initial={{ y: -80, opacity: 0, scale: 0.4 }}
             animate={{ y: -d.far, opacity: [0, 1, 0], scale: [0.4, 1, 0.6] }}
             transition={{ duration: 1.3, ease: EASE, delay: 0.2 + (i % 3) * 0.05 }}
@@ -94,24 +93,39 @@ function Fireworks() {
   );
 }
 
-export default function SignInCelebration({ via, ready, name, email, onDone }: {
-  via: 'google' | 'email';
-  /** Sesi sudah terverifikasi (/auth/me berhasil) */
+export type CelebrationProps = {
+  /** Ikon di dalam lingkaran sebelum berubah jadi centang */
+  icon: React.ReactNode;
+  /** Prosesnya sudah selesai di backend (lingkaran boleh menutup) */
   ready: boolean;
-  name?: string;
-  email?: string;
-  /** Dipanggil setelah animasi selesai & sapaan sempat terbaca */
+  /** Teks selama menunggu, mis. "Verifying your Google sign-in" */
+  loadingLabel: string;
+  /** Label kecil setelah berhasil, mis. "Login successful" */
+  badge: string;
+  title: string;
+  subtitle?: React.ReactNode;
+  /** Isi tambahan (tombol, keterangan) yang muncul setelah centang */
+  children?: React.ReactNode;
   onDone?: () => void;
-}) {
+  /** Detik minimum lingkaran berputar sebelum boleh menutup */
+  load?: number;
+  /** Detik sapaan ditahan sebelum onDone */
+  hold?: number;
+  tone?: 'dark' | 'light';
+};
+
+export function Celebration({
+  icon, ready, loadingLabel, badge, title, subtitle, children, onDone, load = 2.6, hold = 2.4, tone = 'dark',
+}: CelebrationProps) {
   const [minElapsed, setMinElapsed] = useState(false);
   const [done, setDone] = useState(false);
   const finishing = ready && minElapsed;
-  const first = name?.trim().split(/\s+/)[0];
+  const light = tone === 'light';
 
   useEffect(() => {
-    const t = setTimeout(() => setMinElapsed(true), LOAD_S * 1000);
+    const t = setTimeout(() => setMinElapsed(true), load * 1000);
     return () => clearTimeout(t);
-  }, []);
+  }, [load]);
 
   // Lingkaran penuh -> centang. Dipicu timer (bukan onAnimationComplete), supaya alur tetap lanjut
   // walau tab sedang di latar belakang dan animasi browser dijeda.
@@ -123,51 +137,54 @@ export default function SignInCelebration({ via, ready, name, email, onDone }: {
 
   useEffect(() => {
     if (!done || !onDone) return;
-    const t = setTimeout(onDone, HOLD_S * 1000);
+    const t = setTimeout(onDone, hold * 1000);
     return () => clearTimeout(t);
-  }, [done, onDone]);
+  }, [done, onDone, hold]);
+
+  const ink = light ? '#0A0A0A' : '#FFFFFF';
+  const disk = light ? 'bg-[#0A0A0A] text-white' : 'bg-white text-black';
 
   return (
     <div className="flex w-full flex-col items-center text-center" role="status" aria-live="polite">
       <span className="relative flex h-[140px] w-[140px] items-center justify-center">
-        {/* Lingkaran: jejak tipis + busur yang terisi mengitari logo */}
+        {/* Lingkaran: jejak tipis + busur yang terisi mengitari ikon */}
         <svg viewBox="0 0 140 140" className="absolute inset-0 h-full w-full -rotate-90" aria-hidden="true">
-          <circle cx="70" cy="70" r={R} fill="none" stroke="white" strokeOpacity="0.1" strokeWidth="2" />
+          <circle cx="70" cy="70" r={R} fill="none" stroke={ink} strokeOpacity="0.1" strokeWidth="2" />
           <motion.circle
-            cx="70" cy="70" r={R} fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"
+            cx="70" cy="70" r={R} fill="none" stroke={ink} strokeWidth="2.5" strokeLinecap="round"
             initial={{ pathLength: 0 }}
             animate={{ pathLength: finishing ? 1 : 0.86 }}
             transition={finishing
               ? { duration: FINISH_S, ease: [0.65, 0, 0.35, 1] }
-              : { duration: LOAD_S, ease: [0.33, 0, 0.2, 1] }}
+              : { duration: load, ease: [0.33, 0, 0.2, 1] }}
           />
         </svg>
 
-        {/* Logo -> centang */}
+        {/* Ikon -> centang; ikon masuk dengan pantulan kecil seperti gelembung */}
         <motion.span
-          className="absolute flex h-[76px] w-[76px] items-center justify-center rounded-full bg-white"
+          className={`absolute flex h-[76px] w-[76px] items-center justify-center rounded-full ${disk}`}
           initial={{ scale: 0.6, opacity: 0 }}
           animate={done ? { scale: 0.5, opacity: 0 } : { scale: 1, opacity: 1 }}
-          transition={{ duration: done ? 0.35 : 0.9, ease: EASE }}
+          transition={done ? { duration: 0.35, ease: EASE } : { type: 'spring', stiffness: 220, damping: 14 }}
         >
-          {via === 'google' ? <GoogleMark className="h-8 w-8" /> : <Mail className="h-7 w-7 text-black" />}
+          {icon}
         </motion.span>
         {done && (
           <motion.span
-            className="absolute flex h-[76px] w-[76px] items-center justify-center rounded-full bg-white"
+            className={`absolute flex h-[76px] w-[76px] items-center justify-center rounded-full ${disk}`}
             initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.6, ease: [0.34, 1.56, 0.64, 1] }}
           >
             <svg viewBox="0 0 40 40" className="h-9 w-9" aria-hidden="true">
               <motion.path
-                d="M11 21 L17.5 27.5 L29 14" fill="none" stroke="#0A0A0A" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"
+                d="M11 21 L17.5 27.5 L29 14" fill="none" stroke={light ? '#FFFFFF' : '#0A0A0A'} strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"
                 initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
                 transition={{ duration: 0.45, delay: 0.15, ease: EASE }}
               />
             </svg>
           </motion.span>
         )}
-        {done && <Fireworks />}
+        {done && <Fireworks light={light} />}
       </span>
 
       {/* Teks: tinggi tetap supaya pergantian tidak menggeser tata letak */}
@@ -177,38 +194,77 @@ export default function SignInCelebration({ via, ready, name, email, onDone }: {
           animate={{ opacity: done ? 0 : 1, y: done ? -6 : 0 }}
           transition={{ duration: 0.4, ease: EASE }}
         >
-          <p className="text-sm text-white/65">
-            {via === 'google' ? 'Verifying your Google sign-in' : 'Confirming your email'}<Dots />
+          <p className={`text-sm ${light ? 'text-foreground/65' : 'text-white/65'}`}>
+            {loadingLabel}<Dots />
           </p>
         </motion.div>
         {done && (
-          <div className="[grid-area:stack] self-start flex flex-col items-center">
+          <div className="[grid-area:stack] self-start flex w-full flex-col items-center">
             <motion.p
               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, ease: EASE, delay: 0.25 }}
-              className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3.5 py-1 text-xs text-white/75"
+              className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-xs ${light ? 'border-foreground/15 text-foreground/70' : 'border-white/15 text-white/75'}`}
             >
-              {via === 'google' ? 'Login successful' : 'Email confirmed'}
+              {badge}
             </motion.p>
             <motion.h1
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: EASE, delay: 0.4 }}
-              className="mt-4 text-3xl font-medium tracking-tight"
+              className={`mt-4 text-3xl font-medium tracking-tight ${light ? 'text-foreground' : ''}`}
             >
-              {first ? `Welcome, ${first}.` : 'Welcome back.'}
+              {title}
             </motion.h1>
-            {email && (
-              <motion.p
+            {subtitle && (
+              <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 transition={{ duration: 0.8, delay: 0.6 }}
-                className="mt-2 max-w-full truncate text-sm text-white/50"
+                className={`mt-2 max-w-full text-sm leading-relaxed ${light ? 'text-foreground/60' : 'text-white/50'}`}
               >
-                {email}
-              </motion.p>
+                {subtitle}
+              </motion.div>
+            )}
+            {children && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, ease: EASE, delay: 0.8 }}
+                className="mt-8 w-full"
+              >
+                {children}
+              </motion.div>
             )}
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+/** Masuk akun: Google, link konfirmasi email, atau email + password */
+export default function SignInCelebration({ via, ready, name, email, onDone }: {
+  via: 'google' | 'email' | 'password';
+  /** Sesi sudah terverifikasi (/auth/me berhasil) */
+  ready: boolean;
+  name?: string;
+  email?: string;
+  /** Dipanggil setelah animasi selesai & sapaan sempat terbaca */
+  onDone?: () => void;
+}) {
+  const first = name?.trim().split(/\s+/)[0];
+  const icon = via === 'google'
+    ? <GoogleMark className="h-8 w-8" />
+    : via === 'email' ? <Mail className="h-7 w-7" /> : <KeyRound className="h-7 w-7" />;
+  return (
+    <Celebration
+      icon={icon}
+      ready={ready}
+      loadingLabel={via === 'google' ? 'Verifying your Google sign-in' : via === 'email' ? 'Confirming your email' : 'Signing you in'}
+      badge={via === 'email' ? 'Email confirmed' : 'Login successful'}
+      title={first ? `Welcome, ${first}.` : 'Welcome back.'}
+      subtitle={email ? <span className="block truncate" data-i18n-skip>{email}</span> : undefined}
+      onDone={onDone}
+      // Login dengan password sudah selesai saat animasi mulai, jadi lingkarannya lebih singkat
+      load={via === 'password' ? 1.1 : 2.6}
+      hold={via === 'password' ? 1.8 : 2.4}
+    />
   );
 }

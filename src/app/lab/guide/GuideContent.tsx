@@ -2,147 +2,79 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { ArrowRight, Search, X } from 'lucide-react';
 import LabContainer from '../components/LabContainer';
 import LabPageHeader from '../components/LabPageHeader';
 import GuideSectionHead from './GuideSectionHead';
 import GuideNavigation from './GuideNavigation';
+import GuideJourney from './GuideJourney';
+import { Callout, Formula, Points } from './GuideParts';
 import styles from './guide.module.css';
 import visualStyles from './visual-guide.module.css';
-import GuideJourney from './GuideJourney';
 import { cachedGet } from '@/lib/historyCache';
-import {
-  ArrowRight,
-  Search,
-  X,
-} from 'lucide-react';
+
+/*
+ * Panduan membaca hasil. Satu kolom baca dengan daftar isi berkelompok di kiri.
+ * Setiap bagian: kalimat pembuka (inti), poin-poin bertumpuk, lalu catatan/contoh bila perlu.
+ * `id` setiap bagian sama dengan topik GuideLink, jadi tombol bantuan di halaman hasil
+ * langsung membuka bagian yang menjawab pertanyaannya.
+ */
 
 interface SummaryData {
   total_predictions?: number;
-  total_explanations?: number;
-  traces_available_count?: number;
-  retention_policy?: {
-    trace_retention_days?: number;
-    trace_max_jobs_per_user?: number;
-    [key: string]: unknown;
-  };
-  [key: string]: unknown;
+  retention_policy?: { trace_retention_days?: number; trace_max_jobs_per_user?: number };
 }
 
 interface LatestPredictionData {
-  items?: Array<{
-    alpha?: number | null;
-    q_hat?: number | null;
-    [key: string]: unknown;
-  }>;
+  items?: Array<{ alpha?: number | null; q_hat?: number | null }>;
 }
 
 const BIOMARKER_DEFINITIONS = [
-  {
-    key: 'qNet',
-    name: 'Net Charge',
-    signal: 'Action potential',
-    type: 'positive',
-    unchanged: '1.00',
-    definition: 'Net charge carried by the major ionic currents during the action potential; the CiPA metric for TdP risk',
-  },
-  {
-    key: 'dvdtmax',
-    name: 'Max Upstroke Velocity',
-    signal: 'Action potential',
-    type: 'positive',
-    unchanged: '1.00',
-    definition: 'Maximum upstroke velocity of the action potential (dVm/dt max)',
-  },
-  {
-    key: 'vmax',
-    name: 'Peak Membrane Potential',
-    signal: 'Action potential',
-    type: 'positive',
-    unchanged: '1.00',
-    definition: 'Peak membrane potential',
-  },
-  {
-    key: 'vrest',
-    name: 'Resting Potential',
-    signal: 'Action potential',
-    type: 'negative',
-    unchanged: '-1.00',
-    definition: 'Resting membrane potential',
-  },
-  {
-    key: 'APD50',
-    name: 'Action Potential Duration 50%',
-    signal: 'Action potential',
-    type: 'positive',
-    unchanged: '1.00',
-    definition: 'Action potential duration at 50% repolarization',
-  },
-  {
-    key: 'APD90',
-    name: 'Action Potential Duration 90%',
-    signal: 'Action potential',
-    type: 'positive',
-    unchanged: '1.00',
-    definition: 'Action potential duration at 90% repolarization',
-  },
-  {
-    key: 'max_dv',
-    name: 'Max Repolarization Rate',
-    signal: 'Action potential',
-    type: 'negative',
-    unchanged: '-1.00',
-    definition: 'Maximum rate of change of membrane potential during repolarization',
-  },
-  {
-    key: 'camax',
-    name: 'Peak Calcium',
-    signal: 'Calcium transient',
-    type: 'positive',
-    unchanged: '1.00',
-    definition: 'Peak intracellular calcium concentration',
-  },
-  {
-    key: 'carest',
-    name: 'Resting Calcium',
-    signal: 'Calcium transient',
-    type: 'positive',
-    unchanged: '1.00',
-    definition: 'Resting (diastolic) intracellular calcium concentration',
-  },
-  {
-    key: 'CaTD50',
-    name: 'Calcium Transient Duration 50%',
-    signal: 'Calcium transient',
-    type: 'positive',
-    unchanged: '1.00',
-    definition: 'Calcium transient duration at 50% recovery',
-  },
-  {
-    key: 'CaTD90',
-    name: 'Calcium Transient Duration 90%',
-    signal: 'Calcium transient',
-    type: 'positive',
-    unchanged: '1.00',
-    definition: 'Calcium transient duration at 90% recovery',
-  },
+  { key: 'qNet', name: 'Net Charge', signal: 'Action potential', type: 'positive', unchanged: '1.00', definition: 'Net charge carried by the major ionic currents during the action potential; the CiPA metric for TdP risk' },
+  { key: 'dvdtmax', name: 'Max Upstroke Velocity', signal: 'Action potential', type: 'positive', unchanged: '1.00', definition: 'Maximum upstroke velocity of the action potential (dVm/dt max)' },
+  { key: 'vmax', name: 'Peak Membrane Potential', signal: 'Action potential', type: 'positive', unchanged: '1.00', definition: 'Peak membrane potential' },
+  { key: 'vrest', name: 'Resting Potential', signal: 'Action potential', type: 'negative', unchanged: '-1.00', definition: 'Resting membrane potential' },
+  { key: 'APD50', name: 'Action Potential Duration 50%', signal: 'Action potential', type: 'positive', unchanged: '1.00', definition: 'Action potential duration at 50% repolarization' },
+  { key: 'APD90', name: 'Action Potential Duration 90%', signal: 'Action potential', type: 'positive', unchanged: '1.00', definition: 'Action potential duration at 90% repolarization' },
+  { key: 'max_dv', name: 'Max Repolarization Rate', signal: 'Action potential', type: 'negative', unchanged: '-1.00', definition: 'Maximum rate of change of membrane potential during repolarization' },
+  { key: 'camax', name: 'Peak Calcium', signal: 'Calcium transient', type: 'positive', unchanged: '1.00', definition: 'Peak intracellular calcium concentration' },
+  { key: 'carest', name: 'Resting Calcium', signal: 'Calcium transient', type: 'positive', unchanged: '1.00', definition: 'Resting (diastolic) intracellular calcium concentration' },
+  { key: 'CaTD50', name: 'Calcium Transient Duration 50%', signal: 'Calcium transient', type: 'positive', unchanged: '1.00', definition: 'Calcium transient duration at 50% recovery' },
+  { key: 'CaTD90', name: 'Calcium Transient Duration 90%', signal: 'Calcium transient', type: 'positive', unchanged: '1.00', definition: 'Calcium transient duration at 90% recovery' },
 ];
 
-// Urutan bagian = urutan membaca hasil: apa yang diukur -> cara membacanya -> apa yang masuk ke model -> hasilnya.
-// `id` setiap bagian sama dengan nama topik di GuideLink, jadi tiap tombol bantuan punya tujuannya sendiri.
+// Urutan = urutan membaca hasil: apa yang diukur -> cara membacanya -> apa yang masuk ke model -> hasilnya.
 const SECTIONS = [
-  { id: 'biomarkers', title: '1. The 11 Biomarkers' },
-  { id: 'ratios', title: '2. Ratios vs Control' },
-  { id: 'drug-inputs', title: '3. Drug Inputs' },
-  { id: 'simulation-graphs', title: '4. Simulation Graphs' },
-  { id: 'dose-averaging', title: '5. What Goes Into the Model' },
-  { id: 'risk-prediction', title: '6. Risk & Probabilities' },
-  { id: 'prediction-set', title: '7. Prediction Set' },
-  { id: 'shap', title: '8. SHAP Explanations' },
-  { id: 'history-retention', title: '9. History & Retention' },
+  { id: 'biomarkers', title: '1. The 11 biomarkers' },
+  { id: 'ratios', title: '2. Reading a ratio' },
+  { id: 'drug-inputs', title: '3. Drug inputs' },
+  { id: 'simulation-graphs', title: '4. Simulation graphs' },
+  { id: 'dose-averaging', title: '5. What the model reads' },
+  { id: 'risk-prediction', title: '6. Risk tier and votes' },
+  { id: 'prediction-set', title: '7. Prediction set' },
+  { id: 'shap', title: '8. SHAP explanations' },
+  { id: 'history-retention', title: '9. History and storage' },
 ];
+
+/** Kelompok daftar isi: indeks ke SECTIONS */
+const GROUPS = [
+  { label: 'Simulation', indexes: [0, 1, 2, 3] },
+  { label: 'Prediction', indexes: [4, 5, 6, 7] },
+  { label: 'Your records', indexes: [8] },
+];
+
+const CASES = [
+  { tone: 'teal', label: 'One tier', text: 'The model commits to that tier.', todo: 'Follow the protocol for that tier.' },
+  { tone: 'amber', label: 'Two or three tiers', text: 'The model cannot rule out more than one tier. The app recommends the most severe tier in the set as a provisional call.', todo: 'Treat the call as provisional and check the SHAP drivers.' },
+  { tone: 'red', label: 'Empty set', text: 'No tier reached the threshold, so the model abstains. The app recommends High.', todo: 'Check the drug inputs and the simulation flags.' },
+] as const;
 
 export default function GuideContent({ loadHistory = true, visual = false }: { loadHistory?: boolean; visual?: boolean }) {
   const [activeTopic, setActiveTopic] = useState(0);
+  const [biomarkerQuery, setBiomarkerQuery] = useState('');
+  const [summary, setSummary] = useState<SummaryData | null>(null);
+  const [latestPred, setLatestPred] = useState<{ alpha?: number | null; q_hat?: number | null } | null>(null);
+
   const selectTopic = (index: number) => {
     setActiveTopic(index);
     setBiomarkerQuery('');
@@ -155,37 +87,30 @@ export default function GuideContent({ loadHistory = true, visual = false }: { l
       section?.focus({ preventScroll: true });
     });
   };
-  const [biomarkerQuery, setBiomarkerQuery] = useState('');
+  /** Mode visual (halaman pratinjau) menampilkan satu bagian sekaligus */
+  const sectionProps = (id: string) => ({
+    id,
+    hidden: visual && SECTIONS[activeTopic].id !== id,
+    tabIndex: visual ? -1 : undefined,
+    className: styles.section,
+  });
+
   const normalizedQuery = biomarkerQuery.trim().toLowerCase();
-  const visibleBiomarkers = BIOMARKER_DEFINITIONS.filter((biomarker) =>
-    [biomarker.key, biomarker.name, biomarker.definition, biomarker.signal]
-      .some((value) => value.toLowerCase().includes(normalizedQuery)),
-  );
-  const [summary, setSummary] = useState<SummaryData | null>(null);
-  const [latestPred, setLatestPred] = useState<{ alpha?: number | null; q_hat?: number | null } | null>(null);
+  const visibleBiomarkers = BIOMARKER_DEFINITIONS.filter(bm =>
+    [bm.key, bm.name, bm.definition, bm.signal].some(v => v.toLowerCase().includes(normalizedQuery)));
 
   useEffect(() => {
     if (!loadHistory) return;
-
-    cachedGet<SummaryData>('/api/history/summary')
-      .then((data) => {
-        setSummary(data);
-      })
-      .catch(() => {
-        setSummary(null);
-      });
-
+    cachedGet<SummaryData>('/api/history/summary').then(setSummary).catch(() => setSummary(null));
     cachedGet<LatestPredictionData>('/api/history/predictions?limit=1')
-      .then((res) => {
+      .then(res => {
         const item = res?.items?.[0];
-        if (item && typeof item.alpha === 'number') {
-          setLatestPred({ alpha: item.alpha, q_hat: item.q_hat });
-        }
+        if (item && typeof item.alpha === 'number') setLatestPred({ alpha: item.alpha, q_hat: item.q_hat });
       })
       .catch(() => {});
   }, [loadHistory]);
 
-  const alphaVal = typeof latestPred?.alpha === 'number' ? latestPred.alpha : 0.15384615384615383;
+  const alphaVal = typeof latestPred?.alpha === 'number' ? latestPred.alpha : 2 / 13;
   const coveragePct = ((1 - alphaVal) * 100).toFixed(1);
   const qHatVal = typeof latestPred?.q_hat === 'number' ? latestPred.q_hat.toFixed(4) : null;
   const traceDays = summary?.retention_policy?.trace_retention_days;
@@ -193,39 +118,32 @@ export default function GuideContent({ loadHistory = true, visual = false }: { l
 
   return (
     <div className={`${styles.guide} w-full flex flex-col text-foreground`}>
-      <LabContainer className="flex flex-col gap-8 md:gap-10">
+      <LabContainer className="flex flex-col gap-10 md:gap-14">
         <div className={styles.hero}>
           <LabPageHeader
-            eyebrow="Documentation & Reference"
-            title="Output Reading"
-            accent="Guide."
-            description="A complete guide to interpreting simulation waveforms, biomarker ratios, conformal prediction sets, and SHAP contributions."
+            eyebrow="Guide"
+            title="Reading your"
+            accent="results."
+            description="What each part of a result page means: the biomarkers, the graphs, the risk tier and the reasons behind it."
           />
-
           <div className={styles.heroFooter}>
-            <span>9 guide sections</span>
+            <span>9 topics</span>
             <span>11 biomarkers</span>
-            <a href={visual ? `#${SECTIONS[activeTopic].id}` : "#biomarkers"}>Explore the guide <ArrowRight size={16} aria-hidden="true" /></a>
+            <a href={visual ? `#${SECTIONS[activeTopic].id}` : '#biomarkers'}>Start reading <ArrowRight size={16} aria-hidden="true" /></a>
           </div>
         </div>
 
         {visual && <GuideJourney sections={SECTIONS} active={activeTopic} onSelect={selectTopic} />}
         <div className={visual ? visualStyles.visual : styles.layout}>
-          {!visual && <GuideNavigation sections={SECTIONS} />}
-          <div className={styles.content}>
-            {/* =========================================================
-                SECTION 1: THE ELEVEN BIOMARKERS
-                ========================================================= */}
-            <section hidden={visual && SECTIONS[activeTopic].id !== 'biomarkers'} tabIndex={visual ? -1 : undefined} id="biomarkers" aria-labelledby="heading-biomarkers" className="scroll-mt-28">
-              <GuideSectionHead
-                id="heading-biomarkers"
-                title="1. The Eleven Biomarkers"
-                meta="Biophysical definitions & baseline ratios"
-              />
-              <p className="mt-4 text-sm text-foreground/75 max-w-3xl leading-relaxed">
-                The platform quantifies eleven biophysical biomarkers measured from the action potential and
-                calcium transient of simulated human ventricular cardiomyocytes. These eleven features form the
-                standardized vector read by the risk model:
+          {!visual && <GuideNavigation sections={SECTIONS} groups={GROUPS} />}
+
+          <article className={styles.content}>
+            {/* ---------- 1. Biomarker ---------- */}
+            <section {...sectionProps('biomarkers')} aria-labelledby="heading-biomarkers">
+              <GuideSectionHead id="heading-biomarkers" number={1} title="The 11 biomarkers" meta="Reference" />
+              <p className={styles.lead}>
+                The simulation measures 11 values from the action potential and calcium transient of a human ventricular
+                cell. The risk model reads these 11 values and nothing else.
               </p>
 
               <div className={styles.searchBar}>
@@ -236,8 +154,8 @@ export default function GuideContent({ loadHistory = true, visual = false }: { l
                     id="biomarker-search"
                     type="search"
                     value={biomarkerQuery}
-                    onChange={(event) => setBiomarkerQuery(event.target.value)}
-                    placeholder="Search biomarkers, definitions, or signals..."
+                    onChange={e => setBiomarkerQuery(e.target.value)}
+                    placeholder="Search a biomarker or signal"
                     aria-controls="biomarker-reference"
                   />
                   {biomarkerQuery && (
@@ -249,25 +167,25 @@ export default function GuideContent({ loadHistory = true, visual = false }: { l
                 <span className={styles.resultCount} role="status">{visibleBiomarkers.length} of 11 biomarkers</span>
               </div>
               <div className={styles.biomarkerTable} id="biomarker-reference">
-                <table role="table" aria-label="Biomarker definitions and baseline ratios">
-                  <thead role="rowgroup">
-                    <tr role="row">
-                      <th scope="col" role="columnheader">Biomarker</th>
-                      <th scope="col" role="columnheader">Definition</th>
-                      <th scope="col" role="columnheader">Signal</th>
-                      <th scope="col" role="columnheader">No-Change Ratio</th>
+                <table aria-label="Biomarker definitions and baseline ratios">
+                  <thead>
+                    <tr>
+                      <th scope="col">Biomarker</th>
+                      <th scope="col">Definition</th>
+                      <th scope="col">Signal</th>
+                      <th scope="col">No-Change Ratio</th>
                     </tr>
                   </thead>
-                  <tbody role="rowgroup">
-                    {visibleBiomarkers.map((bm) => (
-                      <tr key={bm.key} role="row">
-                        <td className={styles.biomarkerKey} role="cell">{bm.key}</td>
-                        <td role="cell">
+                  <tbody>
+                    {visibleBiomarkers.map(bm => (
+                      <tr key={bm.key}>
+                        <td className={styles.biomarkerKey} data-i18n-skip>{bm.key}</td>
+                        <td>
                           <div className={styles.biomarkerName}>{bm.name}</div>
                           <div className={styles.biomarkerDefinition}>{bm.definition}</div>
                         </td>
-                        <td role="cell"><span className={styles.signal}>{bm.signal}</span></td>
-                        <td role="cell">
+                        <td><span className={styles.signal}>{bm.signal}</span></td>
+                        <td>
                           <span className={styles.mobileLabel} aria-hidden="true">No change</span>
                           <span className={styles.baseline} data-negative={bm.type === 'negative'}>{bm.unchanged}</span>
                         </td>
@@ -284,488 +202,222 @@ export default function GuideContent({ loadHistory = true, visual = false }: { l
               </div>
             </section>
 
-            {/* =========================================================
-                SECTION 2: HOW TO READ A RATIO AGAINST CONTROL
-                ========================================================= */}
-            <section hidden={visual && SECTIONS[activeTopic].id !== 'ratios'} tabIndex={visual ? -1 : undefined} id="ratios" aria-labelledby="heading-ratios" className="scroll-mt-28">
-              <GuideSectionHead
-                id="heading-ratios"
-                title="2. How to Read a Ratio Against Control"
-                meta="Understanding normalized drug effects"
+            {/* ---------- 2. Rasio ---------- */}
+            <section {...sectionProps('ratios')} aria-labelledby="heading-ratios">
+              <GuideSectionHead id="heading-ratios" number={2} title="Reading a ratio" meta="Drug versus control" />
+              <p className={styles.lead}>
+                You read every biomarker as a ratio: the value with the drug divided by the value without it, from the
+                same pacing protocol.
+              </p>
+              <Formula>ratio = with_drug ÷ |without_drug|</Formula>
+              <Points
+                items={[
+                  {
+                    title: 'Nine positive biomarkers',
+                    text: 'qNet, dvdtmax, vmax, APD50, APD90, camax, carest, CaTD50 and CaTD90. A ratio of 1.00 means no change. Above 1.00 the value grew, below 1.00 it shrank.',
+                    example: 'APD90 at 1.038 means repolarization took 3.8% longer.',
+                  },
+                  {
+                    title: 'Two negative biomarkers',
+                    text: 'vrest and max_dv are negative numbers in the simulation, so their no-change ratio is -1.00. A vrest ratio of -0.99999 means no change.',
+                    example: 'max_dv at -0.631 means the repolarization rate fell by 36.9%.',
+                  },
+                ]}
               />
-
-              <div className="mt-5 relative overflow-hidden border-t border-foreground/10 pt-5">
-                <div className="flex items-start gap-3.5">
-
-                  <div className="space-y-3 text-sm text-foreground/85 leading-relaxed">
-                    <h3 className="font-semibold text-foreground text-base">
-                      Every input is a ratio of the drugged cell to the drug-free control simulation, not an absolute value.
-                    </h3>
-                    <p>
-                      Inputs are normalized against a drug-free baseline simulation run under the exact same pacing protocol:
-                    </p>
-                    <div className="font-mono text-sm text-foreground inline-block border-l-2 border-foreground/15 pl-4 py-1">
-                      ratio = with_drug ÷ |without_drug|
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Positive Biomarkers */}
-                <div className="flex flex-col gap-3 border-t border-foreground/10 pt-5">
-                  <div className="flex items-center gap-2 font-medium text-foreground text-sm">
-                    <span className="w-2 h-2 rounded-full bg-teal-500" />
-                    <span>Nine Positive-Valued Biomarkers</span>
-                  </div>
-                  <p className="text-sm text-muted leading-relaxed">
-                    qNet, dvdtmax, vmax, APD50, APD90, camax, carest, CaTD50, CaTD90.
-                  </p>
-                  <div className="text-sm text-foreground/80 space-y-2">
-                    <p>
-                      <strong>1.00</strong> means unchanged compared to control.
-                    </p>
-                    <ul className="list-disc list-inside space-y-1 text-sm text-foreground/75 pl-1">
-                      <li><strong>Above 1.00:</strong> Larger than control.</li>
-                      <li><strong>Below 1.00:</strong> Smaller than control.</li>
-                    </ul>
-                    <div className="mt-2 text-sm font-mono border-l-2 border-foreground/15 pl-4 py-1">
-                      Worked example: APD90 of 1.038 is a 3.8% prolongation of repolarization.
-                    </div>
-                  </div>
-                </div>
-
-                {/* Negative Biomarkers */}
-                <div className="flex flex-col gap-3 border-t border-foreground/10 pt-5">
-                  <div className="flex items-center gap-2 font-medium text-foreground text-sm">
-                    <span className="w-2 h-2 rounded-full bg-amber-500" />
-                    <span>Negative-Valued Biomarkers (vrest, max_dv)</span>
-                  </div>
-                  <p className="text-sm text-muted leading-relaxed">
-                    vrest and max_dv are negative quantities in the simulation.
-                  </p>
-                  <div className="text-sm text-foreground/80 space-y-2">
-                    <p>
-                      Their unchanged value is <strong>-1.00</strong>, NOT 1.00.
-                    </p>
-                    <div className="mt-2 text-sm font-mono space-y-2 border-l-2 border-foreground/15 pl-4 py-1">
-                      <div>• A vrest ratio of -0.99999 means essentially no change.</div>
-                      <div>• A max_dv ratio moving from -1.00 toward 0 means the magnitude of the repolarization rate shrank. For example, a max_dv ratio of -0.631 means the magnitude of the repolarization rate shrank by 36.9%.</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* qNet CiPA Metric */}
-              <div className="mt-6 flex items-start gap-3 border-l-2 border-foreground/15 pl-4 py-1">
-
-                <div className="text-sm text-foreground/80 leading-relaxed">
-                  <strong>qNet and Arrhythmia Risk:</strong> Reduced qNet is associated with higher TdP risk, since qNet is the CiPA risk metric.
-                </div>
-              </div>
+              <Callout tone="key" title="qNet and TdP risk">
+                qNet is the CiPA risk metric. A lower qNet points to a higher TdP risk.
+              </Callout>
             </section>
 
-            {/* =========================================================
-                SECTION 3: DRUG INPUTS
-                ========================================================= */}
-            <section hidden={visual && SECTIONS[activeTopic].id !== 'drug-inputs'} tabIndex={visual ? -1 : undefined} id="drug-inputs" aria-labelledby="heading-drug-inputs" className="scroll-mt-28">
-              <GuideSectionHead
-                id="heading-drug-inputs"
-                title="3. Drug Inputs"
-                meta="Cmax and ion channel parameters"
+            {/* ---------- 3. Input obat ---------- */}
+            <section {...sectionProps('drug-inputs')} aria-labelledby="heading-drug-inputs">
+              <GuideSectionHead id="heading-drug-inputs" number={3} title="Drug inputs" meta="Cmax and ion channels" />
+              <p className={styles.lead}>
+                These numbers describe the drug. They tell the simulation how much drug reaches the cell and how strongly
+                it blocks each ion channel.
+              </p>
+              <Points
+                items={[
+                  { title: 'Cmax (exposure)', text: 'The free peak plasma concentration, in nM. The pipeline simulates the cell at 1×, 2×, 3× and 4× this value.' },
+                  { title: 'hERG binding', text: 'Kmax, Ku, n, halfmax and Vhalf describe how the drug binds to hERG, the channel most tied to TdP risk. The values come from the CiPA fits.' },
+                  { title: 'Other channels', text: 'IC50 and Hill coefficient for the sodium and calcium currents. Leave a field empty when the drug does not block that channel, and the simulation leaves the channel as it is.' },
+                ]}
               />
-
-              <div className="mt-5 border-t border-foreground/10 pt-5 max-w-3xl space-y-3 text-sm text-foreground/85 leading-relaxed">
-                <h3 className="text-base font-semibold text-foreground">
-                  These values describe the drug, not the result.
-                </h3>
-                <p>
-                  They tell the simulation how much drug reaches the cell and how strongly it blocks each ion channel.
-                  The eleven biomarkers are then measured from how the cell behaves under those conditions.
-                </p>
-              </div>
-
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="flex flex-col gap-2 border-t border-foreground/10 pt-5">
-                  <h3 className="text-sm font-medium text-foreground">Cmax (exposure)</h3>
-                  <p className="text-sm text-foreground/75 leading-relaxed">
-                    The free therapeutic peak plasma concentration, in nM. Every simulation runs at multiples of it,
-                    so Cmax sets the whole concentration range.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-2 border-t border-foreground/10 pt-5">
-                  <h3 className="text-sm font-medium text-foreground">hERG binding</h3>
-                  <p className="text-sm text-foreground/75 leading-relaxed">
-                    Kmax, Ku, n, halfmax and Vhalf describe how the drug binds to the hERG channel, the channel most
-                    closely linked to TdP risk. They come from the CiPA fitting.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-2 border-t border-foreground/10 pt-5">
-                  <h3 className="text-sm font-medium text-foreground">Other channels</h3>
-                  <p className="text-sm text-foreground/75 leading-relaxed">
-                    IC50 and the Hill coefficient for the sodium and calcium currents. An empty field means the drug
-                    does not block that channel, so it is left untouched in the simulation.
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-6 border-l-2 border-foreground/15 pl-4 py-1 text-sm text-foreground/80 leading-relaxed">
-                <strong>Where the numbers come from:</strong> a CiPA drug loads them from the reference database;
-                a new drug uses the values you enter; and a CiPA drug with your own lab data starts from the database
-                and keeps the fields you changed. The result page labels each value accordingly.
-              </div>
+              <Callout tone="note" title="Where the numbers come from">
+                A CiPA drug loads them from the reference database. A new drug uses your values. A CiPA drug with your own
+                lab data starts from the database and keeps the fields you changed. The result page marks which is which.
+              </Callout>
             </section>
 
-            {/* =========================================================
-                SECTION 4: READING THE SIMULATION GRAPHS
-                ========================================================= */}
-            <section hidden={visual && SECTIONS[activeTopic].id !== 'simulation-graphs'} tabIndex={visual ? -1 : undefined} id="simulation-graphs" aria-labelledby="heading-graphs" className="scroll-mt-28">
-              <GuideSectionHead
-                id="heading-graphs"
-                title="4. Reading the Simulation Graphs"
-                meta="Action potential & calcium transients"
+            {/* ---------- 4. Grafik ---------- */}
+            <section {...sectionProps('simulation-graphs')} aria-labelledby="heading-graphs">
+              <GuideSectionHead id="heading-graphs" number={4} title="Simulation graphs" meta="Action potential and calcium" />
+              <p className={styles.lead}>
+                Each graph draws one curve per concentration over the drug-free control, which appears as a grey dashed line.
+              </p>
+              <Points
+                items={[
+                  { title: 'hERG blocker', text: 'The plateau widens and repolarization comes later as the concentration rises.' },
+                  { title: 'Calcium channel blocker', text: 'The action potential shortens a little and the calcium peak drops.' },
+                  { title: 'Units', text: 'Voltage is in millivolts. The simulator reports calcium in mM, around 0.000075 mM at rest, and the chart multiplies it by 10⁶ to show nM.' },
+                ]}
               />
-              <p className="mt-4 text-sm text-foreground/75 max-w-3xl leading-relaxed">
-                The action potential and calcium transient are plotted for each simulated concentration against the
-                drug-free control (neutral dashed curve):
+              <h3 className={styles.subhead}>Simulation flags</h3>
+              <Points
+                compact
+                items={[
+                  { title: 'EADs', text: 'Early afterdepolarizations during recovery.' },
+                  { title: 'noDepols', text: 'The cell did not fire after a stimulus.' },
+                  { title: 'noRepols', text: 'The cell did not return to its resting potential.' },
+                ]}
+              />
+              <Callout tone="note" title="A missing value">
+                When a biomarker has no value at one concentration, the pipeline leaves that concentration out of the
+                average and lists it in the result.
+              </Callout>
+            </section>
+
+            {/* ---------- 5. Input model ---------- */}
+            <section {...sectionProps('dose-averaging')} aria-labelledby="heading-dose-averaging">
+              <GuideSectionHead id="heading-dose-averaging" number={5} title="What the model reads" meta="Four concentrations, one input" />
+              <p className={styles.lead}>
+                The model reads 11 numbers: each biomarker ratio averaged over the simulated concentrations.
+              </p>
+              <p className={styles.body}>
+                A Full Pipeline run simulates the cell at 1×, 2×, 3× and 4× Cmax, so each biomarker gets four ratios. The
+                pipeline averages them into one ratio per biomarker, and the model classifies those 11 averages.
               </p>
 
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex flex-col gap-3 border-t border-foreground/10 pt-5">
-                  <h3 className="font-medium text-sm text-foreground flex items-center gap-2">
-
-                    <span>Drug Phenotypes on Waveforms</span>
-                  </h3>
-                  <ul className="space-y-2.5 text-sm text-foreground/80 leading-relaxed">
-                    <li>
-                      <strong>Potent hERG Blocker:</strong> Prolongs the action potential in a concentration-dependent way (broadened AP plateau and delayed repolarization).
-                    </li>
-                    <li>
-                      <strong>Calcium Channel Blocker:</strong> Slightly shortens the action potential and lowers the calcium transient peak.
-                    </li>
-                    <li className="pt-2 border-t border-foreground/8 text-muted leading-normal">
-                      The action potential is plotted in millivolts (mV). The simulator produces raw calcium transient (cai) in millimolar (mM; resting baseline around 0.000075 mM), which the chart multiplies by 10⁶ to plot on the vertical axis in nanomolar (nM).
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="flex flex-col gap-3 border-t border-foreground/10 pt-5">
-                  <h3 className="font-medium text-sm text-foreground flex items-center gap-2">
-
-                    <span>Simulation Flags & Excluded Doses</span>
-                  </h3>
-                  <p className="text-sm text-foreground/80 leading-relaxed">
-                    The simulation tracks physiological disruption through three flags:
-                  </p>
-                  <ul className="space-y-1.5 text-sm text-foreground/75 pl-2 border-l-2 border-foreground/15">
-                    <li><strong>EADs:</strong> Early afterdepolarizations during recovery.</li>
-                    <li><strong>Failed Depolarization (noDepols):</strong> The cell failed to fire an action potential upon stimulus.</li>
-                    <li><strong>Failed Repolarization (noRepols):</strong> The cell failed to return to resting potential.</li>
-                  </ul>
-                  <p className="text-sm text-foreground/75 mt-1 leading-relaxed">
-                    A biomarker undefined at one concentration is excluded from the average, and the simulation response lists the excluded concentration.
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            {/* =========================================================
-                SECTION 5: WHAT GOES INTO THE MODEL (DOSE AVERAGING)
-                ========================================================= */}
-            <section hidden={visual && SECTIONS[activeTopic].id !== 'dose-averaging'} tabIndex={visual ? -1 : undefined} id="dose-averaging" aria-labelledby="heading-dose-averaging" className="scroll-mt-28">
-              <GuideSectionHead
-                id="heading-dose-averaging"
-                title="5. What Goes Into the Model"
-                meta="Four concentrations, one averaged input"
-              />
-
-              <div className="mt-5 border-t border-foreground/10 pt-5 max-w-3xl space-y-3 text-sm text-foreground/85 leading-relaxed">
-                <h3 className="text-base font-semibold text-foreground">
-                  The model reads eleven numbers: each biomarker ratio averaged across the simulated concentrations.
-                </h3>
-                <p>
-                  A Full Pipeline run simulates the cell at 1×, 2×, 3× and 4× Cmax. Every biomarker therefore has four
-                  ratios, one per concentration. Those four are averaged into a single ratio, and the eleven averages
-                  are the input vector the risk model classifies.
-                </p>
-              </div>
-
-              <div className="mt-6 border-t border-foreground/10 pt-5">
-                <h4 className="mb-3 font-mono text-sm uppercase tracking-wider text-muted">Worked example: APD90</h4>
-                <div className="overflow-x-auto -mx-1 px-1 overscroll-x-contain">
-                  <table className="min-w-[34rem] w-full text-sm border-separate border-spacing-0">
+              <figure className={styles.example}>
+                <figcaption>Example: APD90</figcaption>
+                <div className="overflow-x-auto overscroll-x-contain">
+                  <table>
                     <thead>
-                      <tr className="text-[11px] text-foreground/60">
-                        <th className="px-3 py-2 text-left font-medium">1× Cmax</th>
-                        <th className="px-3 py-2 text-left font-medium">2× Cmax</th>
-                        <th className="px-3 py-2 text-left font-medium">3× Cmax</th>
-                        <th className="px-3 py-2 text-left font-medium">4× Cmax</th>
-                        <th className="px-3 py-2 text-left font-medium text-foreground/75">Mean → model</th>
+                      <tr>
+                        <th>1× Cmax</th>
+                        <th>2× Cmax</th>
+                        <th>3× Cmax</th>
+                        <th>4× Cmax</th>
+                        <th>Mean → model</th>
                       </tr>
                     </thead>
-                    <tbody className="font-mono tabular-nums">
+                    <tbody>
                       <tr>
-                        <td className="border-t border-foreground/10 px-3 py-2.5 text-foreground/80">1.012</td>
-                        <td className="border-t border-foreground/10 px-3 py-2.5 text-foreground/80">1.031</td>
-                        <td className="border-t border-foreground/10 px-3 py-2.5 text-foreground/80">1.048</td>
-                        <td className="border-t border-foreground/10 px-3 py-2.5 text-foreground/80">1.061</td>
-                        <td className="border-t border-foreground/10 bg-foreground/[0.04] px-3 py-2.5 font-semibold text-foreground">1.038</td>
+                        <td>1.012</td>
+                        <td>1.031</td>
+                        <td>1.048</td>
+                        <td>1.061</td>
+                        <td>1.038</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
-                <p className="mt-3 text-sm text-foreground/75 leading-relaxed">
-                  Only the last column reaches the model. The per-concentration columns are simulation output, shown so
-                  you can see how the effect grows with exposure; they are not four separate predictions.
-                </p>
-              </div>
-
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex flex-col gap-2 border-t border-foreground/10 pt-5">
-                  <h3 className="text-sm font-medium text-foreground">When a concentration is left out</h3>
-                  <p className="text-sm text-foreground/75 leading-relaxed">
-                    If the cell fails to depolarize or repolarize at one concentration, that biomarker is undefined there
-                    and is excluded from its average. The average then uses the remaining concentrations.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-2 border-t border-foreground/10 pt-5">
-                  <h3 className="text-sm font-medium text-foreground">Digital Lab runs</h3>
-                  <p className="text-sm text-foreground/75 leading-relaxed">
-                    Digital Lab simulates nothing: the eleven ratios you type in are used directly. If your values come
-                    from several concentrations, average them yourself first, the same way the pipeline does.
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            {/* =========================================================
-                SECTION 6: RISK PREDICTION AND PROBABILITIES
-                ========================================================= */}
-            <section hidden={visual && SECTIONS[activeTopic].id !== 'risk-prediction'} tabIndex={visual ? -1 : undefined} id="risk-prediction" aria-labelledby="heading-risk" className="scroll-mt-28">
-              <GuideSectionHead
-                id="heading-risk"
-                title="6. Risk Prediction and Probabilities"
-                meta="Mean dose vector & tree probabilities"
-              />
-
-              <div className="mt-5 space-y-4 border-t border-foreground/10 pt-5">
-                <div className="flex items-start gap-3">
-
-                  <div className="space-y-2 text-sm text-foreground/85 leading-relaxed">
-                    <h3 className="font-semibold text-foreground text-base">
-                      One Risk Tier Per Run
-                    </h3>
-                    <p>
-                      One risk tier per run, computed from the eleven biomarker ratios averaged over 1 to 4× Cmax.
-                      Per-concentration graphs and biomarkers are simulation output, not separate predictions.
-                    </p>
-                    <p className="text-sm text-foreground/70">
-                      The model evaluates only the mean exposure vector. Do not interpret individual dose rows as standalone risk calls.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-foreground/8">
-                  <h4 className="text-sm font-mono uppercase tracking-wider text-muted mb-2">Decision Forest Probabilities</h4>
-                  <p className="text-sm text-foreground/80 leading-relaxed">
-                    The forest averages the class probability vectors of its 400 decision trees. Because the trees are grown to pure leaves, each vector is one-hot and the average equals the share of trees choosing that tier, so the figure can be read as a vote count. The interface displays exact counts when they are whole numbers and percentages otherwise.
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            {/* =========================================================
-                SECTION 7: THE PREDICTION SET (CONFORMAL PREDICTION)
-                ========================================================= */}
-            <section hidden={visual && SECTIONS[activeTopic].id !== 'prediction-set'} tabIndex={visual ? -1 : undefined} id="prediction-set" aria-labelledby="heading-set" className="scroll-mt-28">
-              <GuideSectionHead
-                id="heading-set"
-                title="7. The Prediction Set"
-                meta="Conformal coverage & uncertainty"
-              />
-              <p className="mt-4 text-sm text-foreground/75 max-w-3xl leading-relaxed">
-                The prediction set outputs statistical coverage derived from calibration. Three cases occur in practice:
-              </p>
-
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-5">
-                {/* Case 1: Single Tier */}
-                <div className="flex flex-col justify-between border-t border-foreground/10 pt-5">
-                  <div className="space-y-2.5">
-                    <div className="inline-flex items-center gap-1.5 text-sm font-medium text-teal-700">
-
-                      <span>Single Tier</span>
-                    </div>
-                    <h3 className="font-semibold text-sm text-foreground">Committed Tier</h3>
-                    <p className="text-sm text-foreground/75 leading-relaxed">
-                      The model commits to one tier.
-                    </p>
-                  </div>
-                  <div className="mt-4 pt-3 border-t border-foreground/8 text-sm font-mono text-muted">
-                    What to do: Follow recommended protocol for that tier.
-                  </div>
-                </div>
-
-                {/* Case 2: Ambiguous */}
-                <div className="flex flex-col justify-between border-t border-foreground/10 pt-5">
-                  <div className="space-y-2.5">
-                    <div className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-700">
-
-                      <span>Two or Three Tiers</span>
-                    </div>
-                    <h3 className="font-semibold text-sm text-foreground">Ambiguous Output</h3>
-                    <p className="text-sm text-foreground/75 leading-relaxed">
-                      More than one tier cannot be ruled out; the most severe in the set is recommended and the recommendation is provisional.
-                    </p>
-                  </div>
-                  <div className="mt-4 pt-3 border-t border-foreground/8 text-sm font-mono text-muted">
-                    What to do: Treat recommendation as provisional; review SHAP.
-                  </div>
-                </div>
-
-                {/* Case 3: Empty Set */}
-                <div className="flex flex-col justify-between border-t border-foreground/10 pt-5">
-                  <div className="space-y-2.5">
-                    <div className="inline-flex items-center gap-1.5 text-sm font-medium text-accent">
-
-                      <span>Empty Set ([ ])</span>
-                    </div>
-                    <h3 className="font-semibold text-sm text-foreground">Out of Distribution</h3>
-                    <p className="text-sm text-foreground/75 leading-relaxed">
-                      No tier was probable enough; the model abstains, High is recommended, and the input should be checked.
-                    </p>
-                  </div>
-                  <div className="mt-4 pt-3 border-t border-foreground/8 text-sm font-mono text-accent">
-                    What to do: Check input parameters and simulation flags.
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-5 text-sm text-foreground/70 leading-relaxed space-y-1 border-l-2 border-foreground/15 pl-4 py-1">
                 <p>
-                  <strong>Conformal Parameters from Model:</strong> α = 2/13 (≈ {alphaVal.toFixed(4)}), providing {coveragePct}% nominal coverage
-                  {qHatVal ? ` with non-conformity threshold q̂ = ${qHatVal}` : ''}.
+                  Only the last column reaches the model. The other columns show how the effect grows with exposure. They
+                  are simulation output, and the model makes no prediction from them.
                 </p>
-                <p>
-                  <strong>Calibration Caveat:</strong> Coverage was calibrated on drug-averaged data, so for a single input it is an indication rather than a guarantee.
-                </p>
-              </div>
+              </figure>
+
+              <Points
+                items={[
+                  { title: 'A missing concentration', text: 'If the cell fails to depolarize or repolarize at one concentration, that biomarker has no value there. The average uses the other concentrations.' },
+                  { title: 'Digital Lab', text: 'Digital Lab runs no simulation. The model reads the 11 ratios you type. If your values come from several concentrations, average them first.' },
+                ]}
+              />
             </section>
 
-            {/* =========================================================
-                SECTION 8: SHAP (LOCAL VS. GLOBAL)
-                ========================================================= */}
-            <section hidden={visual && SECTIONS[activeTopic].id !== 'shap'} tabIndex={visual ? -1 : undefined} id="shap" aria-labelledby="heading-shap" className="scroll-mt-28">
-              <GuideSectionHead
-                id="heading-shap"
-                title="8. SHAP"
-                meta="Per-run drivers vs. overall model importances"
-              />
-
-              <p className="mt-4 text-sm text-foreground/75 max-w-3xl leading-relaxed">
-                This section distinguishes two things that are both called SHAP:
+            {/* ---------- 6. Risiko ---------- */}
+            <section {...sectionProps('risk-prediction')} aria-labelledby="heading-risk">
+              <GuideSectionHead id="heading-risk" number={6} title="Risk tier and votes" meta="One tier per run" />
+              <p className={styles.lead}>
+                Each run gets one risk tier, computed from the averaged ratios. The graphs and the biomarkers per dose are
+                simulation output.
               </p>
-
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-3 border-t border-foreground/10 pt-5">
-                  <div className="flex items-center gap-2">
-
-                    <h3 className="font-semibold text-sm text-foreground">Local (What the App Shows)</h3>
-                  </div>
-                  <p className="text-sm text-foreground/80 leading-relaxed">
-                    Computed for one run, on its own input vector. The base value plus the eleven contributions equals the predicted probability of the predicted tier.
-                  </p>
-                  <div className="font-mono text-sm text-foreground border-l-2 border-foreground/15 pl-4 py-1">
-                    Base Value + Sum(11 Contributions) = Predicted Probability
-                  </div>
-                  <ul className="text-sm text-foreground/75 space-y-1 pl-3 list-disc">
-                    <li>Bars toward the result increased that probability.</li>
-                    <li>Bars away decreased it.</li>
-                  </ul>
-                  <p className="text-sm text-muted italic">
-                    The app&apos;s explanation is per-run. A biomarker important globally may be unimportant in a given run and vice versa.
-                  </p>
-                </div>
-
-                <div className="space-y-3 border-t border-foreground/10 pt-5">
-                  <div className="flex items-center gap-2">
-
-                    <h3 className="font-semibold text-sm text-foreground">Global (What Appears in the Research Report)</h3>
-                  </div>
-                  <p className="text-sm text-foreground/80 leading-relaxed">
-                    The mean absolute SHAP value over many samples, describing the model overall rather than any one run.
-                  </p>
-                  <p className="text-sm text-muted leading-relaxed">
-                    <strong>The app does not display this.</strong>
-                  </p>
-                </div>
-              </div>
+              <Points
+                items={[
+                  { title: '400 trees vote', text: 'The model is a random forest of 400 decision trees. Each tree picks one tier, so the probability of a tier equals the share of trees that picked it.' },
+                  { title: 'Votes on the result page', text: 'The page shows the vote count when it is a whole number, and a percentage otherwise.' },
+                ]}
+              />
+              <Callout tone="warn" title="Read the run as a whole">
+                A single dose row is not a risk call. The model only sees the average.
+              </Callout>
             </section>
 
-            {/* =========================================================
-                SECTION 9: HISTORY AND RETENTION
-                ========================================================= */}
-            <section hidden={visual && SECTIONS[activeTopic].id !== 'history-retention'} tabIndex={visual ? -1 : undefined} id="history-retention" aria-labelledby="heading-retention" className="scroll-mt-28">
-              <GuideSectionHead
-                id="heading-retention"
-                title="9. History and Retention"
-                meta="Storage limits, trace reclamation & job caps"
+            {/* ---------- 7. Prediction set ---------- */}
+            <section {...sectionProps('prediction-set')} aria-labelledby="heading-set">
+              <GuideSectionHead id="heading-set" number={7} title="Prediction set" meta="Conformal coverage" />
+              <p className={styles.lead}>
+                The prediction set lists each tier the model cannot rule out at its calibrated confidence. You will see one
+                of three cases.
+              </p>
+              <ol className={styles.cases}>
+                {CASES.map(c => (
+                  <li key={c.label}>
+                    <span className={styles.caseLabel} data-tone={c.tone}>{c.label}</span>
+                    <p>{c.text}</p>
+                    <p className={styles.caseTodo}>{c.todo}</p>
+                  </li>
+                ))}
+              </ol>
+              <Callout tone="note" title="Calibration">
+                <span className="block" data-i18n-skip>
+                  {`α = 2/13 (≈ ${alphaVal.toFixed(4)}) · ${coveragePct}% coverage${qHatVal ? ` · q̂ = ${qHatVal}` : ''}`}
+                </span>
+                <span className="mt-1.5 block">
+                  The calibration used drug-averaged data, so for a single run treat the coverage as an estimate.
+                </span>
+              </Callout>
+            </section>
+
+            {/* ---------- 8. SHAP ---------- */}
+            <section {...sectionProps('shap')} aria-labelledby="heading-shap">
+              <GuideSectionHead id="heading-shap" number={8} title="SHAP explanations" meta="Why the model chose a tier" />
+              <p className={styles.lead}>
+                Two different numbers share the name SHAP. The app shows the first one.
+              </p>
+              <Points
+                items={[
+                  {
+                    title: 'Per run, in the app',
+                    text: 'SHAP splits one run’s prediction across the 11 biomarkers. A bar toward the result raised the probability of that tier, and a bar away lowered it.',
+                  },
+                  {
+                    title: 'Across the model, in the research report',
+                    text: 'The mean absolute SHAP value over many samples. It describes the whole model, and the app does not show it.',
+                  },
+                ]}
               />
+              <Formula>base value + sum of 11 contributions = probability of the predicted tier</Formula>
+              <Callout tone="note" title="Two different views">
+                A biomarker can matter a lot in one run and little across the model, or the other way round.
+              </Callout>
+            </section>
 
-              <div className="mt-5 space-y-4 border-t border-foreground/10 pt-5">
-                <div className="flex items-start gap-3.5">
-
-                  <div className="space-y-2 text-sm text-foreground/85 leading-relaxed">
-                    <h3 className="font-semibold text-foreground text-base">
-                      What Activity Logs Keeps
-                    </h3>
-                    <p>
-                      Predictions, biomarker ratios, and SHAP explanations are kept in Activity Logs, while waveform traces
-                      are reclaimed under the retention policy.
-                      {typeof traceDays === 'number' && typeof maxJobs === 'number' ? (
-                        <>
-                          {' '}Waveform traces are kept for <strong>{traceDays} days</strong>, and pipeline runs have a storage cap of <strong>{maxJobs} jobs</strong>.
-                        </>
-                      ) : null}
-                    </p>
-                    <p className="text-sm text-foreground/70">
-                      Once high-resolution traces are reclaimed, the log entry retains its full input method details,
-                      biomarker ratios, tree probabilities, conformal set, and SHAP contributions.
-                    </p>
-                  </div>
+            {/* ---------- 9. Riwayat ---------- */}
+            <section {...sectionProps('history-retention')} aria-labelledby="heading-retention">
+              <GuideSectionHead id="heading-retention" number={9} title="History and storage" meta="Activity Logs" />
+              <p className={styles.lead}>
+                Activity Logs keeps each prediction with its ratios, tree votes, prediction set and SHAP drivers. Waveform
+                traces take the most space, so the server deletes them after a while.
+              </p>
+              <dl className={styles.stats}>
+                <div>
+                  <dt>Trace storage</dt>
+                  <dd>{typeof traceDays === 'number' ? `${traceDays} days` : '—'}</dd>
+                  <p>{typeof traceDays === 'number' ? 'Waveforms are deleted after this period' : 'Not reported by the server'}</p>
                 </div>
-
-                <div className="pt-4 border-t border-foreground/10 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm font-mono">
-                  <div className="border-l-2 border-foreground/15 pl-4 py-1">
-                    <div className="text-muted text-xs uppercase tracking-wider">Traces Retention</div>
-                    <div className={`text-base font-semibold mt-0.5 ${typeof traceDays === 'number' ? 'text-accent' : 'text-foreground/60 text-sm'}`}>
-                      {typeof traceDays === 'number' ? `${traceDays} days` : 'Policy unavailable'}
-                    </div>
-                    <div className="text-sm text-foreground/60 mt-1 font-sans">
-                      {typeof traceDays === 'number' ? 'Waveforms reclaimed after retention period' : 'Awaiting retention policy from API'}
-                    </div>
-                  </div>
-                  <div className="border-l-2 border-foreground/15 pl-4 py-1">
-                    <div className="text-muted text-xs uppercase tracking-wider">Pipeline Storage Cap</div>
-                    <div className={`text-base font-semibold mt-0.5 ${typeof maxJobs === 'number' ? 'text-foreground' : 'text-foreground/60 text-sm'}`}>
-                      {typeof maxJobs === 'number' ? `${maxJobs} jobs` : 'Policy unavailable'}
-                    </div>
-                    <div className="text-sm text-foreground/60 mt-1 font-sans">
-                      {typeof maxJobs === 'number' ? 'Active pipeline runs stored per user' : 'Awaiting job limit from API'}
-                    </div>
-                  </div>
-                  <div className="border-l-2 border-foreground/15 pl-4 py-1">
-                    <div className="text-muted text-xs uppercase tracking-wider">Activity Logs Records</div>
-                    <div className="text-base font-semibold text-foreground mt-0.5">
-                      {summary?.total_predictions != null
-                        ? `${summary.total_predictions} saved`
-                        : 'Kept'}
-                    </div>
-                    <div className="text-sm text-foreground/60 mt-1 font-sans">
-                      Predictions, ratios & SHAP kept while waveform traces are reclaimed
-                    </div>
-                  </div>
+                <div>
+                  <dt>Pipeline storage cap</dt>
+                  <dd>{typeof maxJobs === 'number' ? `${maxJobs} jobs` : '—'}</dd>
+                  <p>{typeof maxJobs === 'number' ? 'Pipeline runs kept per account' : 'Not reported by the server'}</p>
                 </div>
-              </div>
+                <div>
+                  <dt>Activity Logs records</dt>
+                  <dd>{summary?.total_predictions != null ? `${summary.total_predictions} saved` : '—'}</dd>
+                  <p>Kept after the traces are deleted</p>
+                </div>
+              </dl>
             </section>
 
             {visual && (
@@ -775,24 +427,21 @@ export default function GuideContent({ loadHistory = true, visual = false }: { l
                 <button type="button" disabled={activeTopic === SECTIONS.length - 1} onClick={() => turnPage(activeTopic + 1)}>Next topic</button>
               </div>
             )}
-            {/* Footer Navigation Back to Lab */}
-            <div className="pt-6 border-t border-foreground/10 flex flex-wrap items-center justify-between gap-4">
-              <Link
-                href="/lab/pipeline"
-                className="inline-flex items-center gap-2 text-sm font-medium text-action hover:underline"
-              >
-                <ArrowRight className="w-4 h-4 rotate-180" />
-                <span>Back to Full Pipeline</span>
+
+            {/* Penutup: dua jalan untuk mencoba */}
+            <nav aria-label="Run a prediction" className={styles.next}>
+              <Link href="/lab/pipeline">
+                <span>Full Pipeline</span>
+                <strong>Start from a drug</strong>
+                <ArrowRight size={18} aria-hidden="true" />
               </Link>
-              <Link
-                href="/lab"
-                className="inline-flex items-center gap-2 text-sm font-medium text-action hover:underline"
-              >
-                <span>Open Digital Lab</span>
-                <ArrowRight className="w-4 h-4" />
+              <Link href="/lab">
+                <span>Digital Lab</span>
+                <strong>Start from 11 ratios</strong>
+                <ArrowRight size={18} aria-hidden="true" />
               </Link>
-            </div>
-          </div>
+            </nav>
+          </article>
         </div>
       </LabContainer>
     </div>

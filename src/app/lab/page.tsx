@@ -11,7 +11,6 @@ import HeartbeatLoader from './components/report/HeartbeatLoader';
 import RiskVerdict from './components/report/RiskVerdict';
 import BiomarkerList from './components/report/BiomarkerList';
 import RiskLabel from './components/report/RiskLabel';
-import { ManualInputNote } from './components/report/ModelInputNote';
 import StageMonitor, { type Stage, type StageState } from './components/report/StageMonitor';
 import { primaryBtn } from './components/report/ui';
 import { type Report, clearLabReport, retryLabExplain, submitLabReport, useLabReport } from './useLabReport';
@@ -132,7 +131,6 @@ export default function DigitalLabPage() {
 
             <RiskVerdict tier={report.tier} prediction={report.prediction} />
 
-            <ManualInputNote />
 
             <BiomarkerList
               ratios={report.inputs}

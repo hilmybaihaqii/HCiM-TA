@@ -174,7 +174,7 @@ const btnBase = 'inline-flex h-12 w-full items-center justify-center gap-2.5 rou
 
 export function AuthButton({ loading, children, ...button }: { loading?: boolean } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <button {...button} disabled={button.disabled || loading} className={`${btnBase} bg-white text-black hover:bg-white/85 disabled:opacity-60`}>
+    <button {...button} disabled={button.disabled || loading} className={`${btnBase} bubble bubble-night bg-white text-black disabled:opacity-60`}>
       {loading && <Spinner className="border-black/20 border-t-black" />}
       {children}
     </button>
@@ -183,7 +183,7 @@ export function AuthButton({ loading, children, ...button }: { loading?: boolean
 
 export function AuthSecondaryButton({ children, ...button }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <button {...button} className={`${btnBase} border border-white/20 text-white hover:border-white/45 hover:bg-white/[0.04] disabled:opacity-50`}>
+    <button {...button} className={`${btnBase} bubble border border-white/20 text-white hover:border-white/45 disabled:opacity-50`}>
       {children}
     </button>
   );

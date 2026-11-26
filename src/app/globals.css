@@ -243,3 +243,167 @@ html {
 @media (prefers-reduced-motion: reduce) {
   .page-in { animation: none; }
 }
+
+/* =========================================================
+   Tombol "gelembung": efek yang sama dengan tombol "Run prediction" di halaman utama.
+   Saat hover, gelembung membesar dari titik masuk kursor (riak terang sedikit mendahului),
+   warna teks berbalik; saat kursor keluar gelembung mengecil ke titik keluarnya.
+   Titik --x/--y diisi BubbleOrigin. Gerak hanya transform di dalam tombol.
+   .bubble         : tombol gelap, gelembung terang
+   .bubble-ink     : tombol terang/bergaris, gelembung warna aksi
+   .bubble-accent  : tombol merah, gelembung terang dengan teks merah
+   .bubble-night   : tombol putih di panel hitam, gelembung gelap
+   ========================================================= */
+.bubble {
+  --bubble: var(--surface-white);
+  --bubble-ripple: color-mix(in srgb, var(--surface-white) 40%, transparent);
+  --bubble-text: var(--action);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition-property: color, background-color, border-color, box-shadow, translate, scale;
+  transition-duration: 500ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+.bubble-ink {
+  --bubble: var(--action);
+  --bubble-ripple: color-mix(in srgb, var(--action) 25%, transparent);
+  --bubble-text: var(--surface-white);
+}
+.bubble-accent {
+  --bubble-text: var(--accent);
+}
+.bubble-night {
+  --bubble: #1c1c1c;
+  --bubble-ripple: rgba(28, 28, 28, 0.35);
+  --bubble-text: #ffffff;
+}
+.bubble::before,
+.bubble::after {
+  content: "";
+  position: absolute;
+  left: var(--x, 50%);
+  top: var(--y, 50%);
+  width: 260%;
+  aspect-ratio: 1;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 9999px;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.bubble::before {
+  background: var(--bubble-ripple);
+}
+.bubble::after {
+  background: var(--bubble);
+  transition-duration: 700ms;
+  transition-delay: 75ms;
+}
+@media (hover: hover) {
+  .bubble:hover:not(:disabled)::before,
+  .bubble:hover:not(:disabled)::after {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  .bubble:hover:not(:disabled) {
+    color: var(--bubble-text);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bubble::before,
+  .bubble::after {
+    transition: none;
+  }
+}
+
+/* =========================================================
+   Maskot jantung (HeartbeatLoader): mata berkedip & bintang berkelip. Detak jantung dan kabel
+   digerakkan fisika di HeartbeatLoader.tsx. Hanya transform & opacity.
+   ========================================================= */
+@keyframes heart-blink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  93% { transform: scaleY(0.1); }
+  96% { transform: scaleY(1); }
+}
+@keyframes heart-sparkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.6) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(20deg); }
+}
+.heart-blink {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: heart-blink 4.2s ease-in-out infinite;
+}
+.heart-sparkle {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: heart-sparkle 1.6s ease-in-out infinite;
+}
+/* Interaksi maskot: wajah berganti dengan "pop", mulut berubah halus & "bicara",
+   balon dialog komik muncul memantul. */
+@keyframes heart-pop {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+@keyframes heart-talk {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.55); }
+}
+@keyframes comic-pop {
+  0% { transform: translateY(6px) scale(0.85); opacity: 0; }
+  60% { transform: translateY(0) scale(1.04); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+.heart-pop {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: heart-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.heart-mouth {
+  transition: d 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.heart-cheek {
+  transition: opacity 300ms ease;
+}
+.heart-talk {
+  transform-box: fill-box;
+  transform-origin: 50% 20%;
+  animation: heart-talk 240ms ease-in-out infinite;
+}
+.comic-pop {
+  transform-origin: 8% 100%;
+  animation: comic-pop 380ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+/* Detail reaksi: hati kecil melayang, mata sesekali melirik */
+@keyframes heart-glance {
+  0%, 62%, 100% { transform: translateX(0); }
+  68%, 76% { transform: translateX(-2.5px); }
+  82%, 90% { transform: translateX(2.5px); }
+}
+@keyframes heart-float {
+  0%, 100% { transform: translateY(0) rotate(-6deg); }
+  50% { transform: translateY(-6px) rotate(6deg); }
+}
+.heart-glance {
+  animation: heart-glance 7s ease-in-out infinite;
+}
+.heart-float {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: heart-float 1.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .heart-blink, .heart-sparkle, .heart-pop, .heart-talk, .comic-pop, .heart-float, .heart-glance { animation: none; }
+  .heart-mouth, .heart-cheek { transition: none; }
+}
+
+
+
+
+
+
+
+
+
+

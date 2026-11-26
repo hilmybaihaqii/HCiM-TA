@@ -1,16 +1,16 @@
 import styles from './guide.module.css';
 
-export default function GuideSectionHead({ id, title, meta }: {
-  id: string; title: string; meta: string;
+/** Judul bagian panduan: nomor kecil, label, lalu judul */
+export default function GuideSectionHead({ id, number, title, meta }: {
+  id: string; number: number; title: string; meta: string;
 }) {
-  const [number, ...words] = title.split('. ');
   return (
     <header className={styles.sectionHeading}>
-      <span className={styles.sectionNumber} aria-hidden="true">{number.padStart(2, '0')}</span>
-      <div>
-        <p className={styles.sectionMeta}>{meta}</p>
-        <h2 id={id}>{words.join('. ')}</h2>
-      </div>
+      <p className={styles.sectionMeta}>
+        <span className={styles.sectionNumber} aria-hidden="true">{String(number).padStart(2, '0')}</span>
+        {meta}
+      </p>
+      <h2 id={id}>{title}</h2>
     </header>
   );
 }

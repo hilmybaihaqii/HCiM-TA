@@ -1,16 +1,15 @@
 'use client';
 
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, useAnimation } from 'framer-motion';
 import { api } from '@/lib/api';
+import { LockKeyhole } from 'lucide-react';
 import {
-  AuthAlert, AuthButton, AuthDone, AuthField, AuthHeading, AuthShell, authLink, authLinkButton as primaryLink,
+  AuthAlert, AuthButton, AuthField, AuthHeading, AuthShell, authLink, authLinkButton as primaryLink,
 } from '@/components/auth/AuthShell';
-import { AuthWaiting } from '@/components/auth/SignedInNotice';
-
-const REDIRECT_MS = 2500;
+import { AuthWaiting, Celebration } from '@/components/auth/SignedInNotice';
 
 type Errors = { newPassword?: string; confirmPassword?: string };
 
@@ -33,12 +32,8 @@ function ResetPasswordForm() {
   const [fieldErrors, setFieldErrors] = useState<Errors>({});
   const shake = useAnimation();
 
-  // Berhasil: ke halaman login setelah pesan terbaca
-  useEffect(() => {
-    if (!done) return;
-    const timer = setTimeout(() => router.push('/login'), REDIRECT_MS);
-    return () => clearTimeout(timer);
-  }, [done, router]);
+  // Berhasil: ke halaman login setelah animasi & pesannya sempat terbaca
+  const toLogin = useCallback(() => router.push('/login'), [router]);
 
   const aside = { title: <>Almost<br />done.</>, text: 'Choose a new password, then sign in with it on any device.' };
 
@@ -56,9 +51,19 @@ function ResetPasswordForm() {
   if (done) {
     return (
       <AuthShell aside={aside} close="/login">
-        <AuthDone title="Password updated" action={<Link href="/login" className={primaryLink}>Sign in now</Link>}>
-          <p>Sign in with your new password. Taking you to the sign-in page…</p>
-        </AuthDone>
+        <Celebration
+          icon={<LockKeyhole className="h-7 w-7" />}
+          ready
+          load={1.2}
+          hold={3}
+          loadingLabel="Saving your new password"
+          badge="Password updated"
+          title="You're all set."
+          subtitle="Sign in with your new password. Taking you to the sign-in page…"
+          onDone={toLogin}
+        >
+          <Link href="/login" className={primaryLink}>Sign in now</Link>
+        </Celebration>
       </AuthShell>
     );
   }

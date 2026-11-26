@@ -267,14 +267,14 @@ export default function CTASection() {
         >
           <div className="w-1.5 h-1.5 bg-accent" />
           <span className="text-[10px] md:text-xs font-mono uppercase tracking-[0.3em] text-muted font-semibold">
-            04 — Global Access
+            04 · Global Access
           </span>
           <div className="w-1.5 h-1.5 bg-accent" />
         </motion.div>
 
         {/* Kinetic Headline */}
         <div className="max-w-7xl px-4 bg-background/50 backdrop-blur-[2px]">
-          <RevealText>One digital lab. No borders, no downtime.</RevealText>
+          <RevealText>One digital lab you can open from anywhere.</RevealText>
         </div>
 
         <motion.p
@@ -284,9 +284,8 @@ export default function CTASection() {
           transition={{ duration: 1, delay: 0.2, ease: luxEase }}
           className="mt-8 mb-14 md:mb-20 text-sm md:text-base text-muted max-w-lg leading-relaxed bg-background/50 backdrop-blur-[2px]"
         >
-          Every simulation, biomarker, and SHAP-audited classification runs on
-          the same pipeline — whether it&apos;s called from a lab in Jakarta or a
-          clinic on the other side of the world.
+          A lab in Jakarta and a clinic on the other side of the world use the
+          same pipeline for every simulation and SHAP-checked classification.
         </motion.p>
 
         <div className="mb-14 flex w-full justify-center md:mb-20">
